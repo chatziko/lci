@@ -14,6 +14,7 @@
 	GNU General Public License for more details. */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "parser.h"
 #include "run.h"
@@ -34,8 +35,8 @@ int main() {
 	// read and execute commands
 	while(!feof(stdin)) {
 		printf("lci> ");
-		if(!gets(buffer)) break;
-		if(buffer[0] == '\0') continue;
+		if(!fgets(buffer, sizeof(buffer), stdin)) break;
+		if(strcmp(buffer, "\n") == 0) continue;
 
 		scInputType = SC_BUFFER;
 		scInput = buffer;
