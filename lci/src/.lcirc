@@ -1,0 +1,200 @@
+
+# .lcirc
+# 
+# Initialization file for lci program.
+# This file declares basic functions and operators.
+
+
+# Operator declaration. Must be in the form
+#		? DefOp 'oper' precedence associativity
+
+? DefOp '~'		100 yfx;			# Enforces call-by-value (used internally)
+
+? DefOp '&&'	80 yfx;			# Logical and
+? DefOp '||'	80 yfx;			# Logical or
+
+? DefOp '<'		70 xfx;			# Less than
+? DefOp '<='	70 xfx;			# Less or equal
+? DefOp '>'		70 xfx;			# Greater than
+? DefOp '>='	70 xfx;			# Greater or equal
+? DefOp '=='	70 xfx;			# Equal
+? DefOp '!='	70 xfx;			# Not equal
+
+? DefOp '++'	60 xfy;			# Append lists
+? DefOp ':'		60 xfy;			# Construct list (Head:Tail)
+
+? DefOp ','		55 xfx;			# Construct ordered pair (a,b)
+? DefOp '..'	55 xfx;			# n..m = [n,n+1,...,m]
+
+? DefOp '+'		50 yfx;			# Add
+? DefOp '-'		50 yfx;			# Monus
+
+? DefOp '*'		40 yfx;			# Multiply
+? DefOp '/'		40 yfx;			# Integer division
+
+? DefOp '**'	35 yfx;			# Exponential
+
+# Operator definition.
+
+'&&'	= And;
+'||'	= Or;
+'=='	= Equal;
+'!='	= \a.\b.Not (a == b);
+'>='	= Geq;
+'<='	= Leq;
+'>'	= \a.\b.Not (a <= b);
+'<'	= \a.\b.Not (a >= b);
+'+'	= Add;
+'-'	= Monus;
+'*'	= Mult;
+'/'	= \n.\m.If (n < m) 0 1+(n-m)/m;
+'**'	= Exp;
+':'	= Cons;
+'++'	= Append;
+','	= Pair;
+'..'	= \n.\m.(m-n) (\l.(Pred (Head l)):l) m:Nil;
+
+
+# --- Fixed point combinators -----------------------------------------
+
+Y = \f.(\x.f(x x))(\x.f(x x));
+Theta = (\x.\y.y (x x y))(\x.\y.y (x x y));
+
+# --- Logical functions -----------------------------------------------
+
+True	= \x.\y.x;
+False	= \x.\y.y;
+Not = \z.z False True;
+And = \x.\y.(x (y True False) False);
+Or = \x.\y.(x True (y True False));
+If = \z.\x.\y.z x y;
+
+# --- Arithmetic functions --------------------------------------------
+
+Succ = \n.\f.\x.n f(f x);
+Pred = \x.\y.\z.x(\p.\q.q(p y))(\y.z)(\x.x);
+Add = \n.\m.\f.\x.n f(m f x);
+Mult = \n.\m.\f.n(m f);
+Exp = \n.\m.m n;
+Monus = \a.\b.b Pred a;
+
+#IsZero = \x.x (\x.\z.z False x) (\x.x) True;
+IsZero = \n.n (\x.False) True;
+Equal = \a.\b.(IsZero a-b) && (IsZero b-a);
+Leq = \a.\b.IsZero (Monus a b);
+Geq = \a.\b.IsZero (Monus b a);
+
+# --- Pairs -----------------------------------------------------------
+
+Pair = \x.\y.\z.z x y;
+Fst = \z.z True;
+Snd = \z.z False;
+
+# --- List construction -----------------------------------------------
+
+Cons = \x.\y.\s.s x y;
+Nil = \x.True;
+IsNil = \p.p \x.\y.False;
+Head = \p.p True;
+Tail = \p.p False;
+
+# --- Infinite recursion ----------------------------------------------
+
+Loop = Loop;
+Nats = \n.n:(Nats (Succ n));
+
+# --- Ackermann function ----------------------------------------------
+
+#using definition
+Ack = \m.\n.
+	If (IsZero m)
+		n+1
+		(If (IsZero n)
+			(Ack m-1 1)
+			(Ack m-1 ~(Ack m n-1))
+		);
+
+#using primitive recursion on high order function
+Ack2 = \p.(p (\a.\q.(a (q a 1))) Succ);
+
+# --- Mutually recursive functions ------------------------------------
+
+Series = \n.
+	If (IsZero n)
+		0
+		(G n);
+
+G = \n.
+	n + (Series n-1);
+
+
+# --- Basic list functions --------------------------------------------
+
+ListEqual = \l1.\l2.
+	If (IsNil l1)
+		(IsNil l2)
+		(Head l1)==(Head l2) && (ListEqual (Tail l1) (Tail l2));
+
+Length = \l.
+	If (IsNil l)
+		0
+		(Succ (Length (Tail l)));
+
+Member = \x.\l.
+	If (IsNil l)
+		False
+		(If x == (Head l)
+			True
+			(Member x (Tail l)));
+
+Append = \l1.\l2.
+	If (IsNil l1)
+		l2
+		(Head l1):(Append (Tail l1) l2);
+
+Reverse = \l.
+	If (IsNil l)
+		Nil
+		(Reverse (Tail l)) ++ (Head l):Nil;
+
+Zip = \l1.\l2.
+	If (IsNil l1) || (IsNil l2)
+		Nil
+		((Head l1),(Head l2)):(Zip (Tail l1) (Tail l2));
+
+Combine = \l1.\l2.
+	If (IsNil l1)
+		Nil
+		(Map (Pair (Head l1)) l2) ++ (Combine (Tail l1) l2);
+
+Sum = \l.
+	If (IsNil l)
+		0
+		(Head l) + (Sum (Tail l));
+
+Take = \n.\l.
+	If (IsZero n)
+		Nil
+		(Head l):(Take (Pred n) (Tail l));
+
+
+# --- High order functions --------------------------------------------
+
+Map = \f.\l.
+	If (IsNil l)
+		Nil
+		(f (Head l)):(Map f (Tail l));
+
+Filter = \f.\l.
+	If (IsNil l)
+		Nil
+		(If (f (Head l))
+			(Head l):(Filter f (Tail l))
+			(Filter f (Tail l)));
+
+All = \f.\l.
+	If (IsNil l)
+		True
+		(f (Head l)) && (All f (Tail l));
+
+
