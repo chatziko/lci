@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 CC=gcc
-CFLAGS=-Wall -O3
+CFLAGS=-Wall -O3 -fno-strict-aliasing
 
 
 all: lci
