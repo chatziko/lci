@@ -19,7 +19,7 @@
 #include "grammar.h"
 
 #define OPTNO	5
-typedef enum {OPT_TRACE = 0, OPT_SHOWPAR, OPT_HASKELL, OPT_SHOWEXEC, OPT_READABLE} OPT;
+typedef enum {OPT_TRACE = 0, OPT_SHOWPAR, OPT_GREEKLAMBDA, OPT_SHOWEXEC, OPT_READABLE} OPT;
 
 
 void progInterpret(COMMAND *cmdList);

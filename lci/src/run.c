@@ -249,8 +249,8 @@ int execSystemCmd(TERM *t) {
 			opt = OPT_TRACE;
 		else if(strcmp(par->name, "showpar") == 0)
 			opt = OPT_SHOWPAR;
-		else if(strcmp(par->name, "haskell") == 0)
-			opt = OPT_HASKELL;
+		else if(strcmp(par->name, "greeklambda") == 0)
+			opt = OPT_GREEKLAMBDA;
 		else if(strcmp(par->name, "showexec") == 0)
 			opt = OPT_SHOWEXEC;
 		else if(strcmp(par->name, "readable") == 0)
@@ -280,7 +280,7 @@ int execSystemCmd(TERM *t) {
 		printf("ShowAlias [name]\tList the specified or all stored aliases\n");
 		printf("Print term\t\tDisplays the term\n");
 		printf("Consult file\t\tReads and interprets the specified file\n");
-		printf("Set option (on|off)\tChanges one of the following options:\n\t\t\ttrace, showexec, showpar, haskell, readable\n");
+		printf("Set option (on|off)\tChanges one of the following options:\n\t\t\ttrace, showexec, showpar, greeklambda, readable\n");
 		printf("Help\t\t\tDisplays this message\n");
 		printf("Quit\t\t\tQuit the program (same as Ctrl-D)\n");
 

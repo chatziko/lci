@@ -25,13 +25,14 @@
 
 // termPrint
 //
-// Ektypwnei enan lamda oro
-// An showPar = 0 tote typwnontai mono oi aparaithtes paren8eseis
-// An hsStyle = 1 tote xrhsimopoieitai to styl ths haskell (\x->x anti gia ëx.x)
+// Prints a lambda term
+// If showPar = 0 then only the required parentheses are printed
+// If greeklambda = 1 then a greek lambda character is used instead of "."
+// (must have ISO-8859-7 character set to display it correctly)
 
 void termPrint(TERM *t, int isMostRight) {
 	char showPar = getOption(OPT_SHOWPAR),
-		hsStyle = getOption(OPT_HASKELL),
+		greekLambda = getOption(OPT_GREEKLAMBDA),
 		readable = getOption(OPT_READABLE);
 	int num;
 
@@ -50,9 +51,9 @@ void termPrint(TERM *t, int isMostRight) {
 		else {
 			if(showPar || !isMostRight) printf("(");
 
-			printf(hsStyle ? "\\" : "ë");
+			printf(greekLambda ? "ë" : "\\");
 			termPrint(t->lterm, 0);
-			printf(hsStyle ? "->" : ".");
+			printf(".");
 			termPrint(t->rterm, 1);
 
 			if(showPar || !isMostRight) printf(")");
