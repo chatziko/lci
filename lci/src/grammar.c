@@ -1,7 +1,7 @@
 /* Definition of the finite state machine and the grammar rules
 	that are used by the parser
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -13,6 +13,10 @@
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
+
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +39,7 @@ char *validChars[VALIDCHNO] =	{
 	"01234567890",
 	" \t\n\r",
 	"+-=!@$%^&*/:<>.,|~;?",
-	"\\ë",
+	"\\\xEB",
 	"(", ")", "'"
 };
 
@@ -48,7 +52,7 @@ STATE fsm[VALIDCHNO][STATENO] = {
 	{S_VAR, S_ID , S_NUM, S_NUM, S_NUM, S_NUM, S_NUM, S_NUM, S_QUO },	// num
 	{S_INI, S_INI, S_INI, S_INI, S_INI, S_INI, S_INI, S_INI, S_QUO },	// space
 	{S_OP , S_OP , S_OP , S_OP,  S_OP , S_OP , S_OP,  S_OP , S_QUO },	// operator
-	{S_LAM, S_LAM, S_LAM, S_LAM, S_LAM, S_LAM, S_NEW, S_LAM, S_QUO }, // \ Þ ë
+	{S_LAM, S_LAM, S_LAM, S_LAM, S_LAM, S_LAM, S_NEW, S_LAM, S_QUO }, // \ or greek lambda
 	{S_LPA, S_LPA, S_LPA, S_LPA, S_NEW, S_LPA, S_LPA, S_LPA, S_QUO },	// (
 	{S_RPA, S_RPA, S_RPA, S_RPA, S_RPA, S_NEW, S_RPA, S_RPA, S_QUO },	// )
 	{S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_ID  }	// '
@@ -211,7 +215,13 @@ void procRule0(SYMB_INFO *symb) {
 	//$$ = c;
 
 	termRemoveOper($(2));
-	termAddDecl(strdup(removeChar($(0), '\'')), $(2));
+	termSetClosedFlag($(2));
+
+	if( ((TERM*)$(2))->closed )
+		termAddDecl(strdup(removeChar($(0), '\'')), $(2));
+	else
+		fprintf(stderr, "Error: alias %s is not a closed term and won't be registered\n", $(0));
+
 	$$ = NULL;
 }
 
@@ -231,7 +241,7 @@ void procRule1(SYMB_INFO *symb) {
 
 // T -> v T'
 void procRule2(SYMB_INFO *symb) {
-	TERM *s = malloc(sizeof(TERM));
+	TERM *s = termNew();
 	s->type = TM_VAR;
 	s->name = strdup($(0));
 
@@ -252,7 +262,7 @@ void procRule3(SYMB_INFO *symb) {
 
 // T -> id T'
 void procRule4(SYMB_INFO *symb) {
-	TERM *s = malloc(sizeof(TERM));
+	TERM *s = termNew();
 	s->type = TM_ALIAS;
 	s->name = strdup(removeChar($(0), '\''));
 
@@ -267,8 +277,8 @@ void procRule5(SYMB_INFO *symb) {
 
 // T -> \ v . T T'
 void procRule6(SYMB_INFO *symb) {
-	TERM *s = malloc(sizeof(TERM)),
-		  *v = malloc(sizeof(TERM));
+	TERM *s = termNew(),
+		  *v = termNew();
 
 	v->type = TM_VAR;
 	v->name = strdup($(1));
@@ -282,7 +292,7 @@ void procRule6(SYMB_INFO *symb) {
 
 // T' -> OPER T T'
 void procRule7(SYMB_INFO *symb) {
-	TERM *t = malloc(sizeof(TERM));
+	TERM *t = termNew();
 	OPER *op = NULL;
 
 	t->type = TM_APPL;
