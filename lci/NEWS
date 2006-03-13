@@ -1,0 +1,18 @@
+LCI - Real men use only pure calculus
+
+0.5 (13 Mar 2006):
+	First 'official' release of lci, the code was there for some time but
+	I wanted to add an autotooled build system and some cool extra features.
+
+	So we now use autotools to build, type ./configure && make && make install
+	and you're done. Tested in linux, win32 (cygwin) and OSX, it compiles like a charm :)
+
+	There is also support for readline now so if you have it installed when
+	compiling you'll be able to edit the lines that you type, have history, etc.
+
+	Finally some impressive optimizations have been done in this version.
+	Queens 5 takes just 2 seconds instead of 50 and we can even solve Queens 6
+	in 40 seconds which was unsolvable before.
+
+	Enjoy!
+
