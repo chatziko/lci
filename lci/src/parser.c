@@ -1,6 +1,6 @@
 /* Lexical analyzer and parser
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -12,6 +12,10 @@
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
+
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -60,7 +64,7 @@ int getToken(TOKEN *ptok) {
 
 		for(i = 0; i < VALIDCHNO; i++)
 			for(cpt = validChars[i]; *cpt != '\0'; cpt++)
-				charNo[(int)*cpt] = i;
+				charNo[(unsigned char)*cpt] = i;
 
 		return PAR_OK;
 	}
@@ -90,10 +94,10 @@ int getToken(TOKEN *ptok) {
 
 		//get new state
 		if(c != EOF) {
-			if(charNo[(int)c] == -1)						//invalid character
+			if(charNo[(unsigned char)c] == -1)						//invalid character
 				return PAR_ERROR;
 
-			if((newState = fsm[charNo[(int)c]][prevState]) == S_IGN)
+			if((newState = fsm[charNo[(unsigned char)c]][prevState]) == S_IGN)
 				continue;
 		} else
 			newState = S_EOF;
