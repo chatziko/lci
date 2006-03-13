@@ -1,6 +1,6 @@
 /* Declarations for decllist.c
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -15,6 +15,10 @@
 
 #ifndef DECLLIST_H
 #define DECLLIST_H
+
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include "grammar.h"
 

@@ -1,6 +1,6 @@
 /* Functions to manipulate the list of declarations
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -13,9 +13,14 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "decllist.h"
 #include "termproc.h"
@@ -27,20 +32,23 @@ DECL *declList = NULL;
 
 // termAddDecl
 //
-// Προσθέτει τον όρο term στην λίστα ορισμών με όνομα id.
-// Αν το όνομα υπάρχει ήδη αντικαθίσταται
+// Adds the term to the declaration list with the given id.
+// If a term with this id already exists it is replaced.
 
 void termAddDecl(char *id, TERM *term) {
 	DECL *decl;
 
-	//an to id exei hdh dhlw8ei kanoume antikatastash
+	// declared term must be closed
+	assert(term->closed);
+
+	// if a declaration with this id exists, replace it
 	if((decl = getDecl(id))) {
 		//free declaration memory
 		free(decl->id);
 		termFree(decl->term);
 
 	} else {
-		//an den bre8hke dhmiourgoume kainourgio
+		// if declaration not found, create a new one
 		decl = malloc(sizeof(DECL));
 		decl->aliases.next = NULL;
 		decl->next = declList;
@@ -54,8 +62,8 @@ void termAddDecl(char *id, TERM *term) {
 
 // getDecl
 //
-// Επιστρέφει την εγγραφή που αντιστοιχεί στο αποθηκευμένο
-// alias με όνομα id ή NULL αν δεν υπάρχει καταχωρημένο
+// Returns a record corresponding to the declaration with
+// the given id, or NULL if there is no such declaration.
 
 DECL *getDecl(char *id) {
 	DECL *decl;
@@ -194,6 +202,7 @@ CYCLE dfs(DECL *curNode) {
 	int curSize;
 
 	bestCycle.size = 0;
+	bestCycle.start = bestCycle.end = NULL;
 	curNode->flag = 1;
 
 	//epe3ergasia twn geitonwn
@@ -280,6 +289,8 @@ void removeCycle(CYCLE c) {
 		scInput = buffer;
 		getToken(NULL);
 		parse((void**)&t, TK_TERM);
+
+		termSetClosedFlag(t);				// mark sub-terms as closed
 		termAddDecl(strdup(newId), t);
 
 		//Ta aliases antikatastash twn aliases me tous orismous toys
@@ -291,7 +302,9 @@ void removeCycle(CYCLE c) {
 			tmpId = strdup(d->id);
 			d = d->prev;
 
-			termAddDecl(tmpId, getIndexTerm(c.size, i, newId));
+			tmpTerm = getIndexTerm(c.size, i, newId);
+			termSetClosedFlag(tmpTerm);
+			termAddDecl(tmpId, tmpTerm);
 
 			// Αντικατάσταση του συγκεκριμένου ALIAS με το νέο ορισμό σε όλο το πρόγραμμα
 			for(decl = declList; decl; decl = decl->next)
@@ -307,25 +320,27 @@ void removeCycle(CYCLE c) {
 	// Ετσι ο όρος A=N θα γίνει A=Υ \_me.N[A:=_me]
 	termAlias2Var(t, newId, "_me");							//Allagh toy alias se _me
 
-	newTerm = malloc(sizeof(TERM));							//Efarmogh toy Y ston oro
+	newTerm = termNew();											//Efarmogh toy Y ston oro
 	newTerm->type = TM_APPL;
 	newTerm->name = NULL;
 
-	newTerm->lterm = malloc(sizeof(TERM));					//Y
+	newTerm->lterm = termNew();								//Y
 	newTerm->lterm->type = TM_ALIAS;
 	newTerm->lterm->name = strdup("Y");
 
-	newTerm->rterm = malloc(sizeof(TERM));					//Afairesh \_me.
+	newTerm->rterm = termNew();								//Afairesh \_me.
 	tmpTerm = newTerm->rterm;
 	tmpTerm->type = TM_ABSTR;
 	tmpTerm->name = NULL;
 	tmpTerm->rterm = t;
 
-	tmpTerm->lterm = malloc(sizeof(TERM));					//Metablhth _me
+	tmpTerm->lterm = termNew();								//Metablhth _me
 	tmpTerm->lterm->type = TM_VAR;
 	tmpTerm->lterm->name = strdup("_me");
 
-	//Allagh toy declaration
+	// Change declaration
+	// Note: can't use termAddDecl because it frees the old term (used in the new one)
+	termSetClosedFlag(newTerm);
 	decl = getDecl(newId);
 	decl->term = newTerm;
 
