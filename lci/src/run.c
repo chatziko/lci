@@ -1,6 +1,6 @@
 /* Functions that are used to "execute" terms or commands
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -13,16 +13,24 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <signal.h>
 
-//for ioctl function
+#ifdef USE_READLINE
+#include <readline/readline.h>
+#endif
+#ifdef USE_IOCTL
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <termio.h>
+#endif
 
 #include "run.h"
 #include "parser.h"
@@ -33,10 +41,13 @@
 int trace;
 int options[OPTNO] = {0, 0, 0, 0, 1};
 
-
-void execTerm(TERM *t) {
+#ifndef NDEBUG
+extern int freeNo;
+#endif
+int execTerm(TERM *t) {
 	int redno = -1, res = 1,
 		showExec = getOption(OPT_SHOWEXEC);
+	int retval = 0;
 	long stime = clock();
 	char c;
 
@@ -44,6 +55,12 @@ void execTerm(TERM *t) {
 
 	//Αφαίρεση των operators πριν την εκτέλεση
 	termRemoveOper(t);
+
+	// calculate closed flag for all sub-terms (must be done after termRemoveOper)
+	termSetClosedFlag(t);
+#ifndef NDEBUG
+	freeNo = 0;
+#endif
 
 	switch(execSystemCmd(t)) {
 	 case 1:
@@ -55,6 +72,12 @@ void execTerm(TERM *t) {
 			redno++;
 
 			if(trace) {
+#ifdef USE_READLINE
+				// calling rl_prep_terminal allows to read a single character
+				// from stdin (without waiting for <return>)
+				rl_prep_terminal(1);
+#endif
+#ifdef USE_IOCTL
 				//allazontas tis parametrous sto tio kanoyme thn getchar na epistrefei
 				//ameses meta ton prwto xarakthra (xwris enter) kratame tis palies
 				//parametrous sto oldtio gia epanafora argotera.
@@ -65,11 +88,17 @@ void execTerm(TERM *t) {
 				tio.c_cc[VMIN] = 1;
 				tio.c_cc[VTIME] = 0;
 				ioctl(0, TCSETA, &tio);						//set new settings
+#endif
 
 				termPrint(t, 1);
-				printf("  ?>");
+				printf("  ?> ");
+				fflush(stdout);
 				do {
+#ifdef USE_READLINE
+					switch(c = rl_read_key()) {
+#else
 					switch(c = getchar()) {
+#endif
 					 case 'c':
 						 printf("continue\n");
 						 trace = 0;
@@ -82,12 +111,18 @@ void execTerm(TERM *t) {
 						 break;
 					 default:
 						 c = '?';
-						 printf("\nCommands: (s)tep, (c)ontinue, (a)bort  ?>");
+						 printf("\nCommands: (s)tep, (c)ontinue, (a)bort  ?> ");
+						 fflush(stdout);
 					}
 				} while(c == '?');
 
 				//epanafora ry8misewn termatikoy
+#ifdef USE_READLINE
+				rl_deprep_terminal();
+#endif
+#ifdef USE_IOCTL
 				ioctl(0, TCSETA, &oldtio);
+#endif
 
 				if(c == 'a') break;
 
@@ -103,6 +138,9 @@ void execTerm(TERM *t) {
 			termPrint(t, 1);
 			printf("\n(%d reductions, %.2fs CPU)\n",
 				redno, (double)(clock()-stime) / CLOCKS_PER_SEC);
+#ifndef NDEBUG
+			printf("%d termIsFree's\n", freeNo);
+#endif
 		}
 
 		//Epanafora toy default handler
@@ -114,12 +152,20 @@ void execTerm(TERM *t) {
 		fprintf(stderr, "Error: Missformed sytem command. Type Help for info.\n");
 		break;
 
+	 case -2:
+		// Quit command. Return 1 to exit the program
+		retval = 1;
+		break;
+
 	 default:
 		break;
 	}
 
 	//Απελευθέρωση μνήμης
 	termFree(t);
+	termGC();					// call terms garbageCollector
+
+	return retval;
 }
 
 // execSystemCmd
@@ -130,6 +176,7 @@ void execTerm(TERM *t) {
 //		1	Αν ο όρος δεν είναι εντολή συστήματος
 //		0	Αν ο όρος είναι εντολή συστήματος και εκτελέστηκε κανονικά
 //		-1 Αν ο όρος είνια εντολή συστήματος αλλά συνέβη κάποιο σφάλμα κατά την εκτέλεση
+//		-2 Αν ο όρος είναι εντολή συστήματος που τερματίζει το πρόγραμμα (Quit)
 
 int execSystemCmd(TERM *t) {
 	TERM *stack[10], **sp = stack, *par;
@@ -231,8 +278,14 @@ int execSystemCmd(TERM *t) {
 		par = *--sp;
 		if(par->type != TM_ALIAS && par->type != TM_VAR) return -1;
 
-		if(consultFile(par->name) == 0)
+		switch(consultFile(par->name)) {
+		 case 0:
 			printf("Successfully consulted %s\n", par->name);
+			break;
+		 case -1:
+			printf("Error: cannot open %s\n", par->name);
+			break;
+		}
 
 	} else if(strcmp(t->name, "Set") == 0) {
 		// Set option value
@@ -284,7 +337,7 @@ int execSystemCmd(TERM *t) {
 		printf("Help\t\t\tDisplays this message\n");
 		printf("Quit\t\t\tQuit the program (same as Ctrl-D)\n");
 
-		printf("\nCopyright (C) 2003  Kostas Hatzikokolakis\n\n");
+		printf("\nCopyright (C) 2006  Kostas Chatzikokolakis\n\n");
 
 		printf("This program is free software; you can redistribute it and/or modify\n");
 		printf("it under the terms of the GNU General Public License as published by\n");
@@ -302,7 +355,7 @@ int execSystemCmd(TERM *t) {
 
 	} else if(strcmp(t->name, "Quit") == 0) {
 		if(parno != 0) return -1;
-		exit(0);
+		return -2;
 
 	} else
 		//Το alias δεν είναι κανένα από τα προκαθορισμένα
@@ -313,15 +366,17 @@ int execSystemCmd(TERM *t) {
 
 // consultFile
 //
-// Διαβάζει το αρχείο fname και το εκτελει
+// Reads and executes fname file
+// Return value:
+//   0   ok
+//   -1  cannot open file
+//   -2  syntax error
 
 int consultFile(char *fname) {
 	FILE *f;
 
-	if(!(f = fopen(fname, "r"))) {
-		fprintf(stderr, "Error: cannot open file %s\n", fname);
+	if(!(f = fopen(fname, "r")))
 		return -1;
-	}
 
 	//parse file
 	scInputType = SC_FILE;
@@ -357,43 +412,4 @@ void sigHandler(int sig) {
 	//se SIG_DFL. Etsi prepei na 3anaenergopoih8ei
 	signal(SIGINT, sigHandler);
 }
-
-
-
-//void progInterpret(COMMAND *cmdList) {
-	//for(; cmdList; cmdList = cmdList->next)
-		//switch(cmdList->type) {
-		 //case CM_QUEST:
-			 //execTerm(cmdList->term);
-			 //break;
-
-		 //case CM_DECL:
-			 //termAddDecl(cmdList->id, cmdList->term);
-			 //break;
-		//}	
-//}
-
-//void progFree(COMMAND *cmdList) {
-	//COMMAND *tmp;
-
-	//while(cmdList) {
-		//switch(cmdList->type) {
-		 //case CM_QUEST:
-			 //termFree(cmdList->term);
-			 //break;
-
-		 //case CM_DECL:
-			 ////H mnhmh gia ta declarations den eley8erwnetai dioti exoun
-			 ////apo8hkeytei sthn antistoixh list
-
-			 ////free(cmdList->id);
-			 ////termFree(cmdList->term);
-			 //break;
-		//}
-
-		//tmp = cmdList;
-		//cmdList = cmdList->next;
-		//free(tmp);
-	//}
-//}
 

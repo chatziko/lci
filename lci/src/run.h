@@ -1,6 +1,6 @@
 /* Declarations for run.c
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -16,6 +16,10 @@
 #ifndef RUN_H
 #define RUN_H
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "grammar.h"
 
 #define OPTNO	5
@@ -23,7 +27,7 @@ typedef enum {OPT_TRACE = 0, OPT_SHOWPAR, OPT_GREEKLAMBDA, OPT_SHOWEXEC, OPT_REA
 
 
 void progInterpret(COMMAND *cmdList);
-void execTerm(TERM *t);
+int execTerm(TERM *t);
 void progFree(COMMAND *cmdList);
 int execSystemCmd(TERM *t);
 int consultFile(char *fname);
