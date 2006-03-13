@@ -8,10 +8,6 @@ All entries should be discussed more carefully and priorities should be set.
   
 - Make parser handle errors more friendly.
 
-- Use automake/autoconf, test on more systems.
-
-- Use readline library for input (history, auto-complete, ...)
-
 - Implement call-by-need evaluation strategy (that is lazy evaluation) and support
   coexistence of the three strategies.
 
@@ -24,4 +20,11 @@ All entries should be discussed more carefully and priorities should be set.
 - Add some support for data types.
 
 - Add input/output capabilities (maybe LCI could be used for scripting ?)
+
+
+DONE
+
+- Use automake/autoconf, test on more systems.
+
+- Use readline library for input (history, auto-complete, ...)
 
