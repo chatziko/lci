@@ -1,6 +1,6 @@
 % LCI Documentation (english)
 % 
-% Copyright (C) 2003 Kostas Hatzikokolakis
+% Copyright (C) 2006 Kostas Chatzikokolakis
 % This file is part of LCI
 %
 % This program is free software; you can redistribute it and/or modify
@@ -25,12 +25,12 @@
 \newcommand{\kwd}[1]{\texttt{#1}}
 
 \author{
-	Kostas Hatzikokolakis
+	Kostas Chatzikokolakis
 }
 \title{
 	\kwd{lci} Manual
 }
-\date{26 January 2004}
+\date{12 March 2006}
 
 
 \newcommand{\gr}[1]{#1}
@@ -46,7 +46,7 @@
 
 This manual describes the use of \lci{}, which is an advanced
 interpreter for the \lc. This program was first developed by Kostas
-Hatzikokolakis as an assignment for the \qm{Theory of Programming Languages} course
+Chatzikokolakis as an assignment for the \qm{Theory of Programming Languages} course
 in the Department of Informatics of University of Athens. Later it became an
 open source project licenced under GPL, in order to be used and improved by
 the open source community. It's main purpose is to compute the normal form of
@@ -143,8 +143,15 @@ File processing is made using the following command
 \begin{center}
 	\verb+Consult 'file'+
 \end{center}
-Morever, when being started, \lci{} consults the \kwd{.lcirc} file which must be
-found in working directory. This file contains definitions for many basic
+Morever, when being started, \lci{} searches for a file named \kwd{.lcirc} in the
+following places
+\begin{verbatim}
+	$PREFIX/share/lci/.lcirc  (eg. /usr/local/share/lci/.lcirc)
+	$HOME/.lcirc
+	./.lcirc
+\end{verbatim}
+in that order. All files found are executed, if none is found then a warning
+is printed. This file contains definitions for many basic
 functions and operators (integer operations, for expample) and is similar
 to Haskell's \kwd{prelude.hs}.
 
