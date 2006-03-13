@@ -1,6 +1,6 @@
 /* Declarations for grammar.c
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -16,6 +16,17 @@
 #ifndef GRAMMAR_H
 #define GRAMMAR_H
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+
+// Add __attribute__((packed)) if compiler supports it
+#ifdef HAVE_ATTR_PACKED
+#define ATTR_PACKED __attribute__((packed))
+#else
+#define ATTR_PACKED
+#endif
 
 //Sta8eres poy epitrepoun th xrhsh twn $$ kai $(n) me ton idio tropo
 //me ton yacc stis synarthseis epe3ergasias kanonwn
@@ -60,21 +71,27 @@ typedef enum {
 // Kata to parsing me th boh8eia toy syntaktikoy dentroy 8a dhmiourgh8ei
 // to dentro toy programmatos to opoio 8a xrhsimopoih8ei gia thn ektelesh
 
-typedef enum { TM_ABSTR, TM_APPL, TM_VAR, TM_ALIAS } TERM_TYPE;
-typedef enum { CM_QUEST, CM_DECL } COMMAND_TYPE;
-typedef enum { ASS_LEFT, ASS_RIGHT, ASS_NONE } ASS_TYPE;
+// Note: ATTR_PACKED (#defined __atribute__((packed))) instructs the compiler to
+// use 1 byte instead of 4 for the enum
+enum term_type_tag { TM_ABSTR, TM_APPL, TM_VAR, TM_ALIAS } ATTR_PACKED;
+enum ass_type_tag { ASS_LEFT, ASS_RIGHT, ASS_NONE } ATTR_PACKED;
 
+typedef enum term_type_tag TERM_TYPE;
+typedef enum ass_type_tag ASS_TYPE;
+typedef enum { CM_QUEST, CM_DECL } COMMAND_TYPE;
+
+// Note: put bigger fields first (lterm, rterm, name) to allow
+// the compiler to align the struct without wasting space.
+// results in a smaller sizeof(TERM)
+//
 typedef struct term_tag {
+	struct term_tag *lterm;					//aristero kai de3i paidi
+	struct term_tag *rterm;					//(gia efarmoges kai afaireseis)
+	char *name;									//onoma (gia metablhtes, aliases kai efarmoges me operator)
 	TERM_TYPE type;							//metablhth, efarmogh h afairesh
-	//union {
-		char *name;								//onoma (gia metablhtes kai aliases)
-		//struct {
-			struct term_tag *lterm;			//aristero kai de3i paidi
-			struct term_tag *rterm;			//(gia efarmoges kai afaireseis)
-		//};
-	//};
-	unsigned char preced;
 	ASS_TYPE assoc;
+	unsigned char preced;
+	char closed;
 } TERM;
 
 typedef struct command_tag {
