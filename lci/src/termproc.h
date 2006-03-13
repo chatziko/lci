@@ -1,6 +1,6 @@
 /* Declarations for termproc.c
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -16,14 +16,21 @@
 #ifndef TERMPROC_H
 #define TERMPROC_H
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "kazlib/list.h"
 #include "grammar.h"
 
 
 void termPrint(TERM *t, int isMostRight);
+TERM *termNew();
 void termFree(TERM *t);
+void termGC();
 TERM *termClone(TERM *t);
 
-void termSubst(TERM *x, TERM *M, TERM *N);
+int termSubst(TERM *x, TERM *M, TERM *N, int mustClone);
 int termIsFreeVar(TERM *t, char *name);
 int termConv(TERM *t);
 
@@ -38,6 +45,8 @@ int termRemoveAliases(TERM *t, char *id);
 void termAlias2Var(TERM *t, char *alias, char *var);
 
 void termRemoveOper(TERM *t);
+void termSetClosedFlag(TERM *t);
+list_t* termFreeVars(TERM *t);
 
 char *getVariable(TERM *t1, TERM *t2);
 

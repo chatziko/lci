@@ -1,6 +1,6 @@
 /* Term manipulation functions
 
-	Copyright (C) 2003 Kostas Hatzikokolakis
+	Copyright (C) 2006 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
@@ -13,14 +13,27 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+
+#include "kazlib/list.h"
 
 #include "termproc.h"
 #include "decllist.h"
 #include "parser.h"
 #include "run.h"
+
+
+#define DEFAULT_POOL_SIZE 500
+TERM **termPool = NULL;
+int termPoolSize = 0;
+int termPoolIndex = -1;
 
 
 // termPrint
@@ -51,7 +64,7 @@ void termPrint(TERM *t, int isMostRight) {
 		else {
 			if(showPar || !isMostRight) printf("(");
 
-			printf(greekLambda ? "ë" : "\\");
+			printf(greekLambda ? "\xEB" : "\\");
 			termPrint(t->lterm, 0);
 			printf(".");
 			termPrint(t->rterm, 1);
@@ -84,21 +97,67 @@ void termPrint(TERM *t, int isMostRight) {
 // Apeley8erwsh ths mnhmhs enos TERM
 
 void termFree(TERM *t) {
-	switch(t->type) {
-	 case TM_VAR:
-	 case TM_ALIAS:
-		free(t->name);
-		break;
+	TERM **newPool;
+	int i;
 
-	 case TM_APPL:
-		free(t->name);
-	 case TM_ABSTR:
-		termFree(t->lterm);
-		termFree(t->rterm);
-		break;
+	// if NULL do nothing
+	if(!t) return;
+
+	termPoolIndex++;
+
+	// if the pool is full then create a new one of twice the size
+	if(termPoolIndex >= termPoolSize) {
+		termPoolSize = termPoolSize == 0 ? DEFAULT_POOL_SIZE : 2*termPoolSize;
+		newPool = malloc(termPoolSize * sizeof(TERM*));
+
+		// copy terms to new pool
+		for(i = 0; i < termPoolIndex; i++)
+			newPool[i] = termPool[i];
+
+		free(termPool);
+		termPool = newPool;
 	}
 
-	free(t);
+	// put the term in the pool
+	termPool[termPoolIndex] = t;
+}
+
+void termGC() {
+	while(termPoolIndex >= 0)
+		free(termNew());
+
+	if(termPoolSize > DEFAULT_POOL_SIZE) {
+		free(termPool);
+		termPool = NULL;
+		termPoolSize = 0;
+	}
+	termPoolIndex = -1;
+}
+
+TERM *termNew() {
+	TERM *t;
+
+	if(termPoolIndex >= 0) {
+		t = termPool[termPoolIndex];
+		termPoolIndex--;
+
+		switch(t->type) {
+		 case TM_VAR:
+		 case TM_ALIAS:
+			free(t->name);
+			break;
+	
+		 case TM_APPL:
+			free(t->name);
+		 case TM_ABSTR:
+			termFree(t->lterm);
+			termFree(t->rterm);
+			break;
+		}
+	} else
+		t = malloc(sizeof(TERM));
+
+	return t;
 }
 
 // termClone
@@ -109,10 +168,11 @@ void termFree(TERM *t) {
 TERM *termClone(TERM *t) {
 	TERM *newTerm;
 
-	newTerm = malloc(sizeof(TERM));
+	newTerm = termNew();
 	newTerm->type = t->type;
 	newTerm->preced = t->preced;
-	//newTerm->assoc = t->assoc;
+	newTerm->closed = t->closed;
+	//newTerm->assoc = t->assoc;			// assoc used only in parsing, no need to copy it
 
 	if(t->type == TM_VAR || t->type == TM_ALIAS)
 		newTerm->name = strdup(t->name);
@@ -129,23 +189,43 @@ TERM *termClone(TERM *t) {
 //
 // Antikatastash ths metablhths x ston oro M me ton oro N
 // H antikatastash ginetai symfwna me ton orismo thw selidas 149 twn shmeiwsewn
+//
+// Note:
+// closed flags are kept updated during conversions with minimum complexity cost
+// (constant time). It is not always possible to detect that a term became closed
+// without cost, so a term marked as non-closed could in fact be closed. But the
+// opposite should hold, terms marked as closed MUST be closed.
 
-void termSubst(TERM *x, TERM *M, TERM *N) {
+int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 	TERM z, *y, *P, *clone;
+	int found = 0;
+
+	// nothing can be substituted in closed terms
+	if(M->closed)
+		return 0;
 
 	switch(M->type) {
 	 case TM_VAR:
 	 	if(strcmp(M->name, x->name) == 0) {
-			clone = termClone(N);
 			free(M->name);
-			*M = *clone;
-			free(clone);
+			if(mustClone) {
+				clone = termClone(N);
+				*M = *clone;
+				free(clone);
+			} else
+				*M = *N;
+
+			found = 1;
 		}
 		break;
 
 	 case TM_APPL:
-		termSubst(x, M->lterm, N);
-		termSubst(x, M->rterm, N);
+		found = termSubst(x, M->lterm, N, mustClone);
+		found = termSubst(x, M->rterm, N, mustClone || found) || found;
+
+		// if both branches become closed then M also becomes closed
+		M->closed = M->lterm->closed &&
+			 			M->rterm->closed;
 		break;
 
 	 case TM_ABSTR:		
@@ -156,33 +236,72 @@ void termSubst(TERM *x, TERM *M, TERM *N) {
 		if(strcmp(y->name, x->name) == 0)
 			break;
 
-		// GIA DOKIMH SE KLEISTOYS OROYS (DEN YPARXOYN ELEY8ERES METABL)
-		// KANOYME COMMENT OLO TO IF
-		if(termIsFreeVar(N, y->name) &&
-			termIsFreeVar(P, x->name)) {
+		// If y is free in N then we should alpha-convert it to a different name to avoid capture
+		// except if x is not free in P in which case no substitution will happen anyway
+		//
+		// NOTE
+		// termIsFreeVar is a very constly check to make, and it is performed billions of times.
+		// However, in 'practical' cases we never need to make such substitutions so these costly tests
+		// always fail (in Queens N example we never enter in the following if).
+		// Some profiling showed that 77% percent of the execution time was spent in termIsFree and
+		// putting the hole 'if' in comments leads to an incredible speed boost (Queens 5 solved in 2 seconds
+		// instead of 50) however it breaks the cases where substitution IS needed, for example where we
+		// have free variables:
+		//   (\x.\y.y x) y  ->  \a.a y  (bound y renamed to a)
+		//   but with the 'if' in comments we incorrectly get \y.y y
+		//
+		// Starting with version 0.5 a good optimization is made using the term's 'closed' flag. In practical
+		// cases we are using only closed terms. To exploit this fact each term has a closed flag which is calculated
+		// once in the beggining of the execution and is updated during the conversions whenever possible without
+		// computational overhead. A closed flag means that termSubst and termIsFreeVar can return immediately without
+		// inspecting the term. This gives almost the same performance boost as removing the 'if' (but without breaking
+		// cases with free variables), still some termIsFrees are called but very few.
+		// Note: termIsFreeVar checks the closed flag itself but in the following 'if' we first check N->closed and
+		//       P->closed to avoid extra function calls and avoid calling termIsFreeVar(N, y->name) if P->closed is set
+		// 
+		if(!N->closed && !P->closed &&
+			termIsFreeVar(N, y->name) &&	termIsFreeVar(P, x->name)
+			) {
+			//printf("ISFREE\n");
 
-			//periptwsh 3: x in FV(P) kai y in FV(N)
-			//prepei h metablhth ths afaireshs na alla3ei prin to P[x:=N]
+			// x in FV(P) kai y in FV(N)
+			// bound variable must be renamed before performing P[x:=N]
 			z.type = TM_VAR;
 			z.name = getVariable(N, P);
 
-			termSubst(y, P, &z);
+			termSubst(y, P, &z, 1);
 			y->name = z.name;
 		}
-		termSubst(x, P, N);
+		found = termSubst(x, P, N, mustClone);
+
+		// if P becomes closed then M also becomes closed
+		M->closed = P->closed;
 		break;
 
 	 case TM_ALIAS:
-		//Ta aliases einai kleistoi oroi opote h antikatastash
-		//opoiadhpote metablhths den ta ephrezei
+		// aliases are closed terms so no substitution is possible
+		// We should never reach here because of the closed flag
+		assert(0);
 		break;
 	}
+
+	return found;
 }
 
 // Epistrefei 1 an h metablhth name anhkei stis eley8eres metablhtes
 // toy oroy t, diaforetika 0.
 
+#ifndef NDEBUG
+int freeNo;				// count the number of calls of termIsFree
+#endif
 int termIsFreeVar(TERM *t, char *name) {
+	// closed terms have no free variables
+	if(t->closed)
+		 return 0;
+#ifndef NDEBUG
+	freeNo++;
+#endif
+
 	switch(t->type) {
 	 case TM_VAR:
 		return (strcmp(t->name, name) == 0);
@@ -200,6 +319,7 @@ int termIsFreeVar(TERM *t, char *name) {
 		return 0;
 
 	 default:		//we never reach here!
+		assert(0);
 		return 0;
 	}
 }
@@ -212,17 +332,29 @@ int termIsFreeVar(TERM *t, char *name) {
 // 	1	An bre8hke metatrph
 //		0	An den yparxei metatroph
 //		-1	An synebh kapoio la8os
+//
+// Note:
+// closed flags are kept updated during conversions with minimum complexity cost
+// (constant time). It is not always possible to detect that a term became closed
+// without cost, so a term marked as non-closed could in fact be closed. But the
+// opposite should hold, terms marked as closed MUST be closed.
 
 int termConv(TERM *t) {
 	TERM *L, *M, *N, *x;
-	int res;
+	int res, found;
+	char closed;
+
+	// verify that the closed bit has been set and is not garbage
+	assert(t->closed == 0 || t->closed == 1);
 
 	switch(t->type) {
 	 case TM_VAR:
 		return 0;
 
 	 case TM_ABSTR:
-		L = t->rterm;
+		// Check for eta-conversion
+		// \x.M x -> M  if x not free in M
+		L = t->rterm;			// M x
 		M = L->lterm;
 		N = L->rterm;
 		x = t->lterm;
@@ -273,21 +405,28 @@ int termConv(TERM *t) {
 		N = t->rterm;
 
 		//â-conversion
-		termSubst(x, M, N);
+		closed = t->closed;
+		found = termSubst(x, M, N, 0);
 		*t = *M;
+
+		// if t was closed, it remains closed (bete-conversion does not introduce free variables)
+		// however the inverse can happen, a non-closed t can become closed if M becomes
+		// closed itself (for example if x does not appear in M then any possible free variables of N
+		// will disapear after the beta-conversion)
+		t->closed = M->closed || closed;
 
 		//free memory
 		free(L);
 		free(M);
 		termFree(x);
-		termFree(N);
+		if(found)
+			free(N);
+		else
+			termFree(N);
 
 		return 1;
 
 	 case TM_ALIAS:
-		//dokimastika 8ewroume oti ta aliases einai se kanonikh morfh
-		//return 0;
-
 		//Gia na doume an yparxei kapoia metatroph prepei na antikatasta8ei to
 		//alias me ton antistoixo oro
 		if(termAliasSubst(t) != 0)
@@ -297,6 +436,7 @@ int termConv(TERM *t) {
 		return termConv(t);
 
 	 default:										//we never reach here!
+		assert(0);
 		return -1;
 	}
 }
@@ -311,7 +451,7 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 	if(pow == 0)
 		newTerm = termClone(a);
 	else {
-		newTerm = malloc(sizeof(TERM));
+		newTerm = termNew();
 		newTerm->type = TM_APPL;
 		newTerm->name = NULL;
 		newTerm->lterm = termClone(f);
@@ -327,10 +467,10 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 // poy antistoixei ston ari8mo n:	\f.\x.f^n(x)
 
 TERM *termChurchNum(int n) {
-	TERM *l1 = malloc(sizeof(TERM)),
-		  *l2 = malloc(sizeof(TERM)),
-		  *f  = malloc(sizeof(TERM)),
-		  *x  = malloc(sizeof(TERM));
+	TERM *l1 = termNew(),
+		  *l2 = termNew(),
+		  *f  = termNew(),
+		  *x  = termNew();
 
 	f->type = TM_VAR;
 	f->name = strdup("f");
@@ -448,6 +588,8 @@ int termAliasSubst(TERM *t) {
 		return 1;
 	}
 
+	assert(newTerm->closed == 1);
+
 	//antikatastash toy oroy
 	free(t->name);
 	*t = *newTerm;
@@ -548,17 +690,23 @@ void termRemoveOper(TERM *t) {
 			t->name = NULL;
 
 		} else if(t->name) {
-			alias = malloc(sizeof(TERM));
+			// alias = op
+			alias = termNew();
 			alias->type = TM_ALIAS;
 			alias->name = t->name;
+			alias->closed = 1;							// aliases are closed terms
 			t->name = NULL;
 
-			appl = malloc(sizeof(TERM));
+			// apple = op a
+			appl = termNew();
 			appl->type = TM_APPL;
 			appl->name = NULL;
 
 			appl->lterm = alias;
 			appl->rterm = t->lterm;
+			appl->closed = appl->rterm->closed;		// the application "op a" is closed if a is closed
+
+			// t = (op a) b
 			t->lterm = appl;
 		}
 
@@ -566,6 +714,43 @@ void termRemoveOper(TERM *t) {
 	}
 }
 
+void termSetClosedFlag(TERM *t) {
+	list_t *fvars = termFreeVars(t);
+	list_destroy_nodes(fvars);
+	list_destroy(fvars);
+}
+
+list_t* termFreeVars(TERM *t) {
+	list_t *vars, *rvars;
+	lnode_t *node;
+
+	switch(t->type) {
+	 case(TM_VAR):
+		vars = list_create(LISTCOUNT_T_MAX);
+		list_append(vars, lnode_create(t->name));
+		break;
+
+	 case(TM_ALIAS):
+		vars = list_create(LISTCOUNT_T_MAX);
+		break;
+
+	 case(TM_ABSTR):
+		vars = termFreeVars(t->rterm);
+		while(node = list_find(vars, t->lterm->name, (int(*)(const void*, const void*))strcmp))
+			lnode_destroy(list_delete(vars, node));
+		break;
+
+	 case(TM_APPL):
+		vars = termFreeVars(t->lterm);
+		rvars = termFreeVars(t->rterm);
+		list_transfer(vars, rvars, list_first(rvars));
+		list_destroy(rvars);
+		break;
+	}
+
+	t->closed = list_isempty(vars);
+	return vars;
+}
 
 // Vriskei mia metablhth poy na mhn yparxei stis listes l1 kai l2 dokimazontas
 // diadoxika oles tis symboloseires me thn akolou8h seira
