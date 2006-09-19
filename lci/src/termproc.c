@@ -268,6 +268,7 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 			// bound variable must be renamed before performing P[x:=N]
 			z.type = TM_VAR;
 			z.name = getVariable(N, P);
+			z.closed = 0;
 
 			termSubst(y, P, &z, 1);
 			y->name = z.name;
