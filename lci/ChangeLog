@@ -1,3 +1,16 @@
+2006-09-21	hatz
+	* configure.ac 1.2:
+		Changed version to 0.6
+
+	* NEWS 1.2:
+		Added NEWS about the 0.6 release.
+
+2006-09-19	hatz
+	* src/termproc.c 1.4:
+		bugfix: when alpha-converting a term, mark newly created 
+		variables as non-closed (the bug was triggered in powers, eg 2**
+		3, giving incorrect results)
+
 2006-03-13	hatz
 	* NEWS 1.1:
 		Added NEWS file with info about the 0.5 release.
@@ -109,40 +122,46 @@
 		- use readline for history (save session to ~/.lci_history)
 		- read datadir/lci/.lcirc and $home/.lcirc in addition to ./.lcirc
 
-2004-01-27 12:17  hatz
+2004-01-27	hatz
+	* src/Makefile 1.2:
+		Added -fno-strict-aliasing flag to avoid some warnings.
 
-	* src/Makefile: Added -fno-strict-aliasing flag to avoid some
-	  warnings.
+	* src/main.c 1.2:
+		Replaced the 'dangerous' gets by fgets.
 
-2004-01-27 11:47  hatz
+2004-01-26	hatz
+	* doc/lcidoc.tex 1.2:
+		Updated documentation for the change of the way terms are 
+		printed.
 
-	* src/main.c: Replaced the 'dangerous' gets by fgets.
+	* src/run.c 1.2:
+	* src/run.h 1.2:
+	* src/termproc.c 1.2:
+		Changed the way lambda terms are printed: replaced greek lambda with "."
+		because it is not available in most character sets. It can be enabled
+		with the greeklambda option. Removed haskell option.
 
-2004-01-26 18:31  hatz
-
-	* doc/lcidoc.tex: Updated documentation for the change of the way
-	  terms are printed.
-
-2004-01-26 17:54  hatz
-
-	* src/: run.c, run.h, termproc.c: Changed the way lambda terms are
-	  printed: replaced greek lambda with "." because it is not
-	  available in most character sets. It can be enabled with the
-	  greeklambda option. Removed haskell option.
-
-2003-06-24 10:09  hatz
-
-	* COPYING, Makefile, README, TODO, doc/lcidoc.tex, doc/Makefile,
-	  doc/lcidoc_gr.tex, src/.lcirc, src/decllist.c, src/Makefile,
-	  src/decllist.h, src/grammar.c, src/grammar.h, src/main.c,
-	  src/parser.c, src/parser.h, src/queens.lci, src/run.c, src/run.h,
-	  src/termproc.c, src/termproc.h: Initial import
-
-2003-06-24 10:09  hatz
-
-	* COPYING, Makefile, README, TODO, doc/lcidoc.tex, doc/Makefile,
-	  doc/lcidoc_gr.tex, src/.lcirc, src/decllist.c, src/Makefile,
-	  src/decllist.h, src/grammar.c, src/grammar.h, src/main.c,
-	  src/parser.c, src/parser.h, src/queens.lci, src/run.c, src/run.h,
-	  src/termproc.c, src/termproc.h: Initial revision
+2003-06-24	hatz
+	* COPYING 1.1.1.1:
+	* Makefile 1.1.1.1:
+	* README 1.1.1.1:
+	* TODO 1.1.1.1:
+	* doc/Makefile 1.1.1.1:
+	* doc/lcidoc.tex 1.1.1.1:
+	* doc/lcidoc_gr.tex 1.1.1.1:
+	* src/.lcirc 1.1.1.1:
+	* src/Makefile 1.1.1.1:
+	* src/decllist.c 1.1.1.1:
+	* src/decllist.h 1.1.1.1:
+	* src/grammar.c 1.1.1.1:
+	* src/grammar.h 1.1.1.1:
+	* src/main.c 1.1.1.1:
+	* src/parser.c 1.1.1.1:
+	* src/parser.h 1.1.1.1:
+	* src/queens.lci 1.1.1.1:
+	* src/run.c 1.1.1.1:
+	* src/run.h 1.1.1.1:
+	* src/termproc.c 1.1.1.1:
+	* src/termproc.h 1.1.1.1:
+		Initial import
 
