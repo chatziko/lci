@@ -1,5 +1,9 @@
 LCI - Real men use only pure calculus
 
+0.6 (21 Sep 2006):
+	This is a bugfix release which corrects a bug (#1546641) in alpha-conversion. The bug
+	was affecting the power operator (**) giving a wrong result in some cases.
+
 0.5 (13 Mar 2006):
 	First 'official' release of lci, the code was there for some time but
 	I wanted to add an autotooled build system and some cool extra features.
