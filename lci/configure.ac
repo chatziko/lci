@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(lci, 0.5, hatz-at-users.sourceforge.net)
+AC_INIT(lci, 0.6, hatz-at-users.sourceforge.net)
 AC_CONFIG_SRCDIR([src/run.c])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
