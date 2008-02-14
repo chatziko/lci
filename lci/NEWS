@@ -1,6 +1,6 @@
 LCI - Real men use only pure calculus
 
-0.6 (21 Sep 2006):
+0.6 (14 Feb 2008):
 	This is a bugfix release which corrects a bug (#1546641) in alpha-conversion. The bug
 	was affecting the power operator (**) giving a wrong result in some cases.
 

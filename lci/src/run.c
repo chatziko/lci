@@ -1,6 +1,6 @@
 /* Functions that are used to "execute" terms or commands
 
-	Copyright (C) 2006 Kostas Chatzikokolakis
+	Copyright (C) 2004-8 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify

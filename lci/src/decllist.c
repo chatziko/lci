@@ -1,6 +1,6 @@
 /* Functions to manipulate the list of declarations
 
-	Copyright (C) 2006 Kostas Chatzikokolakis
+	Copyright (C) 2004-8 Kostas Chatzikokolakis
 	This file is part of LCI
 
 	This program is free software; you can redistribute it and/or modify
