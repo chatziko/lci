@@ -1,0 +1,2 @@
+#!/bin/bash
+svn2cl -i --break-before-msg --group-by-day --separate-daylogs
