@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META name="GENERATOR" content="hevea 1.09">
+<LINK rel="stylesheet" type="text/css" href="lcidoc.css">
+<TITLE>Evaluation strategies</TITLE>
+</HEAD>
+<BODY >
+<A HREF="lcidoc006.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc008.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+<HR>
+<H2 CLASS="section"><A NAME="htoc9">7</A>&#XA0;&#XA0;Evaluation strategies</H2><P>
+An evaluation strategy determines the choice of a redex when there are more than
+one in a term. <TT>lci</TT> uses the <EM>normal order</EM> strategy, which selects term's
+leftmost redex. The main advantage of this strategy is that it always leads to
+term's normal form, if it exists. However it has a serious drawback which is the
+multiple computation of terms. For example in the following series of reductions
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>f</I>.<I>f</I>(<I>f</I>&#XA0;<I>y</I>))((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>))&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP><I>y</I></TD></TR>
+</TABLE></TD></TR>
+</TABLE><P>
+the term (&#X3BB; <I>x</I>.<I>x</I>)(&#X3BB; <I>x</I>.<I>x</I>) was computed twice. An alternative strategy
+is <EM>call-by-value</EM>, in which all arguments are computed before applied to a function.
+This method can avoid multiple computation.
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>f</I>.<I>f</I>(<I>f</I>&#XA0;<I>y</I>))((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>))&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>f</I>.<I>f</I>(<I>f</I>&#XA0;<I>y</I>))(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP><I>y</I></TD></TR>
+</TABLE></TD></TR>
+</TABLE><P>
+This strategy, however, does not guarantee that normal form will be found. There
+are also some other strategies like <EM>call-by-need</EM> that is used in some functional
+languages like Haskell.</P><P><TT>lci</TT> does not implement any such technique, but there has been an effort to
+overcome this problem using a special operator &#X223C;. This operator does not
+behave like ordinary operators. The expression <I>M</I>&#X223C; <I>N</I> denotes the application
+of <I>M</I> to <I>N</I> which, however, uses call-by-value. So, if <I>M</I>&#X223C; <I>N</I> is the leftmost
+redex then all reductions of <I>N</I> are performed before the application. Thus the
+term (&#X3BB; <I>f</I>.<I>f</I>(<I>f</I> <I>y</I>))&#X223C;((&#X3BB; <I>x</I>.<I>x</I>)(&#X3BB; <I>x</I>.<I>x</I>)) will be reduced according
+to the second of the previous ways. Operator &#X223C; has the same precedence and
+associativity as the application operator, so it can be easily combined with it.</P><P>This operator, however, should be used with caution since the normal form of
+(&#X3BB; <I>x</I>.<I>y</I>)&#X223C; ((&#X3BB; <I>x</I>.<I>x</I> <I>x</I>)(&#X3BB; <I>x</I>.<I>x</I> <I>x</I>)) will never be found, yet
+it exists. In file <TT>queens.lci</TT> there is an implementation of the well-known
+<I>n</I>-queens problem, using experimentally this operator. Without the use of the
+operator the program is impossible to terminate, even for 3 queens where the
+combinations that must be examined are very few. This is due to the fact that
+terms are extremely complex and cause a lot of recomputation. Using the operator
+&#X223C; and testing in an Athlon 1800, all solutions for the 3 queens where found in
+0.3 seconds, for 4 queens in 4.4 and for 5 in 190. For 6 queens after many hours of
+testing the program did not terminate. This is not strange, though, since Haskell
+(with the same implementation and using lazy-evaluation and constant time arithmetic)
+needs 1799705 reductions for the 8 queens and extremely much time for <I>n</I>&gt;12.</P><HR>
+<A HREF="lcidoc006.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc008.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+</BODY>
+</HTML>

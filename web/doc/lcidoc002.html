@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META name="GENERATOR" content="hevea 1.09">
+<LINK rel="stylesheet" type="text/css" href="lcidoc.css">
+<TITLE>Basic function</TITLE>
+</HEAD>
+<BODY >
+<A HREF="lcidoc001.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc003.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+<HR>
+<H2 CLASS="section"><A NAME="htoc2">2</A>&#XA0;&#XA0;Basic function</H2><P>
+<TT>lci</TT> is an interactive program. When executed it displays the <CODE>lci&gt;</CODE> prompt
+and waits for user input. The most simple usage is to enter a &#X3BB;-term and
+press return. The program performs all &#X3B2; and &#X3B7; reductions and generates
+the term's normal form. The result is printed in a &#X201C;readable&#X201D; way, that is
+only the necessary parentheses are displayed, church numerals are displayed as
+integers and lists using the standard Prolog notation. However the way terms
+are displayed can be modified, for example the following command
+</P><DIV CLASS="center">
+	<CODE>Set showpar on</CODE>
+</DIV><P>
+causes all parentheses to be displayed.</P><P>Terms are reduced using the <EM>normal order evaluation strategy</EM>, that is
+the leftmost &#X3B2; or &#X3B7; reduction is performed first. This strategy
+guarantees that term's normal form will be computed in finite time, if it
+exists. However if a term has no normal form then execution will not terminate.
+After the execution the program displays the number of reductions that were
+performed and the CPU usage time.</P><HR>
+<A HREF="lcidoc001.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc003.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+</BODY>
+</HTML>

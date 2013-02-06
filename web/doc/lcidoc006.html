@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META name="GENERATOR" content="hevea 1.09">
+<LINK rel="stylesheet" type="text/css" href="lcidoc.css">
+<TITLE>Operators</TITLE>
+</HEAD>
+<BODY >
+<A HREF="lcidoc005.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc007.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+<HR>
+<H2 CLASS="section"><A NAME="htoc8">6</A>&#XA0;&#XA0;Operators</H2><P>
+<A NAME="sec_oper"></A>
+Operators is another tool that is provided by almost all programming languages.
+<TT>lci</TT> supports operators as a special kind of function that takes two arguments
+and syntactically appears between them. Using an operator requires two steps.
+The first is it's <EM>declaration</EM> together with it's <EM>precedece</EM> and
+<EM>associativity</EM>, in a way similar to Prolog. This can be done with the command
+</P><DIV CLASS="center">
+	<TT>DefOp 'operator' preced assoc</TT>
+</DIV><P>
+Quotes are necessary so that operator's name is recognized as an identifier. Precedence
+is an integer between 0 and 255 and is used during parsing when no parentheses
+are present. Associativity takes one of the following values:
+</P><DIV CLASS="center">
+	<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=center NOWRAP>		<TT>yfx</TT></TD><TD ALIGN=left NOWRAP>Left-associative operator</TD></TR>
+<TR><TD ALIGN=center NOWRAP>		<TT>xfy</TT></TD><TD ALIGN=left NOWRAP>Right-associative operator</TD></TR>
+<TR><TD ALIGN=center NOWRAP>		<TT>xfx</TT></TD><TD ALIGN=left NOWRAP>Non-associative operator</TD></TR>
+</TABLE>
+</DIV><P>Character <TT>x</TT> corresponds to a term with lower precedence than the operator,
+while <TT>y</TT> to one with higher or equal. Thus expression <TT>a+b+c*d</TT>
+will be recognized as <TT>(a+b)+(c*d)</TT>, for operator <TT>*</TT> has lower precedence
+<SUP><A NAME="text1" HREF="lcidoc010.html#note1">1</A></SUP>
+than <TT>+</TT> and <TT>+</TT> is left-associative. Terms that are not the result of
+an operator, or are enclosed in parentheses, are considered to have precedence 0.
+Moreover application is considered as a left-associative operator with precedence
+100. So if an operator <TT>$</TT> is declared with precedence 110 then the
+expression <TT>a b$c</TT> will be recognized as <TT>(a b)$c</TT>.</P><P>The second step is operator's <EM>definition</EM> which is performed by defining an
+alias with the same name:
+</P><DIV CLASS="center">
+	<TT>'operator' = ...</TT>
+</DIV><P>
+Operator definitions must be placed in a file (as all alias definitions) and quotes
+are required. During parsing, <TT>lci</TT> replaces operators with identifiers, thas is
+expression <TT>a+b</TT> will be transformed to <TT>'+' a b</TT>. Now <TT>+</TT> is an
+identifier, not an operator, and will be replaced with the corresponding term
+during term's evaluation.</P><P>In <TT>.lcirc</TT> many common operators are declared and defined, mainly concerning
+integers and list manipulation. These include the right-associative
+operator <TT>:</TT> to write lists as <TT>a:b:c:Nil</TT>, operator <TT>++</TT> to append
+lists, operator &#X201C;<TT>,</TT>&#X201D; to build ordered pairs <TT>(a,b)</TT>, integer operations,
+integer comparisons etc.</P><HR>
+<A HREF="lcidoc005.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc007.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+</BODY>
+</HTML>

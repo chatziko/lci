@@ -1,0 +1,16 @@
+\begin{tocenv}
+\tocitem \@locref{htoc1}{\begin{@norefs}\@print{1}\quad{}Syntax\end{@norefs}}
+\tocitem \@locref{htoc2}{\begin{@norefs}\@print{2}\quad{}Basic function\end{@norefs}}
+\tocitem \@locref{htoc3}{\begin{@norefs}\@print{3}\quad{}Integers\end{@norefs}}
+\tocitem \@locref{htoc4}{\begin{@norefs}\@print{4}\quad{}Identifiers\end{@norefs}}
+\tocitem \@locref{htoc5}{\begin{@norefs}\@print{5}\quad{}Recursion\end{@norefs}}
+\begin{tocenv}
+\tocitem \@locref{htoc6}{\begin{@norefs}\@print{5.1}\quad{}Recursion using infinite terms\end{@norefs}}
+\tocitem \@locref{htoc7}{\begin{@norefs}\@print{5.2}\quad{}Recursion using a fixed point combinator\end{@norefs}}
+\end{tocenv}
+\tocitem \@locref{htoc8}{\begin{@norefs}\@print{6}\quad{}Operators\end{@norefs}}
+\tocitem \@locref{htoc9}{\begin{@norefs}\@print{7}\quad{}Evaluation strategies\end{@norefs}}
+\tocitem \@locref{htoc10}{\begin{@norefs}\@print{8}\quad{}\en{Tracing}\end{@norefs}}
+\tocitem \@locref{htoc11}{\begin{@norefs}\@print{9}\quad{}System commands\end{@norefs}}
+\tocitem \@locref{htoc12}{\begin{@norefs}\@print{10}\quad{}Examples\end{@norefs}}
+\end{tocenv}

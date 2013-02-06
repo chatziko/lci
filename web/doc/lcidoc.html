@@ -1,0 +1,440 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>
+	lci Manual
+
+</TITLE>
+
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META name="GENERATOR" content="hevea 1.09">
+<STYLE type="text/css">
+.li-itemize{margin:1ex 0ex;}
+.li-enumerate{margin:1ex 0ex;}
+.dd-description{margin:0ex 0ex 1ex 4ex;}
+.dt-description{margin:0ex;}
+.toc{list-style:none;}
+.thefootnotes{text-align:left;margin:0ex;}
+.dt-thefootnotes{margin:0em;}
+.dd-thefootnotes{margin:0em 0em 0em 2em;}
+.footnoterule{margin:1em auto 1em 0px;width:50%;}
+.caption{padding-left:2ex; padding-right:2ex; margin-left:auto; margin-right:auto}
+.title{margin:auto;text-align:center}
+.center{text-align:center;margin-left:auto;margin-right:auto;}
+.flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
+.flushright{text-align:right;margin-left:auto;margin-right:0ex;}
+DIV TABLE{margin-left:inherit;margin-right:inherit;}
+PRE{text-align:left;margin-left:0ex;margin-right:auto;}
+BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
+TD P{margin:0px;}
+.boxed{border:1px solid black}
+.textboxed{border:1px solid black}
+.vbar{border:none;width:2px;background-color:black;}
+.hbar{border:none;height:2px;width:100%;background-color:black;}
+.hfill{border:none;height:1px;width:200%;background-color:black;}
+.vdisplay{border-collapse:separate;border-spacing:2px;width:auto; empty-cells:show; border:2px solid red;}
+.vdcell{white-space:nowrap;padding:0px;width:auto; border:2px solid green;}
+.display{border-collapse:separate;border-spacing:2px;width:auto; border:none;}
+.dcell{white-space:nowrap;padding:0px;width:auto; border:none;}
+.dcenter{margin:0ex auto;}
+.vdcenter{border:solid #FF8000 2px; margin:0ex auto;}
+.minipage{text-align:left; margin-left:0em; margin-right:auto;}
+.marginpar{border:solid thin black; width:20%; text-align:left;}
+.marginparleft{float:left; margin-left:0ex; margin-right:1ex;}
+.marginparright{float:right; margin-left:1ex; margin-right:0ex;}
+.theorem{text-align:left;margin:1ex auto 1ex 0ex;}
+.part{margin:auto;text-align:center}
+</STYLE>
+</HEAD>
+<BODY >
+<!--HEVEA command line is: /usr/bin/hevea ../lci/doc/lcidoc.tex -->
+<!--CUT DEF section 1 --><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">
+	<TT>lci</TT> Manual
+</H1><H3 CLASS="titlerest">
+	Kostas Chatzikokolakis
+</H3><H3 CLASS="titlerest">12 March 2006</H3></TD></TR>
+</TABLE><P><BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+
+</P><P>This manual describes the use of <TT>lci</TT>, which is an advanced
+interpreter for the &#X3BB;-calculus. This program was first developed by Kostas
+Chatzikokolakis as an assignment for the &#X201C;Theory of Programming Languages&#X201D; course
+in the Department of Informatics of University of Athens. Later it became an
+open source project licenced under GPL, in order to be used and improved by
+the open source community. It's main purpose is to compute the normal form of
+pure &#X3BB;-calculus terms. Moreover it supports various extensions which are, however,
+implemented through the pure calculus.</P><!--TOC section Syntax-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc1">1</A>&#XA0;&#XA0;Syntax</H2><!--SEC END --><P>
+<TT>lci</TT> supports the syntax of &#X3BB;-calculus enriched with <EM>integers</EM>, <EM>identifiers</EM>
+and <EM>operators</EM>. The supported language is described by the following grammar:</P><DIV CLASS="center">
+	<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>		Term	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>var</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>( Term Oper Term )</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>( &#X3BB; var . Term )</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>num</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>id</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		Oper</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>op</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>&#X3B5;</TD></TR>
+</TABLE>
+</DIV><P>The symbol &#X3BB; can be written as &#X201C;\&#X201D; or as the greek character
+&#X201C;&#X3BB;&#X201D; (using a greek character set). Also &#X201C;<CODE>-&gt;</CODE>&#X201D; can be used instead
+of a dot. <B>var</B> and <B>id</B> are arbitary strings of latin characters
+(uppercase or lowercase), numbers and underscores. However <B>var</B> must start
+with a lowercase or underscore, while <B>id</B> must start with an
+uppercase . It is also possible for any character to be used in an <B>id</B>
+if enclosed in single quotes. <B>num</B> is a string of numbers and <B>op</B>
+is a string that contains the following characters
+</P><DIV CLASS="center">
+<CODE>~ ! @ $ % ^ &amp; * / + - = &lt; &gt; | . , : ; </CODE>
+</DIV><P>
+except from the reserved operators <CODE>-&gt; . = ; ?</CODE>. Finally parentheses can
+be avoided according to the following rules
+</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+	Outmost parentheses can be avoided
+	</LI><LI CLASS="li-itemize">Application is left-associative
+	</LI><LI CLASS="li-itemize">The scope of an abstraction extends as far to the right as possible
+	</LI><LI CLASS="li-itemize">Terms that contain operators are parsed according to the precedence and
+	associativity of these operators (see section <A HREF="#sec_oper">6</A>).
+</LI></UL><!--TOC section Basic function-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc2">2</A>&#XA0;&#XA0;Basic function</H2><!--SEC END --><P>
+<TT>lci</TT> is an interactive program. When executed it displays the <CODE>lci&gt;</CODE> prompt
+and waits for user input. The most simple usage is to enter a &#X3BB;-term and
+press return. The program performs all &#X3B2; and &#X3B7; reductions and generates
+the term's normal form. The result is printed in a &#X201C;readable&#X201D; way, that is
+only the necessary parentheses are displayed, church numerals are displayed as
+integers and lists using the standard Prolog notation. However the way terms
+are displayed can be modified, for example the following command
+</P><DIV CLASS="center">
+	<CODE>Set showpar on</CODE>
+</DIV><P>
+causes all parentheses to be displayed.</P><P>Terms are reduced using the <EM>normal order evaluation strategy</EM>, that is
+the leftmost &#X3B2; or &#X3B7; reduction is performed first. This strategy
+guarantees that term's normal form will be computed in finite time, if it
+exists. However if a term has no normal form then execution will not terminate.
+After the execution the program displays the number of reductions that were
+performed and the CPU usage time.</P><!--TOC section Integers-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc3">3</A>&#XA0;&#XA0;Integers</H2><!--SEC END --><P>
+<TT>lci</TT> supports integers by encoding them as <EM>church numerals</EM> during
+parsing. Integer <I>n</I> will be converted to
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>c</I><SUB><I>n</I></SUB>&#XA0;&#X2261;&#XA0;&#X3BB;&#XA0;<I>f</I>.&#X3BB;&#XA0;<I>x</I>.<I>f</I><SUP><I>n</I></SUP>(<I>x</I>)&#XA0;</TD></TR>
+</TABLE><P>
+So, actually, it is just a syntactic sugar. All operations are implemented in
+pure &#X3BB;-calculus and can be used through identifiers and operators. Although the
+use of calculus for ordinary operations is sleek, it has has a serious performace
+drawback. The complexity of an operation is far from constant, for example
+the power-of operator (<CODE>**</CODE>) requires an exponential number of reductions.
+Moreover, due to stack limitaions, the greatest suported integer is 9999.</P><!--TOC section Identifiers-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc4">4</A>&#XA0;&#XA0;Identifiers</H2><!--SEC END --><P>
+Identifiers are used to represent big &#X3BB;-terms by defining <EM>aliases</EM>.
+For example term &#X3BB; <I>x</I>.<I>x</I> can be assigned to alias <I>I</I> so that the term
+<I>I</I> <I>y</I> is equivalent to (&#X3BB; <I>x</I>.<I>x</I>) <I>y</I>. Aliases must be defined in a file
+that is read by the program. The syntax of this file is described by the following
+grammar.
+</P><DIV CLASS="center">
+	
+	<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>		CmdList</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>Cmd ; CmdList</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>&#X3B5;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		Cmd</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>id = Term</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>? Term</TD></TR>
+</TABLE>
+	
+</DIV><P>
+Command <TT>id = Term</TT> assings Term to identifier <TT>id</TT> while command
+<TT>? Term</TT> causes the evaluation of <TT>Term</TT> just as if it was entered interactively.
+File processing is made using the following command
+</P><DIV CLASS="center">
+	<CODE>Consult 'file'</CODE>
+</DIV><P>
+Morever, when being started, <TT>lci</TT> searches for a file named <TT>.lcirc</TT> in the
+following places
+</P><PRE CLASS="verbatim"> $PREFIX/share/lci/.lcirc  (eg. /usr/local/share/lci/.lcirc)
+ $HOME/.lcirc
+ ./.lcirc
+</PRE><P>in that order. All files found are executed, if none is found then a warning
+is printed. This file contains definitions for many basic
+functions and operators (integer operations, for expample) and is similar
+to Haskell's <TT>prelude.hs</TT>.</P><P>Identifiers are replaced by the corresponding terms during evaluation and <EM>not</EM>
+during parsing. Thus the order of the definitions is not significant. If an alias
+is not defined an error message is displayed during evaluation. If no alias
+contains itself (directly or indirectly) then aliases are just a syntactic sugar,
+for if we replace all of them we get valid &#X3BB;-terms. However <TT>lci</TT> supports
+curcular references of aliases as a way to implement <EM>recursion</EM>. This
+idea is described in the following section.</P><!--TOC section Recursion-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc5">5</A>&#XA0;&#XA0;Recursion</H2><!--SEC END --><P>
+Recursion is an essential programming tool provided by all serious programming
+languages. <TT>lci</TT> supports two methods of implementing recursion: using
+<EM>infinite temrs</EM> or using <EM>fixed point combinators</EM>.</P><!--TOC subsection Recursion using infinite terms-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc6">5.1</A>&#XA0;&#XA0;Recursion using infinite terms</H3><!--SEC END --><P>
+<A NAME="par_recinf"></A>
+If we allow an alias to contain itself then we can write terms like
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>M</I>&#XA0;=&#XA0;&#X3BB;&#XA0;<I>x</I>.<I>M</I>&#XA0;<I>y</I>&#XA0;</TD></TR>
+</TABLE><P>
+Replacing <I>M</I> according to this definition we get the term &#X3BB; <I>x</I>.(&#X3BB; <I>x</I>.<I>M</I> <I>x</I>) <I>x</I>
+and if we keep on replacing we get the term
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell">&#X3BB;&#XA0;<I>x</I>.(&#X3BB;&#XA0;<I>x</I>.(&#X3BB;&#XA0;<I>x</I>.(...)&#XA0;<I>y</I>)&#XA0;<I>y</I>)&#XA0;<I>y</I>&#XA0;</TD></TR>
+</TABLE><P>
+Thus <I>M</I> can be considered as a term of infinite length. Of course this is not
+a valid &#X3BB;-term, however it can be useful.</P><P>Now consider an arbitary closed &#X3BB;-term <I>M</I>, that is <I>FV</I>(<I>M</I>) = &#X2205;. We
+can easily infer the following
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell">	</TD><TD CLASS="dcell"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=left NOWRAP>		<I>M</I>[<I>x</I>:=<I>N</I>]</TD><TD ALIGN=center NOWRAP>&#X2261;</TD><TD ALIGN=left NOWRAP><I>M</I>&#XA0;</TD></TR>
+<TR><TD ALIGN=left NOWRAP>		(&#X3BB;&#XA0;<I>y</I>.<I>N</I>)[<I>x</I>:=<I>M</I>]</TD><TD ALIGN=center NOWRAP>&#X2261;</TD><TD ALIGN=left NOWRAP>&#X3BB;&#XA0;<I>y</I>.<I>N</I>[<I>x</I>:=<I>M</I>]&#XA0;</TD></TR>
+<TR><TD ALIGN=left NOWRAP>		&#X3BB;&#XA0;<I>x</I>.<I>M</I>&#XA0;<I>x</I></TD><TD ALIGN=center NOWRAP>&#X2192;<SUB>&#X3B7;</SUB></TD><TD ALIGN=left NOWRAP><I>M</I></TD></TR>
+</TABLE></TD></TR>
+</TABLE><P>
+Thus variable substitution as well as &#X3B7;-reduction can be performed without
+knowing the definition of M, that is without the need to replace it. So during
+the evaluation of a term, <I>M</I> must be replaced only if we reach one of the
+following terms:
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell">
+
+
+&#XA0;&#XA0;&#XA0;&#XA0;&#XA0;
+
+</TD><TD CLASS="dcell"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#XA0;<I>M</I>&#XA0;<I>N</I>&#XA0;</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=right NOWRAP>&#XA0;&#XA0;&#XA0;&#XA0;(1)</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#XA0;<I>M</I>
+</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=right NOWRAP>&#XA0;&#XA0;&#XA0;&#XA0;(2)</TD></TR>
+</TABLE></TD></TR>
+</TABLE><P>If the first case <I>M</I> may contain an abstraction and in the second any redex.
+If we replace an alias only when necessary, we can finish the evaluation without
+performing all the replacements. For example the abstraction &#X3BB; <I>x</I>.<I>y</I> does
+not use its argument, so the following reduction
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell">(&#X3BB;&#XA0;<I>x</I>.<I>y</I>)&#XA0;<I>M</I>&#XA0;&#X2192;<SUB>&#X3B2;</SUB><I>y</I>&#XA0;</TD></TR>
+</TABLE><P>
+eliminates <I>M</I> without computing it.</P><P><TT>lci</TT> handles identifiers using this techique. That is it replaces an identifier
+with it's corresponding term only when necessary and only once at a time. So even
+if a term is recursive, it is possible to find a normal form if recursion is
+interrupted by some condition. <TT>.lcirc</TT> contains many recursive definitions,
+mainly concerning list manipulation functions.</P><P>This technique is not compatible with the pure calculus, as it uses invalid
+&#X3BB;-terms. However the following must be noted: suppose that in term
+<I>M</I> = &#X3BB; <I>x</I>.<I>M</I> <I>x</I> we need to replace <I>M</I> only twice until we reach it's normal
+form. This means that in term  &#X3BB; <I>x</I>.(&#X3BB; <I>x</I>.(&#X3BB; <I>x</I>.<I>M</I> <I>y</I>) <I>y</I>) <I>y</I> 
+no replacement will be performed. <I>M</I>. So we can substitute <I>M</I> with an arbitary
+valid &#X3BB;-term <I>N</I> and we get
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>M</I>'&#XA0;=&#XA0;&#X3BB;&#XA0;<I>x</I>.(&#X3BB;&#XA0;<I>x</I>.(&#X3BB;&#XA0;<I>x</I>.<I>N</I>&#XA0;<I>y</I>)&#XA0;<I>y</I>)&#XA0;<I>y</I>&#XA0;</TD></TR>
+</TABLE><P>
+<I>M</I>' behaves exactly like <I>M</I> but it is a valid term. Of course in a different
+situation more replacements could be needed, producing a different <I>M</I>'. So <I>M</I>
+could be considered as a &#X201C;term generator&#X201D; that produces an appropriate <I>M</I>'
+each time.</P><!--TOC subsection Recursion using a fixed point combinator-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc7">5.2</A>&#XA0;&#XA0;Recursion using a fixed point combinator</H3><!--SEC END --><P>
+<A NAME="par_recfp"></A>
+Recursion can be implemented in pure &#X3BB;-calculus in a very sleek way, using a
+fixed point combinator. A such combinator <I>Y</I> is a closed &#X3BB;-term that
+satisfies the following relation
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>Y</I>&#XA0;<I>f</I>&#XA0;&#X2192;&#XA0;<I>f</I>&#XA0;(<I>Y</I>&#XA0;<I>f</I>)&#XA0;</TD></TR>
+</TABLE><P>
+for any term <I>f</I>. Now let <I>f</I> be a term that satisfies <I>f</I>=<I>E</I>, where <I>E</I> is
+an expression that containts <I>f</I>. We convert <I>f</I> to a variable forming the
+non-recursive term <I>F</I> = &#X3BB; <I>f</I>.<I>E</I>. It is easy to see that the function we seek
+is a fixed point of F, that is <I>Y</I> <I>F</I>.</P><P>Things get a little bit more complicated if we have the following set of mutually
+recursive terms
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>	<I>f</I><SUB>1</SUB></TD><TD ALIGN=center NOWRAP>=</TD><TD ALIGN=left NOWRAP><I>E</I><SUB>1</SUB>&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X22EE;&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	<I>f</I><SUB><I>n</I></SUB></TD><TD ALIGN=center NOWRAP>=</TD><TD ALIGN=left NOWRAP><I>E</I><SUB><I>n</I></SUB></TD></TR>
+</TABLE></TD></TR>
+</TABLE><P>
+where any <I>f</I><SUB><I>i</I></SUB> can be contained in any <I>E</I><SUB><I>j</I></SUB>. Now, before applying <I>Y</I>, we must
+join all terms in one. This can be done using the functions TUPLE <I>n</I> and INDEX <I>k</I>.
+The former packages <I>n</I> terms into a <I>n</I>-tuple, the latter returns the <I>k</I>-th
+element of a tuple. Both of them can be implemented in pure &#X3BB;-calculus. So we build
+the following recursive term
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>f</I>&#XA0;=&#XA0;TUPLE &#XA0;<I>n</I>&#XA0;<I>f</I><SUB><I>i</I></SUB>&#XA0;&#XA0;&#X2026;&#XA0;<I>f</I><SUB><I>n</I></SUB>&#XA0;</TD></TR>
+</TABLE><P>
+and replace any occurences of terms <I>f</I><SUB><I>i</I></SUB> using INDEX <I>k</I>
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>f</I><SUB><I>i</I></SUB>&#XA0;&#X2192;&#XA0;INDEX&#XA0;<I>i</I>&#XA0;<I>f</I>&#XA0;</TD></TR>
+</TABLE><P>
+Finally <I>f</I> is defined using a fixed point combinator
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>f</I>&#XA0;=&#XA0;<I>Y</I>&#XA0;(&#X3BB;&#XA0;<I>f</I>.TUPLE &#XA0;<I>n</I>&#XA0;<I>f</I><SUB><I>i</I></SUB>&#XA0;&#XA0;&#X2026;&#XA0;<I>f</I><SUB><I>n</I></SUB>&#XA0;)&#XA0;</TD></TR>
+</TABLE><P>We have already mentioned that <TT>lci</TT> allows an alias to contain itself. The
+default way of handling such aliases was described in paragraph <A HREF="#par_recinf">5.1</A>.
+Moreover <TT>lci</TT> provides the command <TT>FixedPoint</TT> which removes circular references
+from aliases using a fixed point combinator. Initially this command creates a
+graph in which each vertex corresponds to an alias. Two vertexes <I>S</I>,<I>T</I> are connected
+with a directed arc if alias <I>S</I> contains <I>T</I> in it's definition. A circle in
+this graph denote a set of mutually recursive terms. <TT>FixedPoint</TT> detects such
+circles and, in case they contain more than one arc, it packages the corresponding
+terms using functions TUPLE and INDEX. Then it removes recursion using the combinator
+<I>Y</I> which must be defined in <TT>.lcirc</TT>. The modified definition of recursive
+aliases can be displayed using the <TT>ShowAlias</TT> command.</P><!--TOC section Operators-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc8">6</A>&#XA0;&#XA0;Operators</H2><!--SEC END --><P>
+<A NAME="sec_oper"></A>
+Operators is another tool that is provided by almost all programming languages.
+<TT>lci</TT> supports operators as a special kind of function that takes two arguments
+and syntactically appears between them. Using an operator requires two steps.
+The first is it's <EM>declaration</EM> together with it's <EM>precedece</EM> and
+<EM>associativity</EM>, in a way similar to Prolog. This can be done with the command
+</P><DIV CLASS="center">
+	<TT>DefOp 'operator' preced assoc</TT>
+</DIV><P>
+Quotes are necessary so that operator's name is recognized as an identifier. Precedence
+is an integer between 0 and 255 and is used during parsing when no parentheses
+are present. Associativity takes one of the following values:
+</P><DIV CLASS="center">
+	<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=center NOWRAP>		<TT>yfx</TT></TD><TD ALIGN=left NOWRAP>Left-associative operator</TD></TR>
+<TR><TD ALIGN=center NOWRAP>		<TT>xfy</TT></TD><TD ALIGN=left NOWRAP>Right-associative operator</TD></TR>
+<TR><TD ALIGN=center NOWRAP>		<TT>xfx</TT></TD><TD ALIGN=left NOWRAP>Non-associative operator</TD></TR>
+</TABLE>
+</DIV><P>Character <TT>x</TT> corresponds to a term with lower precedence than the operator,
+while <TT>y</TT> to one with higher or equal. Thus expression <TT>a+b+c*d</TT>
+will be recognized as <TT>(a+b)+(c*d)</TT>, for operator <TT>*</TT> has lower precedence
+<SUP><A NAME="text1" HREF="#note1">1</A></SUP>
+than <TT>+</TT> and <TT>+</TT> is left-associative. Terms that are not the result of
+an operator, or are enclosed in parentheses, are considered to have precedence 0.
+Moreover application is considered as a left-associative operator with precedence
+100. So if an operator <TT>$</TT> is declared with precedence 110 then the
+expression <TT>a b$c</TT> will be recognized as <TT>(a b)$c</TT>.</P><P>The second step is operator's <EM>definition</EM> which is performed by defining an
+alias with the same name:
+</P><DIV CLASS="center">
+	<TT>'operator' = ...</TT>
+</DIV><P>
+Operator definitions must be placed in a file (as all alias definitions) and quotes
+are required. During parsing, <TT>lci</TT> replaces operators with identifiers, thas is
+expression <TT>a+b</TT> will be transformed to <TT>'+' a b</TT>. Now <TT>+</TT> is an
+identifier, not an operator, and will be replaced with the corresponding term
+during term's evaluation.</P><P>In <TT>.lcirc</TT> many common operators are declared and defined, mainly concerning
+integers and list manipulation. These include the right-associative
+operator <TT>:</TT> to write lists as <TT>a:b:c:Nil</TT>, operator <TT>++</TT> to append
+lists, operator &#X201C;<TT>,</TT>&#X201D; to build ordered pairs <TT>(a,b)</TT>, integer operations,
+integer comparisons etc.</P><!--TOC section Evaluation strategies-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc9">7</A>&#XA0;&#XA0;Evaluation strategies</H2><!--SEC END --><P>
+An evaluation strategy determines the choice of a redex when there are more than
+one in a term. <TT>lci</TT> uses the <EM>normal order</EM> strategy, which selects term's
+leftmost redex. The main advantage of this strategy is that it always leads to
+term's normal form, if it exists. However it has a serious drawback which is the
+multiple computation of terms. For example in the following series of reductions
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>f</I>.<I>f</I>(<I>f</I>&#XA0;<I>y</I>))((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>))&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP><I>y</I></TD></TR>
+</TABLE></TD></TR>
+</TABLE><P>
+the term (&#X3BB; <I>x</I>.<I>x</I>)(&#X3BB; <I>x</I>.<I>x</I>) was computed twice. An alternative strategy
+is <EM>call-by-value</EM>, in which all arguments are computed before applied to a function.
+This method can avoid multiple computation.
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>f</I>.<I>f</I>(<I>f</I>&#XA0;<I>y</I>))((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)(&#X3BB;&#XA0;<I>x</I>.<I>x</I>))&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>f</I>.<I>f</I>(<I>f</I>&#XA0;<I>y</I>))(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)((&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>)&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>(&#X3BB;&#XA0;<I>x</I>.<I>x</I>)<I>y</I>&#XA0;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>	</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP><I>y</I></TD></TR>
+</TABLE></TD></TR>
+</TABLE><P>
+This strategy, however, does not guarantee that normal form will be found. There
+are also some other strategies like <EM>call-by-need</EM> that is used in some functional
+languages like Haskell.</P><P><TT>lci</TT> does not implement any such technique, but there has been an effort to
+overcome this problem using a special operator &#X223C;. This operator does not
+behave like ordinary operators. The expression <I>M</I>&#X223C; <I>N</I> denotes the application
+of <I>M</I> to <I>N</I> which, however, uses call-by-value. So, if <I>M</I>&#X223C; <I>N</I> is the leftmost
+redex then all reductions of <I>N</I> are performed before the application. Thus the
+term (&#X3BB; <I>f</I>.<I>f</I>(<I>f</I> <I>y</I>))&#X223C;((&#X3BB; <I>x</I>.<I>x</I>)(&#X3BB; <I>x</I>.<I>x</I>)) will be reduced according
+to the second of the previous ways. Operator &#X223C; has the same precedence and
+associativity as the application operator, so it can be easily combined with it.</P><P>This operator, however, should be used with caution since the normal form of
+(&#X3BB; <I>x</I>.<I>y</I>)&#X223C; ((&#X3BB; <I>x</I>.<I>x</I> <I>x</I>)(&#X3BB; <I>x</I>.<I>x</I> <I>x</I>)) will never be found, yet
+it exists. In file <TT>queens.lci</TT> there is an implementation of the well-known
+<I>n</I>-queens problem, using experimentally this operator. Without the use of the
+operator the program is impossible to terminate, even for 3 queens where the
+combinations that must be examined are very few. This is due to the fact that
+terms are extremely complex and cause a lot of recomputation. Using the operator
+&#X223C; and testing in an Athlon 1800, all solutions for the 3 queens where found in
+0.3 seconds, for 4 queens in 4.4 and for 5 in 190. For 6 queens after many hours of
+testing the program did not terminate. This is not strange, though, since Haskell
+(with the same implementation and using lazy-evaluation and constant time arithmetic)
+needs 1799705 reductions for the 8 queens and extremely much time for <I>n</I>&gt;12.</P><!--TOC section Tracing-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc10">8</A>&#XA0;&#XA0;Tracing</H2><!--SEC END --><P>
+<TT>lci</TT> supports evaluation tracing. This function is enabled using the following
+command
+</P><DIV CLASS="center">
+	<TT>Set trace on</TT>
+</DIV><P>
+or pressing <TT>Ctrl-C</TT> during the evaluation of a term. When tracing is enabled,
+the current term is displayed after each reduction and the program waits for user
+input. Available commands are <TT>step</TT>, <TT>continue</TT> and <TT>abort</TT>. The
+first one performs the next reduction, the second continues the reductions without
+tracing and the last one stops the evaluation. An alternative function is to display
+all intermediate terms without interrupting the evaluation. This can be enabled
+using the following command
+</P><DIV CLASS="center">
+	<TT>Set showexec on</TT>
+</DIV><!--TOC section System commands-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc11">9</A>&#XA0;&#XA0;System commands</H2><!--SEC END --><P>
+In previous paragraphs we have already mentioned some commands that are supported by
+<TT>lci</TT>. These commands are functions that may have arguments. If such a function is
+the leftmost in a term, then, instead of evaluating the term, a system command
+is executed. All system commands are described in table <A HREF="#tab_syscmd">1</A>.</P><BLOCKQUOTE CLASS="table"><DIV CLASS="center"><DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV>
+		<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1><TR><TD VALIGN=top ALIGN=left NOWRAP>		<B>Command</B></TD><TD VALIGN=top ALIGN=left><B>Function</B></TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>FixedPoint</TT></TD><TD VALIGN=top ALIGN=left>Removes circular references from aliases using a
+	 		fixed point combinator <I>Y</I></TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>DefOp op prec ass</TT></TD><TD VALIGN=top ALIGN=left>Declares an operator with the given precedence and
+			associativity.</TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>ShowAlias [name]</TT></TD><TD VALIGN=top ALIGN=left>Displays the definition of the given alias, or a lists
+			of all aliases.</TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>Print term</TT></TD><TD VALIGN=top ALIGN=left>Displays a term. Useful to check parsing.</TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>Consult file</TT></TD><TD VALIGN=top ALIGN=left>Reads and processes the given file.</TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>Set option on/off</TT></TD><TD VALIGN=top ALIGN=left>Changes one of the following parameters.</TD></TR>
+<TR><TD ALIGN=right NOWRAP COLSPAN=2>
+			<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1><TR><TD ALIGN=left NOWRAP>				<TT>trace</TT></TD><TD ALIGN=left NOWRAP>Evaluation tracing</TD></TR>
+<TR><TD ALIGN=left NOWRAP>				<TT>showexec</TT></TD><TD ALIGN=left NOWRAP>Display all intermediate terms</TD></TR>
+<TR><TD ALIGN=left NOWRAP>				<TT>showpar</TT></TD><TD ALIGN=left NOWRAP>Display all term's parentheses</TD></TR>
+<TR><TD ALIGN=left NOWRAP>				<TT>greeklambda</TT></TD><TD ALIGN=left NOWRAP>Display &#X201C;&#X3BB;&#X201D; instead of &#X201C;.&#X201D;</TD></TR>
+<TR><TD ALIGN=left NOWRAP>				<TT>readable</TT></TD><TD ALIGN=left NOWRAP>Readable display of integers and lists</TD></TR>
+<TR><TD ALIGN=left NOWRAP></TD></TR>
+</TABLE></TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>Help</TT></TD><TD VALIGN=top ALIGN=left>Displays a help message.</TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP>		<TT>Quit</TT></TD><TD VALIGN=top ALIGN=left>Terminates the program.</TD></TR>
+<TR><TD VALIGN=top ALIGN=left NOWRAP></TD></TR>
+</TABLE><P>	</P><DIV CLASS="caption"><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD VALIGN=top ALIGN=left>Table 1: System commands</TD></TR>
+</TABLE></DIV><P>
+	<A NAME="tab_syscmd"></A>
+</P><DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><!--TOC section Examples-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc12">10</A>&#XA0;&#XA0;Examples</H2><!--SEC END --><P>
+In this section there are some expamples of using the program.</P><PRE CLASS="verbatim">lci&gt; 3+5*2
+13
+
+lci&gt; Sum 1..10
+55
+
+lci&gt; Take 10 (Nats 5)
+[5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+lci&gt; Map (Add 3) 1..5
+[4, 5, 6, 7, 8]
+
+lci&gt; Map (\n.n**2) 1..5
+[\y.y, 4, 9, 16, 25]
+
+lci&gt; Filter (Leq 6) 3:6:10:11:Nil
+[6, 10, 11]
+
+lci&gt; Length 1..10 ++ 4:5:Nil
+12
+
+lci&gt; (Member 3 1..10) &amp;&amp; (Length 3:4:5:Nil) &gt;= 3
+\x.\y.x
+</PRE><P>Note that term &#X3BB; <I>y</I>.<I>y</I> is the normal form of number 1. In file <TT>queens.lci</TT>
+there is an implementation of <I>n</I>-queens problem.</P><PRE CLASS="verbatim">lci&gt; Consult 'queens.lci'
+Successfully consulted queens.lci
+lci&gt; Queens 4
+[[2, 4, \y.y, 3], [3, \y.y, 4, 2]]
+</PRE><P>All of the above functions can be also evaluated using the <TT>FixedPoint</TT> command,
+which removes circular references using the fixed point combinator <I>Y</I>. Using
+<TT>ShowAlias</TT> you can see an alias definition after the modification.</P><PRE CLASS="verbatim">&gt; FixedPoint
+&gt; ShowAlias Sum
+Sum = Y \_me.\l.If (IsNil l) 0 (+ (Head l) (_me (Tail l)))
+</PRE><!--BEGIN NOTES document-->
+<HR CLASS="footnoterule"><DL CLASS="thefootnotes"><DT CLASS="dt-thefootnotes">
+<A NAME="note1" HREF="#text1">1</A></DT><DD CLASS="dd-thefootnotes"><TT>lci</TT> behaves similarly to Prolog, that is lower precedence operators
+	are applied first.
+</DD></DL>
+<!--END NOTES-->
+<!--CUT END -->
+<!--HTMLFOOT-->
+<!--ENDHTML-->
+<!--FOOTER-->
+<HR SIZE=2><BLOCKQUOTE CLASS="quote"><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</EM><A HREF="http://hevea.inria.fr/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.</EM></BLOCKQUOTE></BODY>
+</HTML>

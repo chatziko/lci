@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META name="GENERATOR" content="hevea 1.09">
+<LINK rel="stylesheet" type="text/css" href="lcidoc.css">
+<TITLE>Identifiers</TITLE>
+</HEAD>
+<BODY >
+<A HREF="lcidoc003.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc005.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+<HR>
+<H2 CLASS="section"><A NAME="htoc4">4</A>&#XA0;&#XA0;Identifiers</H2><P>
+Identifiers are used to represent big &#X3BB;-terms by defining <EM>aliases</EM>.
+For example term &#X3BB; <I>x</I>.<I>x</I> can be assigned to alias <I>I</I> so that the term
+<I>I</I> <I>y</I> is equivalent to (&#X3BB; <I>x</I>.<I>x</I>) <I>y</I>. Aliases must be defined in a file
+that is read by the program. The syntax of this file is described by the following
+grammar.
+</P><DIV CLASS="center">
+	
+	<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP>		CmdList</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>Cmd ; CmdList</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>&#X3B5;</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		Cmd</TD><TD ALIGN=center NOWRAP>&#X2192;</TD><TD ALIGN=left NOWRAP>id = Term</TD></TR>
+<TR><TD ALIGN=right NOWRAP>		</TD><TD ALIGN=center NOWRAP>|</TD><TD ALIGN=left NOWRAP>? Term</TD></TR>
+</TABLE>
+	
+</DIV><P>
+Command <TT>id = Term</TT> assings Term to identifier <TT>id</TT> while command
+<TT>? Term</TT> causes the evaluation of <TT>Term</TT> just as if it was entered interactively.
+File processing is made using the following command
+</P><DIV CLASS="center">
+	<CODE>Consult 'file'</CODE>
+</DIV><P>
+Morever, when being started, <TT>lci</TT> searches for a file named <TT>.lcirc</TT> in the
+following places
+</P><PRE CLASS="verbatim"> $PREFIX/share/lci/.lcirc  (eg. /usr/local/share/lci/.lcirc)
+ $HOME/.lcirc
+ ./.lcirc
+</PRE><P>in that order. All files found are executed, if none is found then a warning
+is printed. This file contains definitions for many basic
+functions and operators (integer operations, for expample) and is similar
+to Haskell's <TT>prelude.hs</TT>.</P><P>Identifiers are replaced by the corresponding terms during evaluation and <EM>not</EM>
+during parsing. Thus the order of the definitions is not significant. If an alias
+is not defined an error message is displayed during evaluation. If no alias
+contains itself (directly or indirectly) then aliases are just a syntactic sugar,
+for if we replace all of them we get valid &#X3BB;-terms. However <TT>lci</TT> supports
+curcular references of aliases as a way to implement <EM>recursion</EM>. This
+idea is described in the following section.</P><HR>
+<A HREF="lcidoc003.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc005.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+</BODY>
+</HTML>

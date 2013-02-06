@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META name="GENERATOR" content="hevea 1.09">
+<LINK rel="stylesheet" type="text/css" href="lcidoc.css">
+<TITLE>Integers</TITLE>
+</HEAD>
+<BODY >
+<A HREF="lcidoc002.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc004.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+<HR>
+<H2 CLASS="section"><A NAME="htoc3">3</A>&#XA0;&#XA0;Integers</H2><P>
+<TT>lci</TT> supports integers by encoding them as <EM>church numerals</EM> during
+parsing. Integer <I>n</I> will be converted to
+</P><TABLE CLASS="display dcenter"><TR VALIGN="middle"><TD CLASS="dcell"><I>c</I><SUB><I>n</I></SUB>&#XA0;&#X2261;&#XA0;&#X3BB;&#XA0;<I>f</I>.&#X3BB;&#XA0;<I>x</I>.<I>f</I><SUP><I>n</I></SUP>(<I>x</I>)&#XA0;</TD></TR>
+</TABLE><P>
+So, actually, it is just a syntactic sugar. All operations are implemented in
+pure &#X3BB;-calculus and can be used through identifiers and operators. Although the
+use of calculus for ordinary operations is sleek, it has has a serious performace
+drawback. The complexity of an operation is far from constant, for example
+the power-of operator (<CODE>**</CODE>) requires an exponential number of reductions.
+Moreover, due to stack limitaions, the greatest suported integer is 9999.</P><HR>
+<A HREF="lcidoc002.html"><IMG SRC="previous_motif.gif" ALT="Previous"></A>
+<A HREF="index.html"><IMG SRC="contents_motif.gif" ALT="Up"></A>
+<A HREF="lcidoc004.html"><IMG SRC="next_motif.gif" ALT="Next"></A>
+</BODY>
+</HTML>
