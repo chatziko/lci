@@ -9,8 +9,8 @@ the [GNU General Public Licence](http://www.gnu.org/licenses/gpl.html) (GPL).
 
 ####From source
 
-Latest version is 0.6,
-[available here](http://prdownloads.sourceforge.net/lci/lci-0.6.tar.gz?download).
+The latest version (v0.6) is
+[available here](https://github.com/chatziko/lci/releases/download/v0.6/lci-0.6.tar.gz).
 To install extract the archive, cd to that directory and run:
 
 ```
@@ -37,7 +37,7 @@ brew install lci
 ####Binaries for Windows
 
 Windows binaries are
-[available here](http://prdownloads.sourceforge.net/lci/lci-0.6-win32.zip?download). 
+[available here](https://github.com/chatziko/lci/releases/download/v0.6/lci-0.6-win32.zip).
 Simply extract and run the `lci` executable.
 
 
@@ -46,6 +46,6 @@ Simply extract and run the `lci` executable.
 LCI's documentation covers most of the program's features and explains various
 topics concerning the lambda-calculus
 
-* [View](doc/index.html) documentation online.
-* [Download](lcidoc.pdf) documentation (pdf)
+* [View](http://chatziko.github.io/lci/doc/index.html) documentation online.
+* [Download](http://chatziko.github.io/lci/lcidoc.pdf) documentation (pdf)
 
