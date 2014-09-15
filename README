@@ -66,8 +66,8 @@ LCI has no hard dependencies (except from a descent C99 compiler, gcc is
 recommended) but it is recommended to install readline before compiling
 for better input handling, history, etc.
 
-If you downloaded the code from subversion then you need to install autotools and run
-./reconf to create the configure script.
+If you downloaded the code from git then you need to install autotools and run
+./bootstrap to create the configure script.
 
 ----------------------------------------------------------------------------------
 
