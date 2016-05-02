@@ -76,11 +76,33 @@ int getToken(TOKEN *ptok) {
 		char c;
 
 		//get a character
-		if(scInputType == SC_FILE)
+		if(scInputType == SC_FILE) {
 			c = fgetc(scInput);
-		else
+
+			if ((c & 0xFF) == 0xCE) {
+				char oldc = c;
+				c = fgetc(scInput);
+
+				if ((c & 0xFF) == 0xBB) {
+					c = '\\';
+				} else {
+					c = oldc;
+					fseek(scInput, -1, SEEK_CUR);
+				}
+			}
+		} else {
 			if(!(c = *(char*)scInput++))
 				c = EOF;
+
+			if ((c & 0xFF) == 0xCE) {
+				c = *(char*)scInput++;
+				if ((c & 0xFF) == 0xBB) {
+					c = '\\';
+				} else {
+					c--;
+				}
+			}
+		}
 		//printf("%c", c);
 
 		//handle comments
