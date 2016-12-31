@@ -40,8 +40,8 @@ int termPoolIndex = -1;
 //
 // Prints a lambda term
 // If showPar = 0 then only the required parentheses are printed
-// If greeklambda = 1 then a greek lambda character is used instead of "."
-// (must have ISO-8859-7 character set to display it correctly)
+// If greeklambda = 1 then a greek lambda character is used instead of "\"
+// (must have your terminal set to use UTF-8 as its locale to display)
 
 void termPrint(TERM *t, int isMostRight) {
 	char showPar = getOption(OPT_SHOWPAR),
@@ -64,7 +64,7 @@ void termPrint(TERM *t, int isMostRight) {
 		else {
 			if(showPar || !isMostRight) printf("(");
 
-			printf(greekLambda ? "\xEB" : "\\");
+			printf(greekLambda ? "\u03BB" : "\\");
 			termPrint(t->lterm, 0);
 			printf(".");
 			termPrint(t->rterm, 1);
