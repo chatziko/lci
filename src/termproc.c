@@ -1,3 +1,5 @@
+// vim:noet:ts=3
+
 /* Term manipulation functions
 
 	Copyright (C) 2004-8 Kostas Chatzikokolakis
@@ -56,7 +58,7 @@ void termPrint(TERM *t, int isMostRight) {
 		break;
 
 	 case TM_ABSTR:
-		//an einai church numeral typwnoyme ton antistoixo ari8mo
+		// if the term is a church numeral we print the corresponding number
 		if(readable && (num = termNumber(t)) != -1)
 			printf("%d", num);
 		else if(readable && termIsList(t))
@@ -94,7 +96,7 @@ void termPrint(TERM *t, int isMostRight) {
 
 // termFree
 //
-// Apeley8erwsh ths mnhmhs enos TERM
+// Free a TERM's memory
 
 void termFree(TERM *t) {
 	TERM **newPool;
@@ -162,8 +164,7 @@ TERM *termNew() {
 
 // termClone
 //
-// Dhmioyrgei kai epistrefei ena entigrafo enos oroy
-// (kai olwn twn orwn katw apo ayton)
+// Creates and returns a clone of a term (and all its subterms).
 
 TERM *termClone(TERM *t) {
 	TERM *newTerm;
@@ -187,8 +188,9 @@ TERM *termClone(TERM *t) {
 
 // termSubst
 //
-// Antikatastash ths metablhths x ston oro M me ton oro N
-// H antikatastash ginetai symfwna me ton orismo thw selidas 149 twn shmeiwsewn
+// Replaces variable x in term M with term N.
+// Substitution is performed based on the definition at page 149 of the lecture notes
+// (update: 15 years later, the above comment sounds funny and useless :D)
 //
 // Note:
 // closed flags are kept updated during conversions with minimum complexity cost
@@ -232,7 +234,7 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 		y = M->lterm;
 		P = M->rterm;
 
-		//periptwsh 1: x = y
+		// case 1: x = y
 		if(strcmp(y->name, x->name) == 0)
 			break;
 
@@ -289,8 +291,7 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 	return found;
 }
 
-// Epistrefei 1 an h metablhth name anhkei stis eley8eres metablhtes
-// toy oroy t, diaforetika 0.
+// Returns 1 if variable 'name' belongs to the free variables of term t, otherwise 0.
 
 #ifndef NDEBUG
 int freeNo;				// count the number of calls of termIsFree
@@ -316,10 +317,10 @@ int termIsFreeVar(TERM *t, char *name) {
 				 termIsFreeVar(t->rterm, name);
 	
 	 case TM_ALIAS:
-		//ta aliases prepei na einai kleistoi oroi (xwris eley8eres metablhtes)!
+		// aliases must be closed terms (no free variables)!
 		return 0;
 
-	 default:		//we never reach here!
+	 default:		// we never reach here!
 		assert(0);
 		return 0;
 	}
@@ -327,12 +328,12 @@ int termIsFreeVar(TERM *t, char *name) {
 
 // termConv
 //
-// Ektelei thn aristeroterh β h η metatroph poy yparxei gia to oro t
+// Performs the left-most beta or eta reduction in term t
 //
-// Epistrofh
-// 	1	An bre8hke metatrph
-//		0	An den yparxei metatroph
-//		-1	An synebh kapoio la8os
+// Returns
+// 	1	If a reduction was found
+//		0	If there is no reduction
+//		-1	If some error happened
 //
 // Note:
 // closed flags are kept updated during conversions with minimum complexity cost
@@ -365,10 +366,10 @@ int termConv(TERM *t) {
 			strcmp(N->name, x->name) == 0
 			&& !termIsFreeVar(M, x->name)) {
 
-			//η-conversion
+			// eta-conversion
 			*t = *M;
 
-			//free memory
+			// free memory
 			free(M);
 			free(L);
 			termFree(N);
@@ -380,14 +381,14 @@ int termConv(TERM *t) {
 		return termConv(t->rterm);
 
 	 case TM_APPL:
-		// An o aristeros oros einai alias prepei na ton antikatasthsoume dioti mporei
-		// na periexei afairesh. To while mpaine epeidh kai meta mporei na yparxei alias
+		// If the left-most term is an alias it needs to be substituted cause it might contain
+		// an abstraction. while is needed cause we might still have an alias afterwards.
 		while(t->lterm->type == TM_ALIAS)
 			if(termAliasSubst(t->lterm) != 0)
 				return -1;
 
-		//An den yparxei afairesh sta aristera tote den mporei
-		//na ginei β-metatroph opote synexizoyme thn anazhthsh sto dentro
+		// If no abstraction exist on the left-hand side then a beta-reduction is not possible,
+		// so we continue the search in the tree.
 		if(t->lterm->type != TM_ABSTR) {
 			res = termConv(t->lterm);
 			return res != 0
@@ -395,8 +396,8 @@ int termConv(TERM *t) {
 				: termConv(t->rterm);
 		}
 
-		// Αν preced == 255 σημαίνει ότι η εφαρμογή είχε οριστεί με ~. Τότε κάνουμε
-	   // πρώτα τις μετατροπές στο δεξιά υποδέντρο (call-by-value)
+		// If preced == 255 then the application has beed defined with ~. In this case
+		// we perform the reductions in the right subtree first (call-by-value)
 		if(t->preced == 255 && (res = termConv(t->rterm)) != 0)
 			return res;
 
@@ -405,7 +406,7 @@ int termConv(TERM *t) {
 		M = L->rterm;
 		N = t->rterm;
 
-		//β-conversion
+		// beta-reduction
 		closed = t->closed;
 		found = termSubst(x, M, N, 0);
 		*t = *M;
@@ -416,7 +417,7 @@ int termConv(TERM *t) {
 		// will disapear after the beta-conversion)
 		t->closed = M->closed || closed;
 
-		//free memory
+		// free memory
 		free(L);
 		free(M);
 		termFree(x);
@@ -428,15 +429,14 @@ int termConv(TERM *t) {
 		return 1;
 
 	 case TM_ALIAS:
-		//Gia na doume an yparxei kapoia metatroph prepei na antikatasta8ei to
-		//alias me ton antistoixo oro
+		// to check for reductions we need to substitute the alias with the corresponding term
 		if(termAliasSubst(t) != 0)
 			return -1;
 
-		//Eyresh kapoias metatrophs ston neo oro
+		// search for reductions in the new term
 		return termConv(t);
 
-	 default:										//we never reach here!
+	 default:										// we never reach here!
 		assert(0);
 		return -1;
 	}
@@ -444,7 +444,7 @@ int termConv(TERM *t) {
 
 // termPower
 //
-// Epistrefei ton oro f^pow(a) o opoios orizetai sthn selida 162 twn shmeiwsewn
+// Returns term f^pow(a) = a if pow == 0, f( f^{pow-1}(a) ) otherwise
 
 TERM *termPower(TERM *f, TERM *a, int pow) {
 	TERM *newTerm;
@@ -464,8 +464,7 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 
 // termChurchNum
 //
-// Dhmiourgei kai epistrefei to church numeral
-// poy antistoixei ston ari8mo n:	\f.\x.f^n(x)
+// Creates and returns the church numeral corresponding to number n: \f.\x.f^n(x)
 
 TERM *termChurchNum(int n) {
 	TERM *l1 = termNew(),
@@ -494,23 +493,22 @@ TERM *termChurchNum(int n) {
 
 // termNumber
 //
-// An o oros t einai church numeral tote epistrefei ton ari8mo
-// ston opoio antistoixei, diaforetika epistrefei -1
+// If term t is a church numeral then return its corresponding number, otherwise -1
 
 int termNumber(TERM *t) {
 	TERM *f, *x, *cur;
 	int n = 0;
 
-	//o prwtos oros prepei na einai \f.
+	// first term must be \f.
 	if(t->type != TM_ABSTR) return -1;
 	f = t->lterm;
 
-	//o deyteros oros prepei na einai \x. με x <> f
+	// second term must be \x. with x != f
 	if(t->rterm->type != TM_ABSTR) return -1;
 	x = (t->rterm->lterm);
 	if(strcmp(f->name, x->name) == 0) return -1;
 
-	//anagwnrish toy oroy f^n(x), ypologismos toy n
+	// recognize term f^n(x), compute n
 	for(cur = t->rterm->rterm; ; cur = cur->rterm, n++) {
 		if(cur->type == TM_VAR && strcmp(cur->name, x->name) == 0)
 			return n;
@@ -524,8 +522,8 @@ int termNumber(TERM *t) {
 
 // termIsList
 //
-// Epostrefei 1 an o oros t einai kwdikopoihsh kapoias listas
-// dhladh sth morfh \s.s Head Tail h Nil: \x.\x.\y.x
+// Returns 1 if t is an encoding of a list, that is of the form
+// \s.s Head Tail h Nil: \x.\x.\y.x
 
 int termIsList(TERM *t) {
 	TERM *r;
@@ -535,7 +533,7 @@ int termIsList(TERM *t) {
 	r = t->rterm;
 	switch(r->type) {
 	 case TM_APPL:
-		//elegxos gia th morfh \s.s Head Tail
+		// check for the form \s.s Head Tail
 		if(r->lterm->type == TM_APPL &&
 			r->lterm->lterm->type == TM_VAR &&
 			strcmp(r->lterm->lterm->name, t->lterm->name) == 0)
@@ -543,7 +541,7 @@ int termIsList(TERM *t) {
 		break;
 
 	 case TM_ABSTR:
-		//elegxos gia th morfh Nil: \x.\x.\y.x
+		// check for the form Nil: \x.\x.\y.x
 		if(r->rterm->type == TM_ABSTR &&
 			r->rterm->rterm->type == TM_VAR &&
 			strcmp(r->rterm->rterm->name, r->lterm->name) == 0)
@@ -559,8 +557,8 @@ int termIsList(TERM *t) {
 
 // termPrintList
 //
-// Ektypwnei enan ton oro t me thn morfh [A, B, C, ...]. O oros prepei
-// na einai kwdikopoihsh listas (h termIsList(t) prepei na epistrefei 1)
+// Prints a term of the form [A, B, C, ...]. The term must be the encoding of a list
+// (termIsList(t) must return 1).
 
 void termPrintList(TERM *t) {
 	TERM *r;
@@ -578,8 +576,8 @@ void termPrintList(TERM *t) {
 
 // termAliasSubst
 //
-// Antika8ista to alias t me ton antistoixo oro.
-// Epistrefei 0 an o oros bre8hke h 1 an to alias den exei oristei.
+// Substitutes aliast t with its corresponding term. Returns 0 if the term was found
+// or 1 if the alias is undefined.
 
 int termAliasSubst(TERM *t) {
 	TERM *newTerm;
@@ -591,7 +589,7 @@ int termAliasSubst(TERM *t) {
 
 	assert(newTerm->closed == 1);
 
-	//antikatastash toy oroy
+	// substitute term
 	free(t->name);
 	*t = *newTerm;
 	free(newTerm);
@@ -601,10 +599,9 @@ int termAliasSubst(TERM *t) {
 
 // termRemoveAliases
 //
-// Antika8ista ta ALIASES ston oro t me toy antistoixous orous.
-// Epistreifei 0 an oles oi antikatastaseis eginan kanonika kai
-// 1 an kapoio ALIAS den exei oristei
-// An id != NULL tote antika8istatai mono to sygekrimeno alias
+// Substitutes all aliases in term t with the corresponding terms. Returns 0 if
+// all substitutions were successful, or 1 if some alias was undefined.
+// If id != NULL the only this specific alias is substituted.
 
 int termRemoveAliases(TERM *t, char *id) {
 
@@ -634,8 +631,8 @@ int termRemoveAliases(TERM *t, char *id) {
 
 // termAlias2Var
 //
-// Αντικαθιστά όλες τις εμφανίσεις ενός alias με μια μεταβλητή.
-// Χρησιμοποιείται κατά την αφαίρεση της αναδρμομής με την χρήση fixed point combinator
+// Replaces all occurrences of an aliast with a variable. Used when removing recursion
+// via a fixed point combinator.
 
 void termAlias2Var(TERM *t, char *alias, char *var) {
 
@@ -678,12 +675,11 @@ void termRemoveOper(TERM *t) {
 		termRemoveOper(t->lterm);
 		termRemoveOper(t->rterm);
 
-		//Αν ο t έχει όνομα σημαίνει ότι είναι operator. Στην
-		//περίπτωση αυτή κάνουμε τη μετατροπή
+		//	If t has a name the it's an operator. In this case we perform the conversion:
 		//		a op b -> 'op' a b
 		//
-		// Ο operator ~ έχει ειδική μεταχείριση και χρησιμοποιείται κατά την εκτέλεση
-	 	//	για να καθεοριστεί η σειρά αποτίμησης. Θέτωντας preced = 255 απλά "μαρκάρουμε" τον όρο
+		//	Operator '~' has a special meaning, used during execution to decide the evaluation
+		//	order. Setting preced = 255 we just "mark" the term.
 
 		if(t->name && strcmp(t->name, "~") == 0) {
 			t->preced = 255;
@@ -753,31 +749,31 @@ list_t* termFreeVars(TERM *t) {
 	return vars;
 }
 
-// Vriskei mia metablhth poy na mhn yparxei stis listes l1 kai l2 dokimazontas
-// diadoxika oles tis symboloseires me thn akolou8h seira
+// Finds a variable not contained in lists l1 and l2, by trying all strings in
+// the following order:
 //		a, b, ..., z, aa, ab, .., ba, bb, ..., zz, aaa, aab, ...
 
 char *getVariable(TERM *t1, TERM *t2) {
 	char s[10] = {'a', '\0'};
 	int curLen = 1, i;
 
-	//kataskeyazoume symboloseires mexri na broume kapoia
-	//poy na mhn anhkei se kamia apo tis listes
+	// build strings until we find one not contained in one of the lists
 	while(termIsFreeVar(t1, s) || termIsFreeVar(t2, s)) {
-		//ay3anoume ton teleytaio xarakthra. An aytos ginei 'z' ton
-		//kanoyme 'a' kai ay3anoume ton prohgoumeno (meta to "az" einai to "ba") klp
+		// increment the last character. When it becomes 'z' we change it to 'a'
+		// and continue incrementing the previous character, etc (after "az" we
+		// have "ba").
 		for(i = curLen-1; i >= 0 && ++s[i] == 'z'; i--)
 			s[i] = 'a';
 
-		//an oloi oi xarakthres eginan 'z' prepei na megalwsoume to
-		//mhkos ths symboloseiras kai na 3anarxizoume apo to "aa..."
+		// if all characters became 'z' we need to increase the size of the string,
+		// and start from 'aa...'
 		if(i < 0) {
 			s[curLen] = 'a';
 			s[++curLen] = '\0';
 		}
 	}
 
-	//h symboloseira bre8hke. Epistrefoume ena antigrafo.
+	// string found, return a copy
 	return strdup(s);
 }
 

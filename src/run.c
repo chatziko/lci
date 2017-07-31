@@ -1,3 +1,5 @@
+// vim:noet:ts=3
+
 /* Functions that are used to "execute" terms or commands
 
 	Copyright (C) 2004-8 Kostas Chatzikokolakis
@@ -53,7 +55,7 @@ int execTerm(TERM *t) {
 
 	trace = getOption(OPT_TRACE);
 
-	//Αφαίρεση των operators πριν την εκτέλεση
+	// remove operators before executing
 	termRemoveOper(t);
 
 	// calculate closed flag for all sub-terms (must be done after termRemoveOper)
@@ -64,10 +66,10 @@ int execTerm(TERM *t) {
 
 	switch(execSystemCmd(t)) {
 	 case 1:
-		//kata thn diarkeia ths ekteleshs ta shmata SIGNT energopoioyn to trace
+		// during execution, SIGINT signals enable trace
 		signal(SIGINT, sigHandler);
 
-		//kanoyme ola ta reductions
+		// perform all reductions
 		do {
 			redno++;
 
@@ -78,16 +80,16 @@ int execTerm(TERM *t) {
 				rl_prep_terminal(1);
 #endif
 #ifdef USE_IOCTL
-				//allazontas tis parametrous sto tio kanoyme thn getchar na epistrefei
-				//ameses meta ton prwto xarakthra (xwris enter) kratame tis palies
-				//parametrous sto oldtio gia epanafora argotera.
+				// change tio settings to make getchar return immediately after the
+				// first character (without pressing enter). We keep the old
+				// settings to restore later.
 				struct termio tio, oldtio;
-				ioctl(0, TCGETA, &tio);						//read settings
-				oldtio = tio;									//save settings
-				tio.c_lflag &= ~(ICANON | ECHO);			//changes settings
+				ioctl(0, TCGETA, &tio);						// read settings
+				oldtio = tio;									// save settings
+				tio.c_lflag &= ~(ICANON | ECHO);			// change settings
 				tio.c_cc[VMIN] = 1;
 				tio.c_cc[VTIME] = 0;
-				ioctl(0, TCSETA, &tio);						//set new settings
+				ioctl(0, TCSETA, &tio);						// set new settings
 #endif
 
 				termPrint(t, 1);
@@ -116,7 +118,7 @@ int execTerm(TERM *t) {
 					}
 				} while(c == '?');
 
-				//epanafora ry8misewn termatikoy
+				// restore terminal settings
 #ifdef USE_READLINE
 				rl_deprep_terminal();
 #endif
@@ -132,7 +134,7 @@ int execTerm(TERM *t) {
 			}
 		} while((res = termConv(t)) == 1);
 
-		//An h metatroph teleiwse kanonika ektypwsh
+		// if execution is finished, print result
 		if(res == 0) {
 			printf("\n");
 			termPrint(t, 1);
@@ -143,7 +145,7 @@ int execTerm(TERM *t) {
 #endif
 		}
 
-		//Epanafora toy default handler
+		// restore default signal handler
 		signal(SIGINT, SIG_DFL);
 
 		break;
@@ -161,7 +163,7 @@ int execTerm(TERM *t) {
 		break;
 	}
 
-	//Απελευθέρωση μνήμης
+	// free memory
 	termFree(t);
 	termGC();					// call terms garbageCollector
 
@@ -170,50 +172,50 @@ int execTerm(TERM *t) {
 
 // execSystemCmd
 //
-// Ελέγχει αν ο όρος t είναι εντολή συστήματος και στην περίπτωση αυτή εκτελεί
-// την εντολή. Οι εντολές συστήματος έχουν την μορφή Cmd param1 param2 ...
-// Επιστρέφει
-//		1	Αν ο όρος δεν είναι εντολή συστήματος
-//		0	Αν ο όρος είναι εντολή συστήματος και εκτελέστηκε κανονικά
-//		-1 Αν ο όρος είνια εντολή συστήματος αλλά συνέβη κάποιο σφάλμα κατά την εκτέλεση
-//		-2 Αν ο όρος είναι εντολή συστήματος που τερματίζει το πρόγραμμα (Quit)
+// Checks if term t is a system command and if so executes the command. System commands
+// are of the form Cmd param1 param2 ...
+// Returns
+// 	 1 If the term is not a system command
+// 	 0 If the term is a system command and execution was successful
+// 	-1 If the term is a system command but there was some error during execution
+// 	-2 If the term is a Quit system command
 
 int execSystemCmd(TERM *t) {
 	TERM *stack[10], **sp = stack, *par;
 	int parno = 0;
 
-	//ευρεση αριστερότερου όρου και φύλαξη των παραμέτρων στη στοίβα
+	// find the left-most term and keep params in the stack
 	while(t->type == TM_APPL) {
 		*sp++ = t->rterm;
 		parno++;
 		t = t->lterm;
 	}
 
-	//Ο αριστερότερος όρος πρέπει να είνει κάποιο από τα προκαθορισμένα ALIASES
+	// the left-most term must be one of the predefined aliases
 	if(t->type != TM_ALIAS)
 		return 1;
 
 	if(strcmp(t->name, "DefOp") == 0) {
 		// DefOp name preced assoc
 		//
-		// Καταχωρεί τη δήλωση ενός operator
+		// Stores an operator's declaration
 		char *oper;
 		int prec;
 		ASS_TYPE ass;
 
 		if(parno != 3) return -1;
 
-		//παραμετρος 1: τελεστής
+		// param 1: operator
 		par = *--sp;
 		if(par->type != TM_ALIAS) return -1;
 		oper = par->name;
 
-		//παράμετρος 2: προτεραιότητα
+		// param 2: precedence
 		par = *--sp;
 		prec = termNumber(par);
 		if(prec == -1) return -1;
 
-		//παράμετρος 3: προσεταιριστικότητα
+		// param 3: associativity
 		par = *--sp;
 		if(par->type != TM_ALIAS && par->type != TM_VAR) return -1;
 		if(strcmp(par->name, "xfx") == 0)
@@ -225,14 +227,14 @@ int execSystemCmd(TERM *t) {
 		else
 			return -1;
 	
-		//καταχωρηση της δήλωσης του operator
+		// add the operator's declaration
 		addOper(strdup(oper), prec, ass);
 
 	} else if(strcmp(t->name, "ShowAlias") == 0) {
 		// ShowAlias
 		//
-		// Τυπώνει τον ορισμό όλων των αποθηκευμένων aliases ή ενός
-		// συγκεκριμένου αν δοθεί ως παράμετρος
+		// Prints the definition of all stored aliases, or of a specific one
+		// if given as a parameter.
 		char *id = NULL;
 
 		if(parno != 0 && parno != 1) return -1;
@@ -247,7 +249,7 @@ int execSystemCmd(TERM *t) {
 	} else if(strcmp(t->name, "Print") == 0) {
 		// Print
 		//
-		// Τυπώνει τον όρο που δίνεται ως παράμετρος
+		// Prints the term given as a parameter
 		if(parno != 1) return -1;
 
 		termPrint(*--sp, 1);
@@ -256,7 +258,7 @@ int execSystemCmd(TERM *t) {
 	} else if(strcmp(t->name, "FixedPoint") == 0) {
 		// FixedPoint
 		//
-		// Αφαιρεί την αναδρομή από τα aliases με τη χρήση ενός fixed point combinator
+		// Removes recursion from aliases using a fixed point combinator
 		int n = 0;
 
 		if(parno != 0) return -1;
@@ -272,7 +274,7 @@ int execSystemCmd(TERM *t) {
 	} else if(strcmp(t->name, "Consult") == 0) {
 		// Consult file
 		//
-		// Διαβάζει ένα αρχείο και εκτελεί τις εντολές
+		// Reads a file and executes its commands
 		if(parno != 1) return -1;
 
 		par = *--sp;
@@ -290,7 +292,7 @@ int execSystemCmd(TERM *t) {
 	} else if(strcmp(t->name, "Set") == 0) {
 		// Set option value
 		//
-		// Apouhkeyei thn timh ths parametroy
+		// Changes the value of an option
 		OPT opt;
 		int value;
 
@@ -323,7 +325,7 @@ int execSystemCmd(TERM *t) {
 	} else if(strcmp(t->name, "Help") == 0) {
 		// Help
 		//
-		// Εκτύπωση μηνύματος βοήθειας
+		// Prints help message
 		printf("\nlci - A lambda calculus interpreter\n\n");
 		printf("Type a lambda term to compute its normal form\n");
 		printf("or enter one of the following system commands:\n\n");
@@ -358,7 +360,7 @@ int execSystemCmd(TERM *t) {
 		return -2;
 
 	} else
-		//Το alias δεν είναι κανένα από τα προκαθορισμένα
+		// The alias is not one of the predefined ones
 		return 1;
 
 	return 0;
@@ -395,21 +397,20 @@ int consultFile(char *fname) {
 
 // getOption
 // 
-// Epistrefei thn timh ths perametroy o
+// Returns the value of option opt
 int getOption(OPT opt) {
 	return options[opt]; 
 }
 
 // sigHandler
 //
-// Handler του σήματος SIGINT κατά τη διάρκει της εκτέλεσης.
-// Ενεργοποιεί τη διαδικασία trace
+// Handles SIGINT signal during execution. It enables the trace functionality.
 
 void sigHandler(int sig) {
 	trace = 1;
 
-	//sta suns prin thn klhsh ths synarthshs epaneferetai o handler
-	//se SIG_DFL. Etsi prepei na 3anaenergopoih8ei
+	// in old solaris systems (?) SIG_DFL is restored before calling this
+	// handler, so we have to re-enable it.
 	signal(SIGINT, sigHandler);
 }
 

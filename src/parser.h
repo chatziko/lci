@@ -1,3 +1,5 @@
+// vim:noet:ts=3
+
 /* Declarations for parser.c
 
 	Copyright (C) 2004-8 Kostas Chatzikokolakis
@@ -26,17 +28,17 @@
 #define PAR_ERROR		-1
 
 
-// Typos eisodoy toy lektikoy analyth
+// lexer's input type
 typedef enum { SC_BUFFER, SC_FILE } INPUT_TYPE;
 
 
-//plhrofories gia ena token
+// token info
 typedef struct {
 	TOKEN_TYPE type;
 	char *value;
 } TOKEN;
 
-//plhrofories gia ena symbolo ths grammatikhs
+// grammar symbol info
 typedef struct tag_symb_info {
 	char isTerminal;
 	TOKEN_TYPE type;
@@ -45,11 +47,11 @@ typedef struct tag_symb_info {
 	void *value;
 } SYMB_INFO;
 
-//plhrofories enos kanona ths grammatikhs
+// grammar rule info
 typedef struct {
-	int rsNo;								//ari8mos symbolwn sto de3i melos
-	TOKEN_TYPE rs[MAXRULELEN];			//pinakas me symbola tou de3iou melous
-	void(*func)(SYMB_INFO*);			//synarthsh epe3ergasia tou kanona
+	int rsNo;								// number of symbols in the right-hand side
+	TOKEN_TYPE rs[MAXRULELEN];			// array of right-hand side symbols
+	void(*func)(SYMB_INFO*);			// rule processing function
 } GRAM_RULE;
 
 
@@ -64,8 +66,8 @@ extern void *scInput;
 extern INPUT_TYPE scInputType;
 extern int scLineNo;
 
-//Pinakes poy ka8orizoun to fsm kai thn grammatikh.
-//Prepei na orizontai se kapoio .c arxeio
+// arrays modelling the finite state automaton (fsm) and the grammar
+// must be defined in some .c file
 extern char *validChars[VALIDCHNO];
 extern STATE fsm[VALIDCHNO][STATENO];
 

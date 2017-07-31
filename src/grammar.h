@@ -1,3 +1,5 @@
+// vim:noet:ts=3
+
 /* Declarations for grammar.c
 
 	Copyright (C) 2004-8 Kostas Chatzikokolakis
@@ -28,13 +30,12 @@
 #define ATTR_PACKED
 #endif
 
-//Sta8eres poy epitrepoun th xrhsh twn $$ kai $(n) me ton idio tropo
-//me ton yacc stis synarthseis epe3ergasias kanonwn
+// defines allowing to use $$ and $(n) in the same way as yacc in rule processing functions
 
 #define $$		symb->value
 #define $(n)	symb->chl[n]->value
 
-//sta8eres poy aforoun thn grammatikh
+// grammar-related defines
 
 #define TRMNO			12				//ari8mos termatikwn symbolwn
 #define NONTRMNO		6				//ari8mos mh termatikwn symbolwn
@@ -44,7 +45,7 @@
 #define STATENO 		9				//ari8mos katastasewn toy fsm ths lektikhs analyshs
 #define FINALSTATES	7				//Tekiles katastaseis toy aytomatoy
 
-// TOKENS ths grammatikhs
+// gramar TOKENS
 
 typedef enum {
 	TK_VAR = 0, TK_ID, TK_NUM, TK_OP, TK_LPAR, TK_RPAR, TK_LAMBDA,	//terminals
@@ -52,24 +53,22 @@ typedef enum {
 	TK_CMD, TK_TERM, TK_TERM2, TK_LIST, TK_LIST2, TK_OPER				//non-terminals
 } TOKEN_TYPE;
 
-//arxiko symbolo ths grammatikhs
+// grammar initial symbol
 #define INIT_SYMB TK_LIST
 
-// Katastaseis toy peperasmenoy aytomatoy ths lektiths analyshs
-// Oi prwtes FINALSTATES katastaseis einai oi telikes katastaseis kai
-// antistoixoyn se termatika TOKENS, oi ypoloipes xrhsimopoioyntai eswterika
-//apo ton lektiko analyth
+// States of the lexer's finite automaton. The first FINALSTATES states are considered
+// as final (accepting) and correspond to terminal TOKENS, the rest are used internally
+// by the lexer.
 
 typedef enum {
 	S_VAR = TK_VAR, S_ID, S_NUM, S_OP, S_LPA, S_RPA, S_LAM,
 	S_INI, S_QUO,
-	S_EOF, S_NEW, S_IGN, S_ERR				//eidika states (den metrane sto STATENO)
+	S_EOF, S_NEW, S_IGN, S_ERR				// special states (dont count in STATENO)
 } STATE;
 
 
-// structs gia thn anaparastash enos ë-programmatos se morfh dentroy.
-// Kata to parsing me th boh8eia toy syntaktikoy dentroy 8a dhmiourgh8ei
-// to dentro toy programmatos to opoio 8a xrhsimopoih8ei gia thn ektelesh
+// Structs for representing a lambda-program as a tree. During parsing, we will
+// use the parse tree to construct the program tree used during execution.
 
 // Note: ATTR_PACKED (#defined __atribute__((packed))) instructs the compiler to
 // use 1 byte instead of 4 for the enum
@@ -85,10 +84,10 @@ typedef enum { CM_QUEST, CM_DECL } COMMAND_TYPE;
 // results in a smaller sizeof(TERM)
 //
 typedef struct term_tag {
-	struct term_tag *lterm;					//aristero kai de3i paidi
-	struct term_tag *rterm;					//(gia efarmoges kai afaireseis)
-	char *name;									//onoma (gia metablhtes, aliases kai efarmoges me operator)
-	TERM_TYPE type;							//metablhth, efarmogh h afairesh
+	struct term_tag *lterm;					// left and right children
+	struct term_tag *rterm;					// (for applications and abstractions)
+	char *name;									// name (for variables, aliases and applications with an operator)
+	TERM_TYPE type;							// variable, application or abstraction
 	ASS_TYPE assoc;
 	unsigned char preced;
 	char closed;

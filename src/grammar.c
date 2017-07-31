@@ -1,3 +1,5 @@
+// vim:noet:ts=3
+
 /* Definition of the finite state machine and the grammar rules
 	that are used by the parser
 
@@ -29,9 +31,9 @@
 #include "run.h"
 
 
-// Epitreptoi xarakthres ths glwssas
-// Oi xarakthres poy briskontai se ka8e string anhkoyn sthn idia kathgoria
-// Sto peperasmeno aytomato fsm orizontai oi metabaseis gia ka8e kathgoria xarakthrwn
+// Valid language characters
+// Characters inside each string belong to the same class
+// The finite automaton fsm defines transitions for each character class
 
 char *validChars[VALIDCHNO] =	{
 	"abcdefghijklmnopqrstuvwxyz_",
@@ -43,7 +45,7 @@ char *validChars[VALIDCHNO] =	{
 	"(", ")", "'"
 };
 
-// Peperasmeno aytomato poy xrhsimopoieitai sthn lektikh analysh
+// Finite automaton used for lexical analysis
 
 STATE fsm[VALIDCHNO][STATENO] = {
 //	 S_VAR  S_ID   S_NUM  S_OP   S_LPA  S_RPA  S_LAM, S_INI  S_QUO
@@ -58,7 +60,7 @@ STATE fsm[VALIDCHNO][STATENO] = {
 	{S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_QUO, S_ID  }	// '
 };
 
-//functions gia thn epe3ergasia kanonwn
+// functions for rule processing
 void procRule0(SYMB_INFO *symb);
 void procRule1(SYMB_INFO *symb);
 void procRule2(SYMB_INFO *symb);
@@ -73,10 +75,9 @@ void procRule11(SYMB_INFO *symb);
 void procRule13(SYMB_INFO *symb);
 void doNothing(SYMB_INFO *symb);
 
-//kanones grammatikhs
-//Gia ka8e kanona apo8hkeyetai o ari8mos symbolwn sto de3i meros, ta symbola
-//sto de3i meros, kai h synarthsh pou 8a klh8ei gia na epe3ergastei ton kanona
-//ka8e fora poy aytos 8a emfanistei sthn eisodo
+// grammar rules
+// For each rule we store the number of RHS symbols, the RHS symbols themselves, and the
+// function that will be called to process the rule each time it appears in the input.
 
 GRAM_RULE grammar[RULENO] = {
 	{3, {TK_ID,		TK_EQ,	TK_TERM							}, procRule0},	// CMD -> id = T
@@ -96,9 +97,9 @@ GRAM_RULE grammar[RULENO] = {
 	{0, {																},	doNothing}	// OPER -> e
 };
 
-//Pinakas LL(1)
-//Gia ka8e mh termatiko symbolo kai gia ka8e symbolo eisodou apo8hkeyoyme ton
-//kanona poy prepei na efarmostei. To -1 shmainei syntaktiko la8os.
+// LL(1) parsing table
+// For each non-terminal symbol and each input symbol we store the rule that should
+// be applied. -1 means syntax error.
 
 int LL1[NONTRMNO][TRMNO] = {
 //	 VAR	ID		NUM	OP		LPAR	RPAR	LAMDA	DOT	EQ		SEM	QM		EOF
@@ -132,18 +133,17 @@ TOKEN_TYPE selectOper(char *name) {
 	return TK_OP;
 }
 
-// ----------- Synarthseis epe3ergasias kanonwn ----------------
+// ----------- Rule processing functions ----------------
 
-//Precedence and associativity of applications
+// Precedence and associativity of applications
 #define APPL_PRECED	100
 #define APPL_ASSOC	ASS_LEFT
 
 // newAppl
 //
-// O oros op mporei na einai NULL (opote epistrefetai to s1) h na exei
-// mia efarmogh poy exei symplhrwmeno mono to de3i kladi. Sthn periptwsh ayth
-// 8a mpei to s1 ws aristero kladi toy op ektos kai an logw proteraiothtas o op
-// prepei na "mpei mesa" ston s2
+// The op term can be either NULL (in which case s1 is returned) or it can contain
+// an appliation with only its right branch filled. In this case s1 will be inserted
+// as the left branch, unless due to precedence op needs to "go inside" s2.
 
 TERM *newAppl(TERM *s1, TERM *op) {
 	TERM *s;
@@ -154,15 +154,15 @@ TERM *newAppl(TERM *s1, TERM *op) {
 		TERM *s2 = op->rterm;
 		char breakOp = 0;
 
-		// An o oros s2 einai efarmogh tote yparxei periptwsh o op na "mpei mesa"
-		// sthn efarmogh. Px an op = * kai s2 = (a + b) tote anti gia s1 * (a + b)
-		// prepei na paroume (s1 * a) + b dhladh o * na mpei mesa sto +
-		// Ayto symbainei stis akolou8es 2 periptwseis
-		//		- O op exei mikroterh proteraiothta apo ton s2
-		//		- Exoun ish proteraiothta kai o op DEN einai de3ia prosetairistikos dhladh
-		//		  DEN mporei na exei to s2 sta de3ia toy. An o s2 einai aristera
-		//		  prosetairistikos (dhladh mporei na exei ton op sta aristera toy) tote
-		//		  o op "mpainei mesa" diaforetika yparxei ambiguity kai typwnetai mhnyma
+		// If s2 is an application, then op might need to "go inside" the application.
+		// Eg. if op = * and s2 = (a + b) then instead of s1 * (a + b) we need to
+		// get (s1 * a) + b, that is * should go inside +.
+		// This happens in the following 2 cases:
+		// 	- op has lower precedence than s2
+		// 	- they have the same precedence and op is _not_ right-associative, hence it
+		// 	  _cannot_ have s2 on its right. In this case:
+		// 		* if s2 is left-associative (so it can have op on its left) then op goes inside
+		// 		* otherwise there is an ambiguity and a warning is printed
 
 		if(s2->type == TM_APPL && op->preced <= s2->preced) {
 			if(op->preced < s2->preced || (op->assoc != ASS_RIGHT && s2->assoc == ASS_LEFT))
@@ -187,7 +187,7 @@ TERM *newAppl(TERM *s1, TERM *op) {
 
 // removeChar
 //
-// Διαγράφει όλες τις εμφανίσεις του c από το s και επιστρέφει το s
+// Deletes all occurrences of c from s and returns s
 
 char *removeChar(char *s, char c) {
 	int n = 0;
@@ -299,8 +299,8 @@ void procRule7(SYMB_INFO *symb) {
 	t->name = $(0);
 	t->rterm = newAppl($(1), $(2));
 
-	// An yparxei operator pairnoyme thn proter. kai thn prosetair. apo ton telesth
-	// Diaforetika h efarmogh exei 100 yfx
+	// If an operator exists that we get the precedence/associativity from the operator,
+	// otherwise the application has 100 yfx
 	if($(0)) op = getOper($(0));
 	t->preced = (op ? op->preced : APPL_PRECED);
 	t->assoc = (op ? op->assoc : APPL_ASSOC);
@@ -327,7 +327,7 @@ void procRule13(SYMB_INFO *symb) {
 	$$ = strdup($(0));
 }
 
-// Apla 8etei to $$ se NULL
+// Simply sets $$ to NULL
 void doNothing(SYMB_INFO *symb) {
 	$$ = NULL;
 }

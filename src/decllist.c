@@ -1,3 +1,5 @@
+// vim:noet:ts=3
+
 /* Functions to manipulate the list of declarations
 
 	Copyright (C) 2004-8 Kostas Chatzikokolakis
@@ -77,7 +79,7 @@ DECL *getDecl(char *id) {
 
 // termFromDecl
 //
-// Επιστρέφει ένα νέο όρο ο οποίος είναι αντίγραφο του αποθηκευμένου με αυτό το id
+// Returns a clone of the term stored with the given id
 
 TERM *termFromDecl(char *id) {
 	DECL *decl = getDecl(id);
@@ -89,7 +91,7 @@ TERM *termFromDecl(char *id) {
 
 // buildAliasesList
 //
-// Diagrafei thn palia lista me ta aliases kai dhmiourgei mia nea
+// Deletes the old alias list and creates a new one
 
 void buildAliasList(DECL *d) {
 	IDLIST *idl, *tmp;
@@ -112,7 +114,7 @@ void buildAliasList(DECL *d) {
 
 // searchAliasList
 //
-// Επιστρέφει 1 αν το id υπάρχει στη λίστα, διαφορετικά 0
+// Returns 1 if id exists in list, otherwise 0
 
 int searchAliasList(IDLIST *list, char *id) {
 	for(list = list->next; list; list = list->next)
@@ -124,8 +126,7 @@ int searchAliasList(IDLIST *list, char *id) {
 
 // findAliases
 //
-// Vriskei ola ta aliases poy xrhsimopoioyntai apo ton
-// oro t kai ta pros8etei sthn lista list
+// Finds all aliases used by term t and adds them to 'list'
 
 void findAliases(TERM *t, IDLIST *list) {
 	IDLIST *tmp;
@@ -167,11 +168,11 @@ int findCycle() {
 
 	bestCycle.size = 0;
 
-	//arxikopoihsh ths DFS
+	// initialize DFS
 	for(curNode = declList; curNode; curNode = curNode->next)
 		curNode->flag = 0;
 
-	//h dfs mporei na xreiastei na ektelestei polles fores an o grafos einai mh synektikos
+	// DFS might need to be executed multiple times if the graph is not connected
 	for(curNode = declList; curNode; curNode = curNode->next)
 		if(curNode->flag == 0) {
 			newCycle = dfs(curNode);
@@ -179,7 +180,7 @@ int findCycle() {
 				bestCycle = newCycle;
 		}
 
-	//an bre8hke kapoios kyklos ton afairoume
+	// if a cycle was found, remove it
 	if(bestCycle.size > 0) {
 		//printf("best cycle size: %d\n", bestCycle.size);
 		//printCycle(bestCycle.start, bestCycle.end);
@@ -192,8 +193,8 @@ int findCycle() {
 
 // dfs
 //
-// Depth first search για αναζήτηση κύκλων. Εύρεση και επιστροφή του μέγιστου
-// δυνατού κύκλου, δηλαδή αυτού που δεν περιέχεται σε κάποιον άλλο
+// Depth first search for finding cycles. Finds and returns a maximal
+// cycle, i.e. one not contained in some other cycle.
 
 CYCLE dfs(DECL *curNode) {
 	CYCLE bestCycle, newCycle;
@@ -205,9 +206,9 @@ CYCLE dfs(DECL *curNode) {
 	bestCycle.start = bestCycle.end = NULL;
 	curNode->flag = 1;
 
-	//epe3ergasia twn geitonwn
+	// process neighborhoods
 	for(idl = curNode->aliases.next; idl; idl = idl->next) {
-		//Αν το alias δεν είναι καταχωρημένο το αγνοούμε
+		// if the alias is not defined, ignore it
 		if(!(newNode = getDecl(idl->id)))
 			continue;
 
@@ -236,7 +237,7 @@ CYCLE dfs(DECL *curNode) {
 
 // getCycleSize
 //
-// Επιστρέφει το μέγεθος ενός κύκλου
+// Returns the size of a cycle
 
 int getCycleSize(DECL *start, DECL *end) {
 	DECL *cur;
@@ -250,15 +251,15 @@ int getCycleSize(DECL *start, DECL *end) {
 
 // removeCycle
 //
-// Αφαιρεί την αναδρομή στα aliases του κύκλου C χρησιμοποιώντας έναν
-// fixed point combinator Y (πρέπει να έχει οριστεί στο .lcirc)
+// Removes recursion in the aliases of cycle C using a fixed point combinator
+// Y (must be defined in .lcirc).
 //
-// Αν υπάρχουν περισσότερα από ένα aliases ενώνονται πρώτα σε ένα tuple
-// και οι εμφανίσεις τους αντικαθιστώνται με κλησεις Index
+// If there is more than one alias, they are first merged in a tuple
+// and their occurrences are replaced by Index calls.
 //
 // TODO
-// Αν ένα alias δεν καλεί τον εαυτό του τότε η αντικατάστασή του στο σώμα
-// των άλλων aliases εξαλείφει την ανάγκη για tuple.
+// If an alias does not call itself then its replacement in the body
+// of the other aliases could eliminate the need for a tuple.
 
 void removeCycle(CYCLE c) {
 	DECL *d, *decl;
@@ -268,7 +269,7 @@ void removeCycle(CYCLE c) {
 		  *tmpId;
 	int i;
 
-	//Αν υπάρχουν περισσότερα από ένα aliases στον κύκλο τότε ενώνοντα σε ένα tuple
+	// if there is more than one alias in the cycle, merge them in a tuple
 	if(c.size > 1) {
 		//construct new id
 		newId[0] = '\0';
@@ -277,14 +278,14 @@ void removeCycle(CYCLE c) {
 			strcat(newId, d->id);
 		}
 
-		//construct tupled function
+		// construct tupled function
 		strcpy(buffer, "\\y.y ");
 		for(i = 0, d = c.end; i < c.size; i++, d = d->prev) {
 			strcat(buffer, d->id);
 			strcat(buffer, " ");
 		}
 
-		//create term using parser and insert it into the list
+		// create term using parser and insert it into the list
 		scInputType = SC_BUFFER;
 		scInput = buffer;
 		getToken(NULL);
@@ -293,11 +294,11 @@ void removeCycle(CYCLE c) {
 		termSetClosedFlag(t);				// mark sub-terms as closed
 		termAddDecl(strdup(newId), t);
 
-		//Ta aliases antikatastash twn aliases me tous orismous toys
+		// replace aliases with their corresponding terms
 		termRemoveAliases(t, NULL);
 
-		// Οσα aliases περιέχονται στον κύκλο έχουν ενσωματωθεί στο tuple.
-		// Ετσι οι ορισμοί τους αντικαθιστώνται από όρους Index
+		// Aliases contained in the cycle have been merged in a tuple.
+		// So their appearances are replaced by Index calls
 		for(i = 0, d = c.end; i < c.size; i++) {
 			tmpId = strdup(d->id);
 			d = d->prev;
@@ -306,7 +307,7 @@ void removeCycle(CYCLE c) {
 			termSetClosedFlag(tmpTerm);
 			termAddDecl(tmpId, tmpTerm);
 
-			// Αντικατάσταση του συγκεκριμένου ALIAS με το νέο ορισμό σε όλο το πρόγραμμα
+			// replace this specific alias with its definition in the whole program
 			for(decl = declList; decl; decl = decl->next)
 				termRemoveAliases(decl->term, tmpId);
 		}
@@ -315,26 +316,26 @@ void removeCycle(CYCLE c) {
 		strcpy(newId, c.start->id);
 	}
 
-	// Για να αφαιρεθεί η αναδρομή οι εμφανίσεις του alias μέσα στον εαυτό του αντικαθιστώνται
-	// με τη μεταβλητή _me και προστίθεται ένας fixed point combinator
-	// Ετσι ο όρος A=N θα γίνει A=Υ \_me.N[A:=_me]
-	termAlias2Var(t, newId, "_me");							//Allagh toy alias se _me
+	// To remove recursion, appearances of the alias within its body are replaced with the
+	// variable _me and we add a fixed point combinator.
+	// Hence the term A=N becomes A=Υ \_me.N[A:=_me]
+	termAlias2Var(t, newId, "_me");							// Change alias to _me
 
-	newTerm = termNew();											//Efarmogh toy Y ston oro
+	newTerm = termNew();											// Application of Y to the term
 	newTerm->type = TM_APPL;
 	newTerm->name = NULL;
 
-	newTerm->lterm = termNew();								//Y
+	newTerm->lterm = termNew();								// Y
 	newTerm->lterm->type = TM_ALIAS;
 	newTerm->lterm->name = strdup("Y");
 
-	newTerm->rterm = termNew();								//Afairesh \_me.
+	newTerm->rterm = termNew();								// Remove \_me.
 	tmpTerm = newTerm->rterm;
 	tmpTerm->type = TM_ABSTR;
 	tmpTerm->name = NULL;
 	tmpTerm->rterm = t;
 
-	tmpTerm->lterm = termNew();								//Metablhth _me
+	tmpTerm->lterm = termNew();								// _me variable
 	tmpTerm->lterm->type = TM_VAR;
 	tmpTerm->lterm->name = strdup("_me");
 
@@ -344,16 +345,16 @@ void removeCycle(CYCLE c) {
 	decl = getDecl(newId);
 	decl->term = newTerm;
 
-	//Επανακατασκευή όλων των λιστών με τα aliases
+	// reconstruct all alias lists
 	for(decl = declList; decl; decl = decl->next)
 		buildAliasList(decl);	
 }
 
 // getIndexTerm
 //
-// Επιστρέφει έναν λ-όρο ο οποίος διαλέξει το n-ατο από το tuple των varno
-// στοιχείων. Ο όρος αυτός είναι ο ακόλουθος
-// TUPLE \x1.\x2. ... \xvarno.xn
+// Returns the following lambda-term:
+//   TUPLE \x1.\x2. ... \xvarno.x<n>
+// which chooses the n-th element of a varno-tuple
 
 TERM *getIndexTerm(int varno, int n, char *tuple) {
 	TERM *t;
@@ -378,7 +379,7 @@ TERM *getIndexTerm(int varno, int n, char *tuple) {
 
 // printDeclList
 //
-// Τυπώνει όλη τη λίστα με τους ορισμούς
+// Prints the entire declaration list
 
 void printDeclList(char *id) {
 	DECL *d;
@@ -401,7 +402,7 @@ void printDeclList(char *id) {
 
 
 
-// ------- Diaxeirish operators --------
+// ------- Manage operators --------
 
 OPER *operList = NULL;
 
@@ -418,16 +419,16 @@ OPER *getOper(char *id) {
 
 // addOper
 //
-// Καταχωρείτην δήλωση ενός operator. Αν υπάρχει ήδη αντικαθίσταται
+// Adds an operator declaration. Replace if already exists.
 
 void addOper(char *id, int preced, ASS_TYPE assoc) {
 	OPER *op;
 
-	//an to id exei hdh dhlw8ei kanoume antikatastash
+	// if id is already registered we replace
 	if((op = getOper(id)))
 		free(op->id);
 	else {
-		//an den bre8hke dhmiourgoume kainourgio
+		// not found, create new
 		op = malloc(sizeof(OPER));
 		op->next = operList;
 		operList = op;

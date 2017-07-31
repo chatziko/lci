@@ -1,3 +1,5 @@
+// vim:noet:ts=3
+
 /* Lexical analyzer and parser
 
 	Copyright (C) 2004-8 Kostas Chatzikokolakis
@@ -147,8 +149,8 @@ int getToken(TOKEN *ptok) {
 			return PAR_OK;
 	}
 
-	//Εξοδος από το while σημαίνει ότι φτάσαμε σε EOF. Αν ο buffer δεν έχει αδειάσει
-	//σημαίνει ότι το τελευταίο token δεν πρόλαβε να ολοκληρωθεί
+	// Exiting while means that we reached EOF. If the buffer is not empty
+	// it means that the last token was not completed.
 	if(tokenBuffer[0] != EOF)
 		return PAR_ERROR;
 
@@ -160,9 +162,8 @@ int getToken(TOKEN *ptok) {
 // parse
 //
 // LL(1) parser
-// Ektelei ton klassiko algori8mo gia LL(1) top-down parsing. Xrhsimopoiei
-// ton pinaka grammar poy periexei tous kanones ths grammatikhs kai ton LL1
-// o opoios einai o klassikos pinakas apofashs kanonwn.
+// Implements the classic algorithm for LL(1) top-down parsing. Uses the 'grammar' array
+// which contains the grammar rules and the 'LL1' parsing table for selecting rules.
 
 int parse(void **progTree, int uGrammar) {
 	SYMB_INFO *stack[200],
@@ -175,7 +176,7 @@ int parse(void **progTree, int uGrammar) {
 	if(uGrammar >= 0)
 		mainSymb.type = uGrammar;
 
-	//insert main symbol in stack and read first token
+	// insert main symbol in stack and read first token
 	*spt++ = &mainSymb;
 	if(getToken(&curToken) != PAR_OK)
 		return PAR_ERROR;
@@ -184,9 +185,9 @@ int parse(void **progTree, int uGrammar) {
 		curSymb = *--spt;
 
 		if(curSymb->isTerminal) {
-			//termatiko symbolo
+			// terminal symbol
 			if(curSymb->type == curToken.type) {
-				//tairiazei me to symbolo sthn eisodo.
+				// matches the input symbol
 				curSymb->value = curToken.value;					//Apo8hkeysh timhs
 				if(getToken(&curToken) != PAR_OK)				//pairnoyme neo symbolo
 					return PAR_ERROR;
@@ -194,12 +195,12 @@ int parse(void **progTree, int uGrammar) {
 			} else
 				return PAR_ERROR;
 		} else {
-			//mh termatiko symbolo
+			// non-terminal symbol
 			ruleNo = LL1[curSymb->type - TRMNO][curToken.type];		//eyresh kanona
 			if(ruleNo == -1) return PAR_ERROR;								//syntaktiko la8os
 
-			//pros8hkh olwn twn symbolwn toy de3iou merous tou kanona sth stoiba me
-			//anapodh seira. Kratame ta symbola ayta ston pinaka chl
+			// add all symbols in the rule's RHS to the stack in reverse order. We keep
+			// these symbols in the chl array.
 			curSymb->ruleNo = ruleNo;
 			for(i = grammar[ruleNo].rsNo - 1; i >= 0; i--) {
 				SYMB_INFO *tmpSymb = malloc(sizeof(SYMB_INFO));
@@ -213,10 +214,10 @@ int parse(void **progTree, int uGrammar) {
 		}
 	}
 
-	//dhmioyrgia syntantikou dentrou
+	// create parse tree
 	buildParseTree(&mainSymb);
 
-	//epityxia
+	// success
 	if(progTree) *progTree = mainSymb.value;
 	return PAR_OK;
 }
@@ -224,25 +225,24 @@ int parse(void **progTree, int uGrammar) {
 
 // buildParseTree
 //
-// Afou anagnwristei olh h eisodos kaleitai h buildParseTree h opoia
-// 3ekinwntas apo ta fylla toy dentroy kalei tis synarthseis epe3ergasias
-// ka8e kanona gia na sxhmatistei to syntaktiko dentro.
+// Called after scanning the whole input. Starting from the leaves, it calls
+// each rule's processing function to build the parse tree.
 
 void buildParseTree(SYMB_INFO *symb) {
 	int i;
 
-	//ean to symbolo einai termatiko tote den xreiazetai epe3ergasia
+	// terminal symbol, no processing is needed
 	if(symb->isTerminal)
 		return;
 
-	//prwta epe3ergazomaste ola ta paidia
+	// first process all children
 	for(i = 0; i < grammar[symb->ruleNo].rsNo; i++)
 		buildParseTree(symb->chl[i]);
 
-	//epe3ergasia toy kanona
+	// process the rule
 	grammar[symb->ruleNo].func(symb);
 
-	//apeley8erwsh mnhmhs
+	// free memory
 	for(i = 0; i < grammar[symb->ruleNo].rsNo; i++) {
 		if(symb->chl[i]->isTerminal)
 			free(symb->chl[i]->value);
