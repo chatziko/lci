@@ -71,6 +71,11 @@ extern int scLineNo;
 extern char *validChars[VALIDCHNO];
 extern STATE fsm[VALIDCHNO][STATENO];
 
+// (stefanos): Extern the interned strings.
+#include "str_intern.h"
+
+extern interned_str_t *interns;
+
 extern GRAM_RULE grammar[RULENO];
 extern int LL1[NONTRMNO][TRMNO];
 

@@ -46,6 +46,16 @@ int options[OPTNO] = {0, 0, 0, 0, 1};
 #ifndef NDEBUG
 extern int freeNo;
 #endif
+
+static char *DefOp;
+static char *ShowAlias;
+static char *Print;
+static char *FixedPoint;
+static char *Consult;
+static char *Set;
+static char *Help;
+static char *Quit;
+
 int execTerm(TERM *t) {
 	int redno = -1, res = 1,
 		showExec = getOption(OPT_SHOWEXEC);
@@ -54,6 +64,17 @@ int execTerm(TERM *t) {
 	char c;
 
 	trace = getOption(OPT_TRACE);
+
+	// (stefanos): Get string interned versions of the aliases - to
+	// be used by the execSystemCmd.
+	DefOp = str_intern("DefOp");
+	ShowAlias = str_intern("ShowAlias");
+	Print = str_intern("Print");
+	FixedPoint = str_intern("FixedPoint");
+	Consult = str_intern("Consult");
+	Set = str_intern("Set");
+	Help = str_intern("Help");
+	Quit = str_intern("Quit");
 
 	// remove operators before executing
 	termRemoveOper(t);
@@ -195,7 +216,7 @@ int execSystemCmd(TERM *t) {
 	if(t->type != TM_ALIAS)
 		return 1;
 
-	if(strcmp(t->name, "DefOp") == 0) {
+	if(t->name == DefOp) {
 		// DefOp name preced assoc
 		//
 		// Stores an operator's declaration
@@ -230,7 +251,7 @@ int execSystemCmd(TERM *t) {
 		// add the operator's declaration
 		addOper(strdup(oper), prec, ass);
 
-	} else if(strcmp(t->name, "ShowAlias") == 0) {
+	} else if(t->name == ShowAlias) {
 		// ShowAlias
 		//
 		// Prints the definition of all stored aliases, or of a specific one
@@ -246,7 +267,7 @@ int execSystemCmd(TERM *t) {
 
 		printDeclList(id);
 
-	} else if(strcmp(t->name, "Print") == 0) {
+	} else if(t->name == Print) {
 		// Print
 		//
 		// Prints the term given as a parameter
@@ -255,7 +276,7 @@ int execSystemCmd(TERM *t) {
 		termPrint(*--sp, 1);
 		printf("\n");
 
-	} else if(strcmp(t->name, "FixedPoint") == 0) {
+	} else if(t->name == FixedPoint) {
 		// FixedPoint
 		//
 		// Removes recursion from aliases using a fixed point combinator
@@ -271,7 +292,7 @@ int execSystemCmd(TERM *t) {
 		else
 			printf("No cycles found\n");
 
-	} else if(strcmp(t->name, "Consult") == 0) {
+	} else if(t->name == Consult) {
 		// Consult file
 		//
 		// Reads a file and executes its commands
@@ -289,7 +310,7 @@ int execSystemCmd(TERM *t) {
 			break;
 		}
 
-	} else if(strcmp(t->name, "Set") == 0) {
+	} else if(t->name == Set) {
 		// Set option value
 		//
 		// Changes the value of an option
@@ -322,7 +343,7 @@ int execSystemCmd(TERM *t) {
 
 		options[opt] = value;
 
-	} else if(strcmp(t->name, "Help") == 0) {
+	} else if(t->name == Help) {
 		// Help
 		//
 		// Prints help message
@@ -355,7 +376,7 @@ int execSystemCmd(TERM *t) {
 		printf("along with this program; if not, write to the Free Software\n");
 		printf("Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA\n\n");
 
-	} else if(strcmp(t->name, "Quit") == 0) {
+	} else if(t->name == Quit) {
 		if(parno != 0) return -1;
 		return -2;
 

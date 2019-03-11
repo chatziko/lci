@@ -173,6 +173,22 @@ int parse(void **progTree, int uGrammar) {
 	TOKEN curToken;
 	int ruleNo, i;
 
+	// (stefanos): Hard-coded aliases.
+	char *aliases[] = {
+		"DefOp",
+		"ShowAlias",
+		"Print",
+		"FixedPoint",
+		"Consult",
+		"Set",
+		"Help",
+		"Quit"
+	};
+
+	// (stefanos): Initialize string interning with those aliases, to be used
+	// by the procRule4 in grammar.c
+	initialize_string_interning(aliases, sizeof(aliases) / sizeof(*aliases));
+
 	if(uGrammar >= 0)
 		mainSymb.type = uGrammar;
 

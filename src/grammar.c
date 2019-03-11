@@ -260,11 +260,15 @@ void procRule3(SYMB_INFO *symb) {
 	$$ = newAppl(termChurchNum(num), $(1));
 }
 
+#include "str_intern.h"
+
 // T -> id T'
 void procRule4(SYMB_INFO *symb) {
 	TERM *s = termNew();
 	s->type = TM_ALIAS;
-	s->name = strdup(removeChar($(0), '\''));
+	// (stefanos): Intern the string.
+	s->name = str_intern(removeChar($(0), '\''));
+	// s->name = strdup(removeChar($(0), '\''));
 
 	$$ = newAppl(s, $(1));
 }
