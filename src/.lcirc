@@ -54,6 +54,19 @@
 ','	= Pair;
 '..'	= \n.\m.(m-n) (\l.(Pred (Head l)):l) m:Nil;
 
+# --- Combinator Calculi ----------------------------------------------
+
+# \f.f S K
+Iota = \f.f (\x.\y.\z.x z (y z)) \x.\y.x;
+
+# Iota Iota
+I = \x.x;
+
+# Iota I
+K = \x.\y.x;
+
+# Iota K
+S = \x.\y.\z.x z (y z);
 
 # --- Fixed point combinators -----------------------------------------
 
