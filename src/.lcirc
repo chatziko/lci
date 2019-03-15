@@ -167,11 +167,6 @@ Combine = \l1.\l2.
 		Nil
 		(Map (Pair (Head l1)) l2) ++ (Combine (Tail l1) l2);
 
-Sum = \l.
-	If (IsNil l)
-		0
-		(Head l) + (Sum (Tail l));
-
 Take = \n.\l.
 	If (IsZero n)
 		Nil
@@ -198,3 +193,12 @@ All = \f.\l.
 		(f (Head l)) && (All f (Tail l));
 
 
+# --- Folds -----------------------------------------------------------
+
+Foldr = \f.\i.\l.
+    If (IsNil l)
+        i
+        (f (Head l) (Foldr f i (Tail l)));
+
+Sum = \l.Foldr Add 0 l;
+Product = \l.Foldr Mult 1 l;
