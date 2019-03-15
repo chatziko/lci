@@ -56,9 +56,6 @@
 
 # --- Combinator Calculi ----------------------------------------------
 
-# \f.f S K
-Iota = \f.f (\x.\y.\z.x z (y z)) \x.\y.x;
-
 # Iota Iota
 I = \x.x;
 
@@ -67,6 +64,8 @@ K = \x.\y.x;
 
 # Iota K
 S = \x.\y.\z.x z (y z);
+
+Iota = \f.f S K;
 
 # --- Fixed point combinators -----------------------------------------
 
