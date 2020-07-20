@@ -1,0 +1,8 @@
+title: LCI
+description: A lambda calculus interpeter
+google_analytics: UA-3647898-1
+show_downloads: true
+theme: jekyll-theme-slate
+
+gems:
+  - jekyll-mentions
