@@ -2,7 +2,7 @@
 
 LCI is an interpreter for the lambda calculus. It supports many advanced
 features like recursion, user-defined operators and multiple evaluation
-strategies, all based on the pure calculus. It is FREE SOFTWARE licenced under
+strategies, all based on the pure calculus. It is free software licenced under
 the [GNU General Public Licence](http://www.gnu.org/licenses/gpl.html) (GPL).
 
 ## Install
@@ -46,6 +46,6 @@ Simply extract and run the `lci` executable.
 LCI's documentation covers most of the program's features and explains various
 topics concerning the lambda-calculus
 
-* [View](http://chatziko.github.io/lci/doc/index.html) documentation online.
-* [Download](http://chatziko.github.io/lci/lcidoc.pdf) documentation (pdf)
+* [View](https://www.chatzi.org/lci/doc/index.html) documentation online.
+* [Download](https://www.chatzi.org/lci/lcidoc.pdf) documentation (pdf)
 
