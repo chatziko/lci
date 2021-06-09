@@ -239,7 +239,7 @@ void procRule1(SYMB_INFO *symb) {
 void procRule2(SYMB_INFO *symb) {
 	TERM *s = termNew();
 	s->type = TM_VAR;
-	s->name = strdup($(0));
+	s->name = str_intern($(0));
 
 	$$ = newAppl(s, $(1));
 }
@@ -262,9 +262,7 @@ void procRule3(SYMB_INFO *symb) {
 void procRule4(SYMB_INFO *symb) {
 	TERM *s = termNew();
 	s->type = TM_ALIAS;
-	// (stefanos): Intern the string.
 	s->name = str_intern(removeChar($(0), '\''));
-	// s->name = strdup(removeChar($(0), '\''));
 
 	$$ = newAppl(s, $(1));
 }
@@ -281,7 +279,7 @@ void procRule6(SYMB_INFO *symb) {
 		  *v = termNew();
 
 	v->type = TM_VAR;
-	v->name = strdup($(1));
+	v->name = str_intern($(1));
 
 	s->type = TM_ABSTR;
 	s->lterm = v;
@@ -296,7 +294,7 @@ void procRule7(SYMB_INFO *symb) {
 	OPER *op = NULL;
 
 	t->type = TM_APPL;
-	t->name = $(0);
+	t->name = str_intern($(0));
 	t->rterm = newAppl($(1), $(2));
 
 	// If an operator exists that we get the precedence/associativity from the operator,

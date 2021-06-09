@@ -109,6 +109,9 @@ char *str_intern_range(char *start, char *end) {
 
 // NOTE(stefanos): That could be done faster, but that's easier.
 char *str_intern(char *str) {
+    if(str == NULL)
+        return NULL;
+
     return str_intern_range(str, str + strlen(str));
 }
 

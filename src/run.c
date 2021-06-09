@@ -249,7 +249,7 @@ int execSystemCmd(TERM *t) {
 			return -1;
 	
 		// add the operator's declaration
-		addOper(strdup(oper), prec, ass);
+		addOper(str_intern(oper), prec, ass);
 
 	} else if(t->name == ShowAlias) {
 		// ShowAlias

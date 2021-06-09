@@ -318,8 +318,8 @@ void removeCycle(CYCLE c) {
 
 	// To remove recursion, appearances of the alias within its body are replaced with the
 	// variable _me and we add a fixed point combinator.
-	// Hence the term A=N becomes A=Õ \_me.N[A:=_me]
-	termAlias2Var(t, newId, "_me");							// Change alias to _me
+	// Hence the term A=N becomes A=ï¿½ \_me.N[A:=_me]
+	termAlias2Var(t, newId, str_intern("_me"));						// Change alias to _me
 
 	newTerm = termNew();											// Application of Y to the term
 	newTerm->type = TM_APPL;
@@ -327,7 +327,7 @@ void removeCycle(CYCLE c) {
 
 	newTerm->lterm = termNew();								// Y
 	newTerm->lterm->type = TM_ALIAS;
-	newTerm->lterm->name = strdup("Y");
+	newTerm->lterm->name = str_intern("Y");
 
 	newTerm->rterm = termNew();								// Remove \_me.
 	tmpTerm = newTerm->rterm;
@@ -337,7 +337,7 @@ void removeCycle(CYCLE c) {
 
 	tmpTerm->lterm = termNew();								// _me variable
 	tmpTerm->lterm->type = TM_VAR;
-	tmpTerm->lterm->name = strdup("_me");
+	tmpTerm->lterm->name = str_intern("_me");
 
 	// Change declaration
 	// Note: can't use termAddDecl because it frees the old term (used in the new one)
