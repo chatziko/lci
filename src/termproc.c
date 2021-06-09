@@ -718,7 +718,7 @@ void termSetClosedFlag(TERM *t) {
 }
 
 list_t* termFreeVars(TERM *t) {
-	list_t *vars, *rvars;
+	list_t *vars = NULL, *rvars;
 	lnode_t *node;
 
 	switch(t->type) {
@@ -733,7 +733,7 @@ list_t* termFreeVars(TERM *t) {
 
 	 case(TM_ABSTR):
 		vars = termFreeVars(t->rterm);
-		while(node = list_find(vars, t->lterm->name, (int(*)(const void*, const void*))strcmp))
+		while((node = list_find(vars, t->lterm->name, (int(*)(const void*, const void*))strcmp)))
 			lnode_destroy(list_delete(vars, node));
 		break;
 
@@ -743,6 +743,9 @@ list_t* termFreeVars(TERM *t) {
 		list_transfer(vars, rvars, list_first(rvars));
 		list_destroy(rvars);
 		break;
+	
+	 default:
+		assert(0 /* invalid t-> type */);
 	}
 
 	t->closed = list_isempty(vars);
