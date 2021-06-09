@@ -53,31 +53,27 @@ pure calculus.
 Installation
 
 You can compile LCI in the standard unix way by executing
-   ./configure
-   make
-An executable named "lci" will be created in the src directory, you can run it from
+   cmake -B build
+   cd build && make
+An executable named "lci" will be created in the build directory, you can run it from
 there or you can install it in your system by executing
-   make install
+   sudo make install
 This will install lci executable in /usr/local/bin and .lcirc, queens.lci in
 /usr/local/share/lci. You can install lci in a different location by passing
-a --prefix=<dir> argument to ./confugure. See INSTALL for more info.
+-DCMAKE_INSTALL_PREFIX=<dir> to cmake.
 
 LCI has no hard dependencies (except from a descent C99 compiler, gcc is
 recommended) but it is recommended to install readline before compiling
 for better input handling, history, etc.
 
-If you downloaded the code from git then you need to install autotools and run
-./bootstrap to create the configure script.
-
 ----------------------------------------------------------------------------------
 
 Directory structure
 
-/		This folder contains text documents (README, TODO, licence, ...) and the
-		files needed by autotools.
+/		This folder contains text documents (README, TODO, licence, ...),
+    cmake files, etc.
 
-/src	This folder contains all source code. There is also a Makefile.am and some .lci
-		files (definitions of lambda-terms)
+/src	This folder contains all source code.
 
 /doc	Documentation files in TeX format (in english and greek language)
 
@@ -85,11 +81,8 @@ Directory structure
 
 Contribution
 
-If you have found a bug please report it by adding a ticket
-at LCI's development page (http://trac2.assembla.com/lci) or by sending an
-e-mail to kostas-at-chatzi-dot-org. Also if you 'd like to help improving
-LCI by sending patches or joining the deveopment team, you are something more than
-welcome!
+If you have found a bug please report it in github (https://github.com/chatziko/lci).
+Also feel free to send pull requests!
 
 Finally I 'd like very much to hear from people who are actually using LCI. If
 you find the program useful please let me know. Also feel free to send ideas or

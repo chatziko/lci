@@ -37,11 +37,11 @@ int main() {
 	TERM *t;
 	char *home = getenv("HOME"),
 		 *lcirc = ".lcirc",
-		 *lci_history = "/.lci_history",
 		 *path;
 
 #ifdef USE_READLINE
 	char *buffer = NULL;
+	char *lci_history = "/.lci_history";
 
 	// disable file auto-complete
 	// TODO: implement our own auto-complete
@@ -98,23 +98,24 @@ int main() {
 	   fprintf(stderr, "warning: no .lcirc file was found\n");
 
 	// read and execute commands
-	while(!feof(stdin)) {
+	while(1) {
 		// read command
 #ifdef USE_READLINE
 		free(buffer);
 		buffer = readline("lci> ");
+		if(!buffer) break;	// if eof exit
 #else
 		printf("lci> ");
 		fflush(stdout);
-		fgets(buffer, sizeof(buffer), stdin);
+		if(!fgets(buffer, sizeof(buffer), stdin))
+			break;	// if eof exit
 
 		// remove trailing '\n' (if exists)
 		for(s = buffer; *s != '\0' && *s != '\n'; s++)
 			;
 		*s = '\0';
 #endif
-		// if eof exit, if empty read again.
-		if(!buffer) break;
+		// if empty read again.
 		if(!*buffer) continue;
 
 #ifdef USE_READLINE

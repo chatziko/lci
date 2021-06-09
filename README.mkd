@@ -14,17 +14,14 @@ The latest version (v0.6) is
 To install extract the archive, cd to that directory and run:
 
 ```
-./configure
-make
+cmake -B build
+cd build && make
 sudo make install
 ```    
 
 It is recommended to install the **readline** library (and development files)
 before compiling. On ubuntu/debian install the ```libreadline-dev``` package.
-Check the output of ```./configure``` to see if you have it.
-
-You can also checkout the code from github. In this case you need to install
-autotools and run ```./bootstrap```.
+Check the output of ```cmake``` to see if you have it.
 
 #### Using Homebrew on OSX
 

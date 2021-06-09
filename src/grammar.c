@@ -220,7 +220,7 @@ void procRule0(SYMB_INFO *symb) {
 	if( ((TERM*)$(2))->closed )
 		termAddDecl(strdup(removeChar($(0), '\'')), $(2));
 	else
-		fprintf(stderr, "Error: alias %s is not a closed term and won't be registered\n", $(0));
+		fprintf(stderr, "Error: alias %s is not a closed term and won't be registered\n", (char*)$(0));
 
 	$$ = NULL;
 }
