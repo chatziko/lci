@@ -10,6 +10,13 @@ ADD_LATEX_DOCUMENT(lcidoc_gr.tex)
 set_target_properties(lcidoc PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(lcidoc_gr PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
+# target to make the html version
+add_custom_target(html
+	SOURCES lcidoc.tex
+	COMMAND hevea ${CMAKE_CURRENT_SOURCE_DIR}/lcidoc.tex
+	COMMAND hevea ${CMAKE_CURRENT_SOURCE_DIR}/lcidoc.tex
+)
+
 # 'doc' target, depends on all docs
 add_custom_target(doc)
-add_dependencies(doc lcidoc lcidoc_gr)
+add_dependencies(doc lcidoc lcidoc_gr html)
