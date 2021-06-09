@@ -145,8 +145,8 @@ TERM *termNew() {
 
 		switch(t->type) {
 		 case TM_VAR:
-		 case TM_ALIAS:
 			free(t->name);
+		 case TM_ALIAS:
 			break;
 	
 		 case TM_APPL:
