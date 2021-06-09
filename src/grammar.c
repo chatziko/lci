@@ -135,10 +135,6 @@ TOKEN_TYPE selectOper(char *name) {
 
 // ----------- Rule processing functions ----------------
 
-// Precedence and associativity of applications
-#define APPL_PRECED	100
-#define APPL_ASSOC	ASS_LEFT
-
 // newAppl
 //
 // The op term can be either NULL (in which case s1 is returned) or it can contain

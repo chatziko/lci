@@ -454,6 +454,7 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 	else {
 		newTerm = termNew();
 		newTerm->type = TM_APPL;
+		newTerm->preced = APPL_PRECED;
 		newTerm->name = NULL;
 		newTerm->lterm = termClone(f);
 		newTerm->rterm = termPower(f, a, pow-1);
@@ -698,6 +699,7 @@ void termRemoveOper(TERM *t) {
 			appl = termNew();
 			appl->type = TM_APPL;
 			appl->name = NULL;
+			appl->preced = APPL_PRECED;
 
 			appl->lterm = alias;
 			appl->rterm = t->lterm;

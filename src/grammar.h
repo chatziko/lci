@@ -103,6 +103,10 @@ typedef struct command_tag {
 
 TOKEN_TYPE selectOper(char *name);
 
+// Precedence and associativity of applications
+#define APPL_PRECED	100
+#define APPL_ASSOC	ASS_LEFT
+
 
 #endif
 
