@@ -1,6 +1,12 @@
 PROJECT(lci C)
 cmake_minimum_required(VERSION 2.8)
 
+# ignore if latex is not installed
+find_program(LATEX "latx")
+IF(NOT LATEX)
+	return()
+ENDIF()
+
 INCLUDE(../cmake/UseLATEX.cmake)
 
 ADD_LATEX_DOCUMENT(lcidoc.tex)
