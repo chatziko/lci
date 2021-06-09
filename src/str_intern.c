@@ -101,9 +101,8 @@ char *str_intern_range(char *start, char *end) {
             return interns[i].str;
         }
     }
-    char *str = smalloc(len);
-    memcpy(str, start, len);
-    str[len] = 0;
+    char *str = smalloc(len+1);
+    memcpy(str, start, len+1);
     buf_push(interns, (interned_str_t) { len, str });  // C99
     return str;
 }
