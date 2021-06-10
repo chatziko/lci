@@ -177,26 +177,22 @@ int execTerm(TERM *t) {
 // 	-1 If the term is a system command but there was some error during execution
 // 	-2 If the term is a Quit system command
 
+typedef enum {
+	STR_DEFOP, STR_SHOWALIAS, STR_PRINT, STR_FIXPOINT, STR_CONSULT, STR_SET, STR_HELP, STR_QUIT,
+	STR_XFX, STR_YFX, STR_XFY, STR_TRACE, STR_SHOWPAR, STR_GREEKLAMBDA, STR_SHOWEXEC, STR_READABLE, STR_ON, STR_OFF
+} STR_CONSTANTS;
+
+static char* str_constants[] = {
+	"DefOp", "ShowAlias", "Print", "FixedPoint", "Consult", "Set", "Help", "Quit",
+	"xfx", "yfx", "xfy", "trace", "showpar", "greeklambda", "showexec", "readable", "on", "off"
+};
+
 int execSystemCmd(TERM *t) {
-	// interned constnts
-	static char *DefOp;
-	static char *ShowAlias;
-	static char *Print;
-	static char *FixedPoint;
-	static char *Consult;
-	static char *Set;
-	static char *Help;
-	static char *Quit;
-	if(DefOp == NULL) {
-		DefOp = str_intern("DefOp");
-		ShowAlias = str_intern("ShowAlias");
-		Print = str_intern("Print");
-		FixedPoint = str_intern("FixedPoint");
-		Consult = str_intern("Consult");
-		Set = str_intern("Set");
-		Help = str_intern("Help");
-		Quit = str_intern("Quit");
-	}
+	// interned constants, initialize on first execution
+	static char* icon[sizeof(str_constants)/sizeof(char*)];
+	if(icon[0] == NULL)
+		for(int i = 0; i < sizeof(str_constants)/sizeof(char*); i++)
+			icon[i] = str_intern(str_constants[i]);
 
 	TERM *stack[10], **sp = stack, *par;
 	int parno = 0;
@@ -212,7 +208,7 @@ int execSystemCmd(TERM *t) {
 	if(t->type != TM_ALIAS)
 		return 1;
 
-	if(t->name == DefOp) {
+	if(t->name == icon[STR_DEFOP]) {
 		// DefOp name preced assoc
 		//
 		// Stores an operator's declaration
@@ -235,11 +231,11 @@ int execSystemCmd(TERM *t) {
 		// param 3: associativity
 		par = *--sp;
 		if(par->type != TM_ALIAS && par->type != TM_VAR) return -1;
-		if(strcmp(par->name, "xfx") == 0)
+		if(par->name == icon[STR_XFX])
 			ass = ASS_NONE;
-		else if(strcmp(par->name, "yfx") == 0)
+		else if(par->name == icon[STR_YFX])
 			ass = ASS_LEFT;
-		else if(strcmp(par->name, "xfy") == 0)
+		else if(par->name == icon[STR_XFY])
 			ass = ASS_RIGHT;
 		else
 			return -1;
@@ -247,7 +243,7 @@ int execSystemCmd(TERM *t) {
 		// add the operator's declaration
 		addOper(str_intern(oper), prec, ass);
 
-	} else if(t->name == ShowAlias) {
+	} else if(t->name == icon[STR_SHOWALIAS]) {
 		// ShowAlias
 		//
 		// Prints the definition of all stored aliases, or of a specific one
@@ -263,7 +259,7 @@ int execSystemCmd(TERM *t) {
 
 		printDeclList(id);
 
-	} else if(t->name == Print) {
+	} else if(t->name == icon[STR_PRINT]) {
 		// Print
 		//
 		// Prints the term given as a parameter
@@ -272,7 +268,7 @@ int execSystemCmd(TERM *t) {
 		termPrint(*--sp, 1);
 		printf("\n");
 
-	} else if(t->name == FixedPoint) {
+	} else if(t->name == icon[STR_FIXPOINT]) {
 		// FixedPoint
 		//
 		// Removes recursion from aliases using a fixed point combinator
@@ -288,7 +284,7 @@ int execSystemCmd(TERM *t) {
 		else
 			printf("No cycles found\n");
 
-	} else if(t->name == Consult) {
+	} else if(t->name == icon[STR_CONSULT]) {
 		// Consult file
 		//
 		// Reads a file and executes its commands
@@ -306,7 +302,7 @@ int execSystemCmd(TERM *t) {
 			break;
 		}
 
-	} else if(t->name == Set) {
+	} else if(t->name == icon[STR_SET]) {
 		// Set option value
 		//
 		// Changes the value of an option
@@ -317,29 +313,29 @@ int execSystemCmd(TERM *t) {
 
 		par = *--sp;
 		if(par->type != TM_VAR) return -1;
-		if(strcmp(par->name, "trace") == 0)
+		if(par->name == icon[STR_TRACE])
 			opt = OPT_TRACE;
-		else if(strcmp(par->name, "showpar") == 0)
+		else if(par->name == icon[STR_SHOWPAR])
 			opt = OPT_SHOWPAR;
-		else if(strcmp(par->name, "greeklambda") == 0)
+		else if(par->name == icon[STR_GREEKLAMBDA])
 			opt = OPT_GREEKLAMBDA;
-		else if(strcmp(par->name, "showexec") == 0)
+		else if(par->name == icon[STR_SHOWEXEC])
 			opt = OPT_SHOWEXEC;
-		else if(strcmp(par->name, "readable") == 0)
+		else if(par->name == icon[STR_READABLE])
 			opt = OPT_READABLE;
 		else
 			return -1;
 
 		par = *--sp;
-		if(strcmp(par->name, "on") == 0)
+		if(par->name == icon[STR_ON])
 			value = 1;
-		else if(strcmp(par->name, "off") == 0)
+		else if(par->name == icon[STR_OFF])
 			value = 0;
 		else return -1;
 
 		options[opt] = value;
 
-	} else if(t->name == Help) {
+	} else if(t->name == icon[STR_HELP]) {
 		// Help
 		//
 		// Prints help message
@@ -356,7 +352,7 @@ int execSystemCmd(TERM *t) {
 		printf("Help\t\t\tDisplays this message\n");
 		printf("Quit\t\t\tQuit the program (same as Ctrl-D)\n\n");
 
-	} else if(t->name == Quit) {
+	} else if(t->name == icon[STR_QUIT]) {
 		if(parno != 0) return -1;
 		return -2;
 
