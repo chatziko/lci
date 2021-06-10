@@ -17,9 +17,10 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")	# common flags
 
 # sources
-file(GLOB SOURCES src/*.c src/kazlib/*.c)
+file(GLOB SOURCES src/*.c src/**/*.c)
 
 add_executable(lci ${SOURCES})
+target_include_directories(lci PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/k08)
 
 # search for readline
 find_package(Readline)

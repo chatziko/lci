@@ -25,6 +25,7 @@
 #include <assert.h>
 
 #include "kazlib/list.h"
+#include "ADTVector.h"
 
 #include "termproc.h"
 #include "decllist.h"
@@ -33,10 +34,7 @@
 #include "str_intern.h"
 
 
-#define DEFAULT_POOL_SIZE 500
-TERM **termPool = NULL;
-int termPoolSize = 0;
-int termPoolIndex = -1;
+Vector termPool = NULL;
 
 
 // termPrint
@@ -100,58 +98,36 @@ void termPrint(TERM *t, int isMostRight) {
 // Free a TERM's memory
 
 void termFree(TERM *t) {
-	TERM **newPool;
-	int i;
-
 	// if NULL do nothing
 	if(!t) return;
 
-	termPoolIndex++;
-
-	// if the pool is full then create a new one of twice the size
-	if(termPoolIndex >= termPoolSize) {
-		termPoolSize = termPoolSize == 0 ? DEFAULT_POOL_SIZE : 2*termPoolSize;
-		newPool = malloc(termPoolSize * sizeof(TERM*));
-
-		// copy terms to new pool
-		for(i = 0; i < termPoolIndex; i++)
-			newPool[i] = termPool[i];
-
-		free(termPool);
-		termPool = newPool;
-	}
-
 	// put the term in the pool
-	termPool[termPoolIndex] = t;
+	vector_insert_last(termPool, t);
 }
 
 void termGC() {
-	while(termPoolIndex >= 0)
+	while(vector_size(termPool) > 0)
 		free(termNew());
-
-	if(termPoolSize > DEFAULT_POOL_SIZE) {
-		free(termPool);
-		termPool = NULL;
-		termPoolSize = 0;
-	}
-	termPoolIndex = -1;
 }
 
 TERM *termNew() {
-	TERM *t;
+	if(termPool == NULL)
+		termPool = vector_create(0, NULL);
 
-	if(termPoolIndex >= 0) {
-		t = termPool[termPoolIndex];
-		termPoolIndex--;
+	int size = vector_size(termPool);
+	if(size > 0) {
+		TERM* t = vector_get_at(termPool, size-1);
+		vector_remove_last(termPool);
 
 		if(t->type == TM_APPL || t->type == TM_ABSTR) {
 			termFree(t->lterm);
 			termFree(t->rterm);
 		}
-	} else
-		t = malloc(sizeof(TERM));
+		return t;
 
-	return t;
+	} else {
+		return malloc(sizeof(TERM));
+	}
 }
 
 // termClone
