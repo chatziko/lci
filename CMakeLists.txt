@@ -51,6 +51,13 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/queens.lci DESTINATION ${CMAKE_CURRENT
 install(TARGETS lci RUNTIME)
 install(FILES src/.lcirc src/queens.lci DESTINATION share/lci)
 
+# simple test
+add_custom_target(test
+	DEPENDS lci
+	COMMAND printf "Consult 'queens.lci'\\nQueens 5" | ./lci
+	VERBATIM
+)
+
 # Print all variables
 if(VERBOSE)
 	get_cmake_property(_variableNames VARIABLES)
