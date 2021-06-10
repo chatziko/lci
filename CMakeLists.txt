@@ -43,9 +43,10 @@ if (IOCTL_FOUND)
 	add_compile_definitions(HAS_IOCTL)
 endif()
 
-# copy some files to the build dir for easier debugging
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/.lcirc     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/queens.lci DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# copy some files to the build dir for easier debugging (configure_file has the advantage of
+# creating a dependency, modifying the source file will update the target).
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/.lcirc     ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/queens.lci ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 # installation
 install(TARGETS lci RUNTIME)
