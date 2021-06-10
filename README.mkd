@@ -1,3 +1,5 @@
+![run-tests](../../workflows/test/badge.svg)
+
 # LCI
 
 LCI is an interpreter for the lambda calculus. It supports many advanced
