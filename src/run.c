@@ -43,15 +43,6 @@ int options[OPTNO] = {0, 0, 0, 0, 1};
 extern int freeNo;
 #endif
 
-static char *DefOp;
-static char *ShowAlias;
-static char *Print;
-static char *FixedPoint;
-static char *Consult;
-static char *Set;
-static char *Help;
-static char *Quit;
-
 int execTerm(TERM *t) {
 	int redno = -1, res = 1,
 		showExec = getOption(OPT_SHOWEXEC);
@@ -60,17 +51,6 @@ int execTerm(TERM *t) {
 	char c;
 
 	trace = getOption(OPT_TRACE);
-
-	// (stefanos): Get string interned versions of the aliases - to
-	// be used by the execSystemCmd.
-	DefOp = str_intern("DefOp");
-	ShowAlias = str_intern("ShowAlias");
-	Print = str_intern("Print");
-	FixedPoint = str_intern("FixedPoint");
-	Consult = str_intern("Consult");
-	Set = str_intern("Set");
-	Help = str_intern("Help");
-	Quit = str_intern("Quit");
 
 	// remove operators before executing
 	termRemoveOper(t);
@@ -198,6 +178,26 @@ int execTerm(TERM *t) {
 // 	-2 If the term is a Quit system command
 
 int execSystemCmd(TERM *t) {
+	// interned constnts
+	static char *DefOp;
+	static char *ShowAlias;
+	static char *Print;
+	static char *FixedPoint;
+	static char *Consult;
+	static char *Set;
+	static char *Help;
+	static char *Quit;
+	if(DefOp == NULL) {
+		DefOp = str_intern("DefOp");
+		ShowAlias = str_intern("ShowAlias");
+		Print = str_intern("Print");
+		FixedPoint = str_intern("FixedPoint");
+		Consult = str_intern("Consult");
+		Set = str_intern("Set");
+		Help = str_intern("Help");
+		Quit = str_intern("Quit");
+	}
+
 	TERM *stack[10], **sp = stack, *par;
 	int parno = 0;
 
