@@ -97,7 +97,8 @@ void termFree(TERM *t) {
 	// if NULL do nothing
 	if(!t) return;
 
-	// put the term in the pool
+	// put the term in the pool, but dont recurse to subterms, they
+	// will be freed when the term is used (this seems to be faster).
 	vector_insert_last(termPool, t);
 }
 
@@ -115,6 +116,7 @@ TERM *termNew() {
 		TERM* t = vector_get_at(termPool, size-1);
 		vector_remove_last(termPool);
 
+		// free subterm (they are not freed when the term is freed)
 		if(t->type == TM_APPL || t->type == TM_ABSTR) {
 			termFree(t->lterm);
 			termFree(t->rterm);
@@ -176,7 +178,9 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 			if(mustClone) {
 				clone = termClone(N);
 				*M = *clone;
-				free(clone);		// TODO: return to pool
+
+				clone->lterm = clone->rterm = NULL;	// free but make sure that the
+				termFree(clone);					// subterms are not freed
 			} else
 				*M = *N;
 
@@ -333,10 +337,10 @@ int termConv(TERM *t) {
 			// eta-conversion
 			*t = *M;
 
-			// free memory
-			free(M);
-			free(L);
-			termFree(N);
+			// free terms. By freeing L we also free M,N, but we
+			// should _not_ free M's subterms (they are copied in t)
+			M->lterm = M->rterm = NULL;
+			termFree(L);
 			termFree(x);
 
 			return 1;
@@ -365,12 +369,12 @@ int termConv(TERM *t) {
 		if(t->preced == 255 && (res = termConv(t->rterm)) != 0)
 			return res;
 
-		L = t->lterm;
+		L = t->lterm;		// L = \x.M
 		x = L->lterm;
 		M = L->rterm;
 		N = t->rterm;
 
-		// beta-reduction
+		// beta-reduction: \x.M N -> M[x:=N]
 		closed = t->closed;
 		found = termSubst(x, M, N, 0);
 		*t = *M;
@@ -381,14 +385,14 @@ int termConv(TERM *t) {
 		// will disapear after the beta-conversion)
 		t->closed = M->closed || closed;
 
-		// free memory
-		free(L);
-		free(M);
-		termFree(x);
-		if(found)
-			free(N);
-		else
-			termFree(N);
+		// free terms. freeing L will also free x,M, but in case of M we
+		// should not free its subterms (which have been copied to t)
+		M->lterm = M->rterm = NULL;
+		termFree(L);
+
+		if(found)							// if N was substituted in M, we should
+			N->lterm = N->rterm = NULL;		// not free its subterms
+		termFree(N);
 
 		return 1;
 
@@ -564,7 +568,10 @@ int termAliasSubst(TERM *t) {
 
 	// substitute term
 	*t = *newTerm;
-	free(newTerm);			// TODO: return to pool
+
+	// free newTerm, but without its subterms (which are copied in t)
+	newTerm->lterm = newTerm->rterm = NULL;
+	termFree(newTerm);
 
 	return 0;
 }
