@@ -26,10 +26,6 @@
 #ifndef LIST_H
 #define LIST_H
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <limits.h>
 
 #ifdef KAZLIB_SIDEEFFECT_DEBUG

@@ -15,10 +15,6 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -134,7 +130,7 @@ int getToken(TOKEN *ptok) {
 			if(prevState != S_INI) {
 				ptok->type = prevState == S_OP
 					? selectOper(tbuf)
-					: prevState;
+					: (TOKEN_TYPE)prevState;
 				ptok->value = strdup(tbuf);
 			}
 		}

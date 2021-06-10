@@ -16,10 +16,6 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -135,10 +131,6 @@ TOKEN_TYPE selectOper(char *name) {
 
 // ----------- Rule processing functions ----------------
 
-// Precedence and associativity of applications
-#define APPL_PRECED	100
-#define APPL_ASSOC	ASS_LEFT
-
 // newAppl
 //
 // The op term can be either NULL (in which case s1 is returned) or it can contain
@@ -210,7 +202,7 @@ void procRule0(SYMB_INFO *symb) {
 
 	//c->type = CM_DECL;
 	//c->term = $(2);
-	//c->id = strdup(removeChar($(0), '\''));
+	//c->id = str_intern(removeChar($(0), '\''));
 
 	//$$ = c;
 
@@ -218,7 +210,7 @@ void procRule0(SYMB_INFO *symb) {
 	termSetClosedFlag($(2));
 
 	if( ((TERM*)$(2))->closed )
-		termAddDecl(strdup(removeChar($(0), '\'')), $(2));
+		termAddDecl(str_intern(removeChar($(0), '\'')), $(2));
 	else
 		fprintf(stderr, "Error: alias %s is not a closed term and won't be registered\n", (char*)$(0));
 
@@ -243,7 +235,7 @@ void procRule1(SYMB_INFO *symb) {
 void procRule2(SYMB_INFO *symb) {
 	TERM *s = termNew();
 	s->type = TM_VAR;
-	s->name = strdup($(0));
+	s->name = str_intern($(0));
 
 	$$ = newAppl(s, $(1));
 }
@@ -260,11 +252,13 @@ void procRule3(SYMB_INFO *symb) {
 	$$ = newAppl(termChurchNum(num), $(1));
 }
 
+#include "str_intern.h"
+
 // T -> id T'
 void procRule4(SYMB_INFO *symb) {
 	TERM *s = termNew();
 	s->type = TM_ALIAS;
-	s->name = strdup(removeChar($(0), '\''));
+	s->name = str_intern(removeChar($(0), '\''));
 
 	$$ = newAppl(s, $(1));
 }
@@ -281,7 +275,7 @@ void procRule6(SYMB_INFO *symb) {
 		  *v = termNew();
 
 	v->type = TM_VAR;
-	v->name = strdup($(1));
+	v->name = str_intern($(1));
 
 	s->type = TM_ABSTR;
 	s->lterm = v;
@@ -296,12 +290,12 @@ void procRule7(SYMB_INFO *symb) {
 	OPER *op = NULL;
 
 	t->type = TM_APPL;
-	t->name = $(0);
+	t->name = str_intern($(0));
 	t->rterm = newAppl($(1), $(2));
 
 	// If an operator exists that we get the precedence/associativity from the operator,
 	// otherwise the application has 100 yfx
-	if($(0)) op = getOper($(0));
+	if($(0)) op = getOper(str_intern($(0)));
 	t->preced = (op ? op->preced : APPL_PRECED);
 	t->assoc = (op ? op->assoc : APPL_ASSOC);
 
@@ -324,7 +318,7 @@ void procRule11(SYMB_INFO *symb) {
 
 // OPER -> op
 void procRule13(SYMB_INFO *symb) {
-	$$ = strdup($(0));
+	$$ = str_intern($(0));
 }
 
 // Simply sets $$ to NULL

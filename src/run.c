@@ -15,20 +15,15 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <signal.h>
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 #include <readline/readline.h>
-#endif
-#ifdef USE_IOCTL
+#elif defined(HAS_IOCTL)
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <termio.h>
@@ -46,6 +41,7 @@ int options[OPTNO] = {0, 0, 0, 0, 1};
 #ifndef NDEBUG
 extern int freeNo;
 #endif
+
 int execTerm(TERM *t) {
 	int redno = -1, res = 1,
 		showExec = getOption(OPT_SHOWEXEC);
@@ -74,12 +70,11 @@ int execTerm(TERM *t) {
 			redno++;
 
 			if(trace) {
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 				// calling rl_prep_terminal allows to read a single character
 				// from stdin (without waiting for <return>)
 				rl_prep_terminal(1);
-#endif
-#ifdef USE_IOCTL
+#elif defined(HAS_IOCTL)
 				// change tio settings to make getchar return immediately after the
 				// first character (without pressing enter). We keep the old
 				// settings to restore later.
@@ -96,7 +91,7 @@ int execTerm(TERM *t) {
 				printf("  ?> ");
 				fflush(stdout);
 				do {
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 					switch(c = rl_read_key()) {
 #else
 					switch(c = getchar()) {
@@ -119,10 +114,9 @@ int execTerm(TERM *t) {
 				} while(c == '?');
 
 				// restore terminal settings
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 				rl_deprep_terminal();
-#endif
-#ifdef USE_IOCTL
+#elif defined(HAS_IOCTL)
 				ioctl(0, TCSETA, &oldtio);
 #endif
 
@@ -180,7 +174,23 @@ int execTerm(TERM *t) {
 // 	-1 If the term is a system command but there was some error during execution
 // 	-2 If the term is a Quit system command
 
+typedef enum {
+	STR_DEFOP, STR_SHOWALIAS, STR_PRINT, STR_FIXPOINT, STR_CONSULT, STR_SET, STR_HELP, STR_QUIT,
+	STR_XFX, STR_YFX, STR_XFY, STR_TRACE, STR_SHOWPAR, STR_GREEKLAMBDA, STR_SHOWEXEC, STR_READABLE, STR_ON, STR_OFF
+} STR_CONSTANTS;
+
+static char* str_constants[] = {
+	"DefOp", "ShowAlias", "Print", "FixedPoint", "Consult", "Set", "Help", "Quit",
+	"xfx", "yfx", "xfy", "trace", "showpar", "greeklambda", "showexec", "readable", "on", "off"
+};
+
 int execSystemCmd(TERM *t) {
+	// interned constants, initialize on first execution
+	static char* icon[sizeof(str_constants)/sizeof(char*)];
+	if(icon[0] == NULL)
+		for(int i = 0; i < sizeof(str_constants)/sizeof(char*); i++)
+			icon[i] = str_intern(str_constants[i]);
+
 	TERM *stack[10], **sp = stack, *par;
 	int parno = 0;
 
@@ -195,7 +205,7 @@ int execSystemCmd(TERM *t) {
 	if(t->type != TM_ALIAS)
 		return 1;
 
-	if(strcmp(t->name, "DefOp") == 0) {
+	if(t->name == icon[STR_DEFOP]) {
 		// DefOp name preced assoc
 		//
 		// Stores an operator's declaration
@@ -218,19 +228,19 @@ int execSystemCmd(TERM *t) {
 		// param 3: associativity
 		par = *--sp;
 		if(par->type != TM_ALIAS && par->type != TM_VAR) return -1;
-		if(strcmp(par->name, "xfx") == 0)
+		if(par->name == icon[STR_XFX])
 			ass = ASS_NONE;
-		else if(strcmp(par->name, "yfx") == 0)
+		else if(par->name == icon[STR_YFX])
 			ass = ASS_LEFT;
-		else if(strcmp(par->name, "xfy") == 0)
+		else if(par->name == icon[STR_XFY])
 			ass = ASS_RIGHT;
 		else
 			return -1;
 	
 		// add the operator's declaration
-		addOper(strdup(oper), prec, ass);
+		addOper(str_intern(oper), prec, ass);
 
-	} else if(strcmp(t->name, "ShowAlias") == 0) {
+	} else if(t->name == icon[STR_SHOWALIAS]) {
 		// ShowAlias
 		//
 		// Prints the definition of all stored aliases, or of a specific one
@@ -246,7 +256,7 @@ int execSystemCmd(TERM *t) {
 
 		printDeclList(id);
 
-	} else if(strcmp(t->name, "Print") == 0) {
+	} else if(t->name == icon[STR_PRINT]) {
 		// Print
 		//
 		// Prints the term given as a parameter
@@ -255,7 +265,7 @@ int execSystemCmd(TERM *t) {
 		termPrint(*--sp, 1);
 		printf("\n");
 
-	} else if(strcmp(t->name, "FixedPoint") == 0) {
+	} else if(t->name == icon[STR_FIXPOINT]) {
 		// FixedPoint
 		//
 		// Removes recursion from aliases using a fixed point combinator
@@ -271,7 +281,7 @@ int execSystemCmd(TERM *t) {
 		else
 			printf("No cycles found\n");
 
-	} else if(strcmp(t->name, "Consult") == 0) {
+	} else if(t->name == icon[STR_CONSULT]) {
 		// Consult file
 		//
 		// Reads a file and executes its commands
@@ -289,7 +299,7 @@ int execSystemCmd(TERM *t) {
 			break;
 		}
 
-	} else if(strcmp(t->name, "Set") == 0) {
+	} else if(t->name == icon[STR_SET]) {
 		// Set option value
 		//
 		// Changes the value of an option
@@ -300,29 +310,29 @@ int execSystemCmd(TERM *t) {
 
 		par = *--sp;
 		if(par->type != TM_VAR) return -1;
-		if(strcmp(par->name, "trace") == 0)
+		if(par->name == icon[STR_TRACE])
 			opt = OPT_TRACE;
-		else if(strcmp(par->name, "showpar") == 0)
+		else if(par->name == icon[STR_SHOWPAR])
 			opt = OPT_SHOWPAR;
-		else if(strcmp(par->name, "greeklambda") == 0)
+		else if(par->name == icon[STR_GREEKLAMBDA])
 			opt = OPT_GREEKLAMBDA;
-		else if(strcmp(par->name, "showexec") == 0)
+		else if(par->name == icon[STR_SHOWEXEC])
 			opt = OPT_SHOWEXEC;
-		else if(strcmp(par->name, "readable") == 0)
+		else if(par->name == icon[STR_READABLE])
 			opt = OPT_READABLE;
 		else
 			return -1;
 
 		par = *--sp;
-		if(strcmp(par->name, "on") == 0)
+		if(par->name == icon[STR_ON])
 			value = 1;
-		else if(strcmp(par->name, "off") == 0)
+		else if(par->name == icon[STR_OFF])
 			value = 0;
 		else return -1;
 
 		options[opt] = value;
 
-	} else if(strcmp(t->name, "Help") == 0) {
+	} else if(t->name == icon[STR_HELP]) {
 		// Help
 		//
 		// Prints help message
@@ -337,25 +347,9 @@ int execSystemCmd(TERM *t) {
 		printf("Consult file\t\tReads and interprets the specified file\n");
 		printf("Set option (on|off)\tChanges one of the following options:\n\t\t\ttrace, showexec, showpar, greeklambda, readable\n");
 		printf("Help\t\t\tDisplays this message\n");
-		printf("Quit\t\t\tQuit the program (same as Ctrl-D)\n");
+		printf("Quit\t\t\tQuit the program (same as Ctrl-D)\n\n");
 
-		printf("\nCopyright (C) 2006  Kostas Chatzikokolakis\n\n");
-
-		printf("This program is free software; you can redistribute it and/or modify\n");
-		printf("it under the terms of the GNU General Public License as published by\n");
-		printf("the Free Software Foundation; either version 2 of the License, or\n");
-		printf("(at your option) any later version.\n\n");
-
-		printf("This program is distributed in the hope that it will be useful,\n");
-		printf("but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
-		printf("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n");
-		printf("GNU General Public License for more details.\n\n");
-
-		printf("You should have received a copy of the GNU General Public License\n");
-		printf("along with this program; if not, write to the Free Software\n");
-		printf("Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA\n\n");
-
-	} else if(strcmp(t->name, "Quit") == 0) {
+	} else if(t->name == icon[STR_QUIT]) {
 		if(parno != 0) return -1;
 		return -2;
 

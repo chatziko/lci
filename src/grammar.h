@@ -18,13 +18,9 @@
 #ifndef GRAMMAR_H
 #define GRAMMAR_H
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 
 // Add __attribute__((packed)) if compiler supports it
-#ifdef HAVE_ATTR_PACKED
+#if defined(__GNUC__) || defined(__clang__)
 #define ATTR_PACKED __attribute__((packed))
 #else
 #define ATTR_PACKED
@@ -102,6 +98,10 @@ typedef struct command_tag {
 
 
 TOKEN_TYPE selectOper(char *name);
+
+// Precedence and associativity of applications
+#define APPL_PRECED	100
+#define APPL_ASSOC	ASS_LEFT
 
 
 #endif

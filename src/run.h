@@ -16,10 +16,6 @@
 #ifndef RUN_H
 #define RUN_H
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include "grammar.h"
 
 #define OPTNO	5

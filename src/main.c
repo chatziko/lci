@@ -13,15 +13,11 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
@@ -39,7 +35,7 @@ int main() {
 		 *lcirc = ".lcirc",
 		 *path;
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 	char *buffer = NULL;
 	char *lci_history = "/.lci_history";
 
@@ -61,9 +57,7 @@ int main() {
 #endif
 
 	printf("lci - A lambda calculus interpreter\n");
-	printf("Copyright (C) 2004-8 Kostas Chatzikokolakis\n");
-	printf("This is FREE SOFTWARE and comes with ABSOLUTELY NO WARRANTY\n\n");
-	printf("Type a term, Help for info or Quit to exit.\n");
+	printf("Type a term, Help for info or Quit to exit.\n\n");
 
 	// consult .lcirc files in various places
 	int found = 0;
@@ -100,7 +94,7 @@ int main() {
 	// read and execute commands
 	while(1) {
 		// read command
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 		free(buffer);
 		buffer = readline("lci> ");
 		if(!buffer) break;	// if eof exit
@@ -118,7 +112,7 @@ int main() {
 		// if empty read again.
 		if(!*buffer) continue;
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 		// add line to readline history
 		add_history(buffer);
 #endif
@@ -134,7 +128,7 @@ int main() {
 			printf("Syntax error\n\n");
 	}
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 	// save history to ~/.lci_history
 	if(home) {
 		path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
@@ -142,9 +136,9 @@ int main() {
 		strcat(path, lci_history);
 
 		write_history(path);
-#if HAVE_HISTORY_TRUNCATE_FILE
+// #if HAVE_HISTORY_TRUNCATE_FILE
 		history_truncate_file(path, MAX_HISTORY_ENTRIES);
-#endif
+// #endif
 		free(path);
 	}
 #endif

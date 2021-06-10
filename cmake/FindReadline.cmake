@@ -19,6 +19,8 @@
 #  Readline_INCLUDE_DIR      The readline include directories. 
 #  Readline_LIBRARY          The readline library.
 
+# include(CheckFunctionExists)
+
 find_path(Readline_ROOT_DIR
     NAMES include/readline/readline.h
 )
@@ -41,6 +43,12 @@ else(Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
   FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG Readline_INCLUDE_DIR Readline_LIBRARY )
   MARK_AS_ADVANCED(Readline_INCLUDE_DIR Readline_LIBRARY)
 endif(Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
+
+# Readline might be present but without history_truncate_file
+# if (READLINE_FOUND)
+# 	set(CMAKE_REQUIRED_LIBRARIES "readline")
+# 	check_function_exists(history_truncate_file HISTORY_TRUNCATE_FILE_FOUND)
+# endif()
 
 mark_as_advanced(
     Readline_ROOT_DIR

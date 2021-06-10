@@ -15,27 +15,22 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
 #include "kazlib/list.h"
+#include "ADTVector.h"
 
 #include "termproc.h"
 #include "decllist.h"
 #include "parser.h"
 #include "run.h"
+#include "str_intern.h"
 
 
-#define DEFAULT_POOL_SIZE 500
-TERM **termPool = NULL;
-int termPoolSize = 0;
-int termPoolIndex = -1;
+Vector termPool = NULL;
 
 
 // termPrint
@@ -99,67 +94,36 @@ void termPrint(TERM *t, int isMostRight) {
 // Free a TERM's memory
 
 void termFree(TERM *t) {
-	TERM **newPool;
-	int i;
-
 	// if NULL do nothing
 	if(!t) return;
 
-	termPoolIndex++;
-
-	// if the pool is full then create a new one of twice the size
-	if(termPoolIndex >= termPoolSize) {
-		termPoolSize = termPoolSize == 0 ? DEFAULT_POOL_SIZE : 2*termPoolSize;
-		newPool = malloc(termPoolSize * sizeof(TERM*));
-
-		// copy terms to new pool
-		for(i = 0; i < termPoolIndex; i++)
-			newPool[i] = termPool[i];
-
-		free(termPool);
-		termPool = newPool;
-	}
-
 	// put the term in the pool
-	termPool[termPoolIndex] = t;
+	vector_insert_last(termPool, t);
 }
 
 void termGC() {
-	while(termPoolIndex >= 0)
+	while(vector_size(termPool) > 0)
 		free(termNew());
-
-	if(termPoolSize > DEFAULT_POOL_SIZE) {
-		free(termPool);
-		termPool = NULL;
-		termPoolSize = 0;
-	}
-	termPoolIndex = -1;
 }
 
 TERM *termNew() {
-	TERM *t;
+	if(termPool == NULL)
+		termPool = vector_create(0, NULL);
 
-	if(termPoolIndex >= 0) {
-		t = termPool[termPoolIndex];
-		termPoolIndex--;
+	int size = vector_size(termPool);
+	if(size > 0) {
+		TERM* t = vector_get_at(termPool, size-1);
+		vector_remove_last(termPool);
 
-		switch(t->type) {
-		 case TM_VAR:
-		 case TM_ALIAS:
-			free(t->name);
-			break;
-	
-		 case TM_APPL:
-			free(t->name);
-		 case TM_ABSTR:
+		if(t->type == TM_APPL || t->type == TM_ABSTR) {
 			termFree(t->lterm);
 			termFree(t->rterm);
-			break;
 		}
-	} else
-		t = malloc(sizeof(TERM));
+		return t;
 
-	return t;
+	} else {
+		return malloc(sizeof(TERM));
+	}
 }
 
 // termClone
@@ -176,8 +140,8 @@ TERM *termClone(TERM *t) {
 	//newTerm->assoc = t->assoc;			// assoc used only in parsing, no need to copy it
 
 	if(t->type == TM_VAR || t->type == TM_ALIAS)
-		newTerm->name = strdup(t->name);
-	else {														//TM_ABRST or TM_APPL
+		newTerm->name = t->name;			// fast copy, strings are interned
+	else {									// TM_ABRST or TM_APPL
 		newTerm->name = NULL;
 		newTerm->lterm = termClone(t->lterm);
 		newTerm->rterm = termClone(t->rterm);
@@ -208,12 +172,11 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 
 	switch(M->type) {
 	 case TM_VAR:
-	 	if(strcmp(M->name, x->name) == 0) {
-			free(M->name);
+	 	if(M->name == x->name) {		// fast compare, strings are interned
 			if(mustClone) {
 				clone = termClone(N);
 				*M = *clone;
-				free(clone);
+				free(clone);		// TODO: return to pool
 			} else
 				*M = *N;
 
@@ -235,7 +198,7 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 		P = M->rterm;
 
 		// case 1: x = y
-		if(strcmp(y->name, x->name) == 0)
+		if(y->name == x->name)	// fast comparison, strings are interned
 			break;
 
 		// If y is free in N then we should alpha-convert it to a different name to avoid capture
@@ -291,7 +254,8 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 	return found;
 }
 
-// Returns 1 if variable 'name' belongs to the free variables of term t, otherwise 0.
+// Returns 1 if variable 'name' (must be interned) belongs to the
+// free variables of term t, otherwise 0.
 
 #ifndef NDEBUG
 int freeNo;				// count the number of calls of termIsFree
@@ -306,14 +270,14 @@ int termIsFreeVar(TERM *t, char *name) {
 
 	switch(t->type) {
 	 case TM_VAR:
-		return (strcmp(t->name, name) == 0);
+		return t->name == name;
 
 	 case TM_APPL:
 		return termIsFreeVar(t->lterm, name) ||
 				 termIsFreeVar(t->rterm, name);
 
 	 case TM_ABSTR:
-		return strcmp(t->lterm->name, name) != 0 &&
+		return t->lterm->name != name &&
 				 termIsFreeVar(t->rterm, name);
 	
 	 case TM_ALIAS:
@@ -363,8 +327,8 @@ int termConv(TERM *t) {
 
 		if(L->type == TM_APPL &&
 			N->type == TM_VAR &&
-			strcmp(N->name, x->name) == 0
-			&& !termIsFreeVar(M, x->name)) {
+			N->name == x->name &&
+			!termIsFreeVar(M, x->name)) {
 
 			// eta-conversion
 			*t = *M;
@@ -454,6 +418,7 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 	else {
 		newTerm = termNew();
 		newTerm->type = TM_APPL;
+		newTerm->preced = APPL_PRECED;
 		newTerm->name = NULL;
 		newTerm->lterm = termClone(f);
 		newTerm->rterm = termPower(f, a, pow-1);
@@ -467,16 +432,24 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 // Creates and returns the church numeral corresponding to number n: \f.\x.f^n(x)
 
 TERM *termChurchNum(int n) {
+	// get interned strings on first call
+	static char* str_f = NULL;
+	static char* str_x = NULL;
+	if(str_f == NULL) {
+		str_f = str_intern("f");
+		str_x = str_intern("x");
+	}
+
 	TERM *l1 = termNew(),
 		  *l2 = termNew(),
 		  *f  = termNew(),
 		  *x  = termNew();
 
 	f->type = TM_VAR;
-	f->name = strdup("f");
+	f->name = str_f;
 
 	x->type = TM_VAR;
-	x->name = strdup("x");
+	x->name = str_x;
 
 	l1->type = TM_ABSTR;
 	l1->name = NULL;
@@ -506,16 +479,16 @@ int termNumber(TERM *t) {
 	// second term must be \x. with x != f
 	if(t->rterm->type != TM_ABSTR) return -1;
 	x = (t->rterm->lterm);
-	if(strcmp(f->name, x->name) == 0) return -1;
+	if(f->name == x->name) return -1;
 
 	// recognize term f^n(x), compute n
 	for(cur = t->rterm->rterm; ; cur = cur->rterm, n++) {
-		if(cur->type == TM_VAR && strcmp(cur->name, x->name) == 0)
+		if(cur->type == TM_VAR && cur->name == x->name)
 			return n;
 
 		if(cur->type != TM_APPL ||
 			cur->lterm->type != TM_VAR ||
-			strcmp(cur->lterm->name, f->name) != 0)
+			cur->lterm->name != f->name)
 			return -1;
 	}
 }	
@@ -536,7 +509,7 @@ int termIsList(TERM *t) {
 		// check for the form \s.s Head Tail
 		if(r->lterm->type == TM_APPL &&
 			r->lterm->lterm->type == TM_VAR &&
-			strcmp(r->lterm->lterm->name, t->lterm->name) == 0)
+			r->lterm->lterm->name == t->lterm->name)
 			return termIsList(r->rterm);
 		break;
 
@@ -544,7 +517,7 @@ int termIsList(TERM *t) {
 		// check for the form Nil: \x.\x.\y.x
 		if(r->rterm->type == TM_ABSTR &&
 			r->rterm->rterm->type == TM_VAR &&
-			strcmp(r->rterm->rterm->name, r->lterm->name) == 0)
+			r->rterm->rterm->name == r->lterm->name)
 			return 1;
 		break;
 
@@ -590,9 +563,8 @@ int termAliasSubst(TERM *t) {
 	assert(newTerm->closed == 1);
 
 	// substitute term
-	free(t->name);
 	*t = *newTerm;
-	free(newTerm);
+	free(newTerm);			// TODO: return to pool
 
 	return 0;
 }
@@ -617,7 +589,7 @@ int termRemoveAliases(TERM *t, char *id) {
 				  termRemoveAliases(t->rterm, id);
 
 	 case(TM_ALIAS):
-		return !id || strcmp(id, t->name) == 0
+		return !id || id == t->name
 			? termAliasSubst(t)
 			: 0;
 
@@ -631,8 +603,8 @@ int termRemoveAliases(TERM *t, char *id) {
 
 // termAlias2Var
 //
-// Replaces all occurrences of an aliast with a variable. Used when removing recursion
-// via a fixed point combinator.
+// Replaces all occurrences of an aliast with an already interned variable.
+// Used when removing recursion via a fixed point combinator.
 
 void termAlias2Var(TERM *t, char *alias, char *var) {
 
@@ -650,16 +622,19 @@ void termAlias2Var(TERM *t, char *alias, char *var) {
 		return;
 
 	 case(TM_ALIAS):
-		if(strcmp(alias, t->name) == 0) {
+		if(alias == t->name) {
 			t->type = TM_VAR;
-			free(t->name);
-			t->name = strdup(var);
+			t->name = var;		// already interned
 		}
 		return;
 	}
 }
 
 void termRemoveOper(TERM *t) {
+	static char* str_tilde = NULL;
+	if(str_tilde == NULL)
+		str_tilde = str_intern("~");
+
 	TERM *alias, *appl;
 	
 	switch(t->type) {
@@ -681,9 +656,8 @@ void termRemoveOper(TERM *t) {
 		//	Operator '~' has a special meaning, used during execution to decide the evaluation
 		//	order. Setting preced = 255 we just "mark" the term.
 
-		if(t->name && strcmp(t->name, "~") == 0) {
+		if(t->name == str_tilde) {
 			t->preced = 255;
-			free(t->name);
 			t->name = NULL;
 
 		} else if(t->name) {
@@ -698,6 +672,7 @@ void termRemoveOper(TERM *t) {
 			appl = termNew();
 			appl->type = TM_APPL;
 			appl->name = NULL;
+			appl->preced = APPL_PRECED;
 
 			appl->lterm = alias;
 			appl->rterm = t->lterm;
@@ -717,6 +692,10 @@ void termSetClosedFlag(TERM *t) {
 	list_destroy(fvars);
 }
 
+static int compare_pointers(const void *key1, const void *key2) {
+    return key1 - key2;
+}
+
 list_t* termFreeVars(TERM *t) {
 	list_t *vars = NULL, *rvars;
 	lnode_t *node;
@@ -733,7 +712,7 @@ list_t* termFreeVars(TERM *t) {
 
 	 case(TM_ABSTR):
 		vars = termFreeVars(t->rterm);
-		while((node = list_find(vars, t->lterm->name, (int(*)(const void*, const void*))strcmp)))
+		while((node = list_find(vars, t->lterm->name, compare_pointers)) != NULL)
 			lnode_destroy(list_delete(vars, node));
 		break;
 
@@ -757,7 +736,7 @@ list_t* termFreeVars(TERM *t) {
 //		a, b, ..., z, aa, ab, .., ba, bb, ..., zz, aaa, aab, ...
 
 char *getVariable(TERM *t1, TERM *t2) {
-	char s[10] = {'a', '\0'};
+	char s[10] = "a";
 	int curLen = 1, i;
 
 	// build strings until we find one not contained in one of the lists
@@ -777,7 +756,7 @@ char *getVariable(TERM *t1, TERM *t2) {
 	}
 
 	// string found, return a copy
-	return strdup(s);
+	return str_intern(s);
 }
 
 
