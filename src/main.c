@@ -57,9 +57,7 @@ int main() {
 #endif
 
 	printf("lci - A lambda calculus interpreter\n");
-	printf("Copyright (C) 2004-8 Kostas Chatzikokolakis\n");
-	printf("This is FREE SOFTWARE and comes with ABSOLUTELY NO WARRANTY\n\n");
-	printf("Type a term, Help for info or Quit to exit.\n");
+	printf("Type a term, Help for info or Quit to exit.\n\n");
 
 	// consult .lcirc files in various places
 	int found = 0;

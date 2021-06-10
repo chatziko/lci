@@ -354,23 +354,7 @@ int execSystemCmd(TERM *t) {
 		printf("Consult file\t\tReads and interprets the specified file\n");
 		printf("Set option (on|off)\tChanges one of the following options:\n\t\t\ttrace, showexec, showpar, greeklambda, readable\n");
 		printf("Help\t\t\tDisplays this message\n");
-		printf("Quit\t\t\tQuit the program (same as Ctrl-D)\n");
-
-		printf("\nCopyright (C) 2006  Kostas Chatzikokolakis\n\n");
-
-		printf("This program is free software; you can redistribute it and/or modify\n");
-		printf("it under the terms of the GNU General Public License as published by\n");
-		printf("the Free Software Foundation; either version 2 of the License, or\n");
-		printf("(at your option) any later version.\n\n");
-
-		printf("This program is distributed in the hope that it will be useful,\n");
-		printf("but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
-		printf("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n");
-		printf("GNU General Public License for more details.\n\n");
-
-		printf("You should have received a copy of the GNU General Public License\n");
-		printf("along with this program; if not, write to the Free Software\n");
-		printf("Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA\n\n");
+		printf("Quit\t\t\tQuit the program (same as Ctrl-D)\n\n");
 
 	} else if(t->name == Quit) {
 		if(parno != 0) return -1;
