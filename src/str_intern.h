@@ -15,11 +15,4 @@
 
 #pragma once
 
-typedef struct interned_str {
-    size_t len;
-    char *str;
-} interned_str_t;
-
-char *str_intern_range(char *start, char *end);
 char *str_intern(char *str);
-void initialize_string_interning(char **strings, size_t len);

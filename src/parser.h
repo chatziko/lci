@@ -23,6 +23,7 @@
 #endif
 
 #include "grammar.h"
+#include "str_intern.h"
 
 #define PAR_OK			0
 #define PAR_ERROR		-1
@@ -70,11 +71,6 @@ extern int scLineNo;
 // must be defined in some .c file
 extern char *validChars[VALIDCHNO];
 extern STATE fsm[VALIDCHNO][STATENO];
-
-// (stefanos): Extern the interned strings.
-#include "str_intern.h"
-
-extern interned_str_t *interns;
 
 extern GRAM_RULE grammar[RULENO];
 extern int LL1[NONTRMNO][TRMNO];
