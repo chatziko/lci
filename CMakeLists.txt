@@ -26,11 +26,15 @@ target_include_directories(lci PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/k08)
 find_package(Readline)
 
 if (READLINE_FOUND)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 	message(STATUS "Readline found")
 
-  add_compile_definitions(USE_READLINE)
-  target_link_libraries(lci readline)
+	add_compile_definitions(USE_READLINE)
+	target_link_libraries(lci readline)
+
+	# not sure if this is needed
+	# if (HISTORY_TRUNCATE_FILE_FOUND)
+	# 	add_compile_definitions(HAVE_HISTORY_TRUNCATE_FILE)
+	# endif(
 endif()
 
 # copy some files to the build dir for easier debugging

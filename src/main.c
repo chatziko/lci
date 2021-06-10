@@ -142,9 +142,9 @@ int main() {
 		strcat(path, lci_history);
 
 		write_history(path);
-#if HAVE_HISTORY_TRUNCATE_FILE
+// #if HAVE_HISTORY_TRUNCATE_FILE
 		history_truncate_file(path, MAX_HISTORY_ENTRIES);
-#endif
+// #endif
 		free(path);
 	}
 #endif
