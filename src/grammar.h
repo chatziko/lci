@@ -24,7 +24,7 @@
 
 
 // Add __attribute__((packed)) if compiler supports it
-#ifdef HAVE_ATTR_PACKED
+#if defined(__GNUC__) || defined(__clang__)
 #define ATTR_PACKED __attribute__((packed))
 #else
 #define ATTR_PACKED
