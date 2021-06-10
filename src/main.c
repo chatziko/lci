@@ -17,7 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
@@ -35,7 +35,7 @@ int main() {
 		 *lcirc = ".lcirc",
 		 *path;
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 	char *buffer = NULL;
 	char *lci_history = "/.lci_history";
 
@@ -94,7 +94,7 @@ int main() {
 	// read and execute commands
 	while(1) {
 		// read command
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 		free(buffer);
 		buffer = readline("lci> ");
 		if(!buffer) break;	// if eof exit
@@ -112,7 +112,7 @@ int main() {
 		// if empty read again.
 		if(!*buffer) continue;
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 		// add line to readline history
 		add_history(buffer);
 #endif
@@ -128,7 +128,7 @@ int main() {
 			printf("Syntax error\n\n");
 	}
 
-#ifdef USE_READLINE
+#ifdef HAS_READLINE
 	// save history to ~/.lci_history
 	if(home) {
 		path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
