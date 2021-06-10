@@ -30,7 +30,7 @@ DECL *declList = NULL;
 
 // termAddDecl
 //
-// Adds the term to the declaration list with the given id.
+// Adds the term to the declaration list with the given (interned) id.
 // If a term with this id already exists it is replaced.
 
 void termAddDecl(char *id, TERM *term) {
@@ -42,7 +42,6 @@ void termAddDecl(char *id, TERM *term) {
 	// if a declaration with this id exists, replace it
 	if((decl = getDecl(id))) {
 		//free declaration memory
-		free(decl->id);
 		termFree(decl->term);
 
 	} else {
@@ -61,13 +60,13 @@ void termAddDecl(char *id, TERM *term) {
 // getDecl
 //
 // Returns a record corresponding to the declaration with
-// the given id, or NULL if there is no such declaration.
+// the given (interned) id, or NULL if there is no such declaration.
 
 DECL *getDecl(char *id) {
 	DECL *decl;
 
 	for(decl = declList; decl; decl = decl->next)
-		if(strcmp(decl->id, id) == 0)
+		if(decl->id == id)
 			return decl;
 
 	return NULL;
@@ -114,7 +113,7 @@ void buildAliasList(DECL *d) {
 
 int searchAliasList(IDLIST *list, char *id) {
 	for(list = list->next; list; list = list->next)
-		if(strcmp(list->id, id) == 0)
+		if(list->id == id)
 			return 1;
 
 	return 0;
@@ -261,18 +260,20 @@ void removeCycle(CYCLE c) {
 	DECL *d, *decl;
 	TERM *t, *newTerm, *tmpTerm;
 	char buffer[500],
-		  newId[50],
+		  *newId,		// interned newId
 		  *tmpId;
 	int i;
 
 	// if there is more than one alias in the cycle, merge them in a tuple
 	if(c.size > 1) {
 		//construct new id
-		newId[0] = '\0';
+		char newId_raw[50];
+		newId_raw[0] = '\0';
 		for(i = 0, d = c.end; i < c.size; i++, d = d->prev) {
-			if(i > 0) strcat(newId, "_");
-			strcat(newId, d->id);
+			if(i > 0) strcat(newId_raw, "_");
+			strcat(newId_raw, d->id);
 		}
+		newId = str_intern(newId_raw);
 
 		// construct tupled function
 		strcpy(buffer, "\\y.y ");
@@ -288,7 +289,7 @@ void removeCycle(CYCLE c) {
 		parse((void**)&t, TK_TERM);
 
 		termSetClosedFlag(t);				// mark sub-terms as closed
-		termAddDecl(strdup(newId), t);
+		termAddDecl(newId, t);
 
 		// replace aliases with their corresponding terms
 		termRemoveAliases(t, NULL);
@@ -296,7 +297,7 @@ void removeCycle(CYCLE c) {
 		// Aliases contained in the cycle have been merged in a tuple.
 		// So their appearances are replaced by Index calls
 		for(i = 0, d = c.end; i < c.size; i++) {
-			tmpId = strdup(d->id);
+			tmpId = d->id;
 			d = d->prev;
 
 			tmpTerm = getIndexTerm(c.size, i, newId);
@@ -309,7 +310,7 @@ void removeCycle(CYCLE c) {
 		}
 	} else {
 		t = c.start->term;
-		strcpy(newId, c.start->id);
+		newId = c.start->id;
 	}
 
 	// To remove recursion, appearances of the alias within its body are replaced with the
@@ -407,7 +408,7 @@ OPER *getOper(char *id) {
 	OPER *op;
 
 	for(op = operList; op; op = op->next)
-		if(strcmp(op->id, id) == 0)
+		if(op->id == id)
 			return op;
 
 	return NULL;

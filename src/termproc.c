@@ -736,7 +736,7 @@ list_t* termFreeVars(TERM *t) {
 //		a, b, ..., z, aa, ab, .., ba, bb, ..., zz, aaa, aab, ...
 
 char *getVariable(TERM *t1, TERM *t2) {
-	char s[10] = {'a', '\0'};
+	char s[10] = "a";
 	int curLen = 1, i;
 
 	// build strings until we find one not contained in one of the lists
@@ -756,7 +756,7 @@ char *getVariable(TERM *t1, TERM *t2) {
 	}
 
 	// string found, return a copy
-	return strdup(s);
+	return str_intern(s);
 }
 
 

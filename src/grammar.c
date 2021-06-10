@@ -202,7 +202,7 @@ void procRule0(SYMB_INFO *symb) {
 
 	//c->type = CM_DECL;
 	//c->term = $(2);
-	//c->id = strdup(removeChar($(0), '\''));
+	//c->id = str_intern(removeChar($(0), '\''));
 
 	//$$ = c;
 
@@ -210,7 +210,7 @@ void procRule0(SYMB_INFO *symb) {
 	termSetClosedFlag($(2));
 
 	if( ((TERM*)$(2))->closed )
-		termAddDecl(strdup(removeChar($(0), '\'')), $(2));
+		termAddDecl(str_intern(removeChar($(0), '\'')), $(2));
 	else
 		fprintf(stderr, "Error: alias %s is not a closed term and won't be registered\n", (char*)$(0));
 
@@ -295,7 +295,7 @@ void procRule7(SYMB_INFO *symb) {
 
 	// If an operator exists that we get the precedence/associativity from the operator,
 	// otherwise the application has 100 yfx
-	if($(0)) op = getOper($(0));
+	if($(0)) op = getOper(str_intern($(0)));
 	t->preced = (op ? op->preced : APPL_PRECED);
 	t->assoc = (op ? op->assoc : APPL_ASSOC);
 
@@ -318,7 +318,7 @@ void procRule11(SYMB_INFO *symb) {
 
 // OPER -> op
 void procRule13(SYMB_INFO *symb) {
-	$$ = strdup($(0));
+	$$ = str_intern($(0));
 }
 
 // Simply sets $$ to NULL
