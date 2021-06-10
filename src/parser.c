@@ -134,7 +134,7 @@ int getToken(TOKEN *ptok) {
 			if(prevState != S_INI) {
 				ptok->type = prevState == S_OP
 					? selectOper(tbuf)
-					: prevState;
+					: (TOKEN_TYPE)prevState;
 				ptok->value = strdup(tbuf);
 			}
 		}
