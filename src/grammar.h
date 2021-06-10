@@ -18,10 +18,6 @@
 #ifndef GRAMMAR_H
 #define GRAMMAR_H
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 
 // Add __attribute__((packed)) if compiler supports it
 #if defined(__GNUC__) || defined(__clang__)
