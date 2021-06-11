@@ -13,8 +13,7 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#ifndef RUN_H
-#define RUN_H
+#pragma once
 
 #include "grammar.h"
 
@@ -30,8 +29,3 @@ int consultFile(char *fname);
 int getOption(OPT opt);
 
 void sigHandler(int sig);
-
-
-#endif
-
-

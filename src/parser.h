@@ -15,8 +15,7 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#ifndef PARSER_H
-#define PARSER_H
+#pragma once
 
 #include "grammar.h"
 #include "str_intern.h"
@@ -70,8 +69,3 @@ extern STATE fsm[VALIDCHNO][STATENO];
 
 extern GRAM_RULE grammar[RULENO];
 extern int LL1[NONTRMNO][TRMNO];
-
-
-#endif
-
-

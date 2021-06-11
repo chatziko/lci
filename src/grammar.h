@@ -15,8 +15,7 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#ifndef GRAMMAR_H
-#define GRAMMAR_H
+#pragma once
 
 
 // Add __attribute__((packed)) if compiler supports it
@@ -102,8 +101,3 @@ TOKEN_TYPE selectOper(char *name);
 // Precedence and associativity of applications
 #define APPL_PRECED	100
 #define APPL_ASSOC	ASS_LEFT
-
-
-#endif
-
-

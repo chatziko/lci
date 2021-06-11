@@ -13,8 +13,7 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#ifndef DECLLIST_H
-#define DECLLIST_H
+#pragma once
 
 #include "ADTVector.h"
 #include "grammar.h"
@@ -52,8 +51,3 @@ void printDeclList(char *id);
 
 OPER *getOper(char *id);
 void addOper(char *id, int preced, ASS_TYPE assoc);
-
-
-#endif
-
-

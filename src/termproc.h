@@ -13,8 +13,7 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details. */
 
-#ifndef TERMPROC_H
-#define TERMPROC_H
+#pragma once
 
 #include "kazlib/list.h"
 #include "grammar.h"
@@ -45,8 +44,3 @@ void termSetClosedFlag(TERM *t);
 list_t* termFreeVars(TERM *t);
 
 char *getVariable(TERM *t1, TERM *t2);
-
-
-#endif
-
-
