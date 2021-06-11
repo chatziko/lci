@@ -56,15 +56,16 @@ install(FILES src/.lcirc src/queens.lci DESTINATION share/lci)
 enable_testing()
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
-add_test(NAME queens
-	COMMAND sh -c "printf \"Consult 'queens.lci'\\nQueens 5\" | ./lci"
+add_test(build make lci)		# make sure lci is build, strangly I couldn't find a way to add a dependency
+add_test(queens
+	sh -c "printf \"Consult 'queens.lci'\\nQueens 5\" | ./lci"
 )
 set_tests_properties(queens PROPERTIES
 	PASS_REGULAR_EXPRESSION "\\[\\[\\\\y.y, 3, 5, 2, 4\\], \\[\\\\y.y, 4, 2, 5, 3\\], \\[2, 4, \\\\y.y, 3, 5\\], \\[2, 5, 3, \\\\y.y, 4\\], \\[3, \\\\y.y, 4, 2, 5\\], \\[3, 5, 2, 4, \\\\y.y\\], \\[4, \\\\y.y, 3, 5, 2\\], \\[4, 2, 5, 3, \\\\y.y\\], \\[5, 2, 4, \\\\y.y, 3\\], \\[5, 3, \\\\y.y, 4, 2\\]\\]"
 )
 
-add_test(NAME fixed_point
-	COMMAND sh -c "printf \"FixedPoint\\nAppend 3:4:Nil 5:Nil\" | ./lci"
+add_test(fixed_point
+	sh -c "printf \"FixedPoint\\nAppend 3:4:Nil 5:Nil\" | ./lci"
 )
 set_tests_properties(fixed_point PROPERTIES
 	PASS_REGULAR_EXPRESSION "\\[3, 4, 5\\]"
