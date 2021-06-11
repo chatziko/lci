@@ -40,17 +40,12 @@ typedef struct {
 	int size;
 } GraphCycle;
 
-typedef struct tag_decl {
-	char *id;
-	TERM *term;
-} DECL;
+
+static Map declarations = NULL;		// id => TERM
+static Map operators = NULL;		// id => OPER
 
 
-static Map declarations = NULL;
-static Map operators = NULL;
-
-
-static DECL *getDecl(char *id);
+static TERM *getDeclarationTerm(char *id);
 
 static void findAliases(TERM *t, Vector aliases);
 static GraphCycle dfs(GraphNode *curNode, Map graph);
@@ -73,33 +68,20 @@ void termAddDecl(char *id, TERM *term) {
 
 	if(declarations == NULL) {
 		// strings are interned, so we can just compare them as pointers
-		declarations = map_create(compare_pointers, NULL, free);
+		declarations = map_create(compare_pointers, NULL, NULL);
 		map_set_hash_function(declarations, hash_pointer);
 	}
 
-	// if a declaration with this id exists, replace it
-	DECL *decl = getDecl(id);
-
-	if(decl != NULL) {
-		// free the term, it's going to be replaced
-		termFree(decl->term);
-
-	} else {
-		// if declaration not found, create a new one
-		decl = malloc(sizeof(DECL));
-		map_insert(declarations, id, decl);
-	}
-
-	decl->id = id;
-	decl->term = term;
+	// if a declaration with this id exists, it will be replaced
+	map_insert(declarations, id, term);
 }
 
-// getDecl
+// getDeclarationTerm
 //
-// Returns a record corresponding to the declaration with
+// Returns the term corresponding to the declaration with
 // the given (interned) id, or NULL if there is no such declaration.
 
-static DECL *getDecl(char *id) {
+static TERM *getDeclarationTerm(char *id) {
 	return declarations  != NULL
 		? map_find(declarations, id)
 		: NULL;
@@ -110,10 +92,10 @@ static DECL *getDecl(char *id) {
 // Returns a clone of the term stored with the given id
 
 TERM *termFromDecl(char *id) {
-	DECL *decl = getDecl(id);
+	TERM *term = getDeclarationTerm(id);
 
-	return decl
-		? termClone(decl->term)
+	return term != NULL
+		? termClone(term)
 		: NULL;
 }
 
@@ -160,17 +142,18 @@ int findAndRemoveCycle() {
 	map_set_hash_function(graph, hash_pointer);
 
 	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-		DECL *decl = map_node_value(declarations, node);
+		char *id = map_node_key(declarations, node);
+		TERM *term = map_node_value(declarations, node);
 
 		GraphNode *node = malloc(sizeof(GraphNode));
-		node->id = decl->id;
+		node->id = id;
 		node->flag = 0;
 		node->prev = NULL;
 		node->neighbours = vector_create(0, NULL);		// vector of ids
 
-		findAliases(decl->term, node->neighbours);
+		findAliases(term, node->neighbours);
 
-		map_insert(graph, decl->id, node);
+		map_insert(graph, id, node);
 	}
 
 	// DFS might need to be executed multiple times if the graph is not connected
@@ -316,12 +299,12 @@ static void removeCycle(GraphCycle cycle) {
 
 			// replace this specific alias with its definition in the whole program
 			for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-				DECL *decl = map_node_value(declarations, node);
-				termRemoveAliases(decl->term, tmpId);
+				TERM *term = map_node_value(declarations, node);
+				termRemoveAliases(term, tmpId);
 			}
 		}
 	} else {
-		t = getDecl(cycle.start->id)->term;
+		t = getDeclarationTerm(cycle.start->id);
 		newId = cycle.start->id;
 	}
 
@@ -351,7 +334,7 @@ static void removeCycle(GraphCycle cycle) {
 	// Change declaration
 	// Note: can't use termAddDecl because it frees the old term (used in the new one)
 	termSetClosedFlag(newTerm);
-	getDecl(newId)->term = newTerm;
+	termAddDecl(newId, newTerm);
 }
 
 // getIndexTerm
@@ -386,19 +369,21 @@ static TERM *getIndexTerm(int varno, int n, char *tuple) {
 void printDeclList(char *id) {
 
 	if(id) {
-		DECL *d = getDecl(id);
-		if(d == NULL) {
+		TERM *term = getDeclarationTerm(id);
+		if(term == NULL) {
 			printf("Error: alias %s not found.\n", id);
 		} else {
 			printf("%s = ", id);
-			termPrint(d->term, 1);
+			termPrint(term, 1);
 			printf("\n");
 		}
 	} else {
 		for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-			DECL *d = map_node_value(declarations, node);
-			printf("%s = ", d->id);
-			termPrint(d->term, 1);
+			char *id = map_node_key(declarations, node);
+			TERM *term = map_node_value(declarations, node);
+
+			printf("%s = ", id);
+			termPrint(term, 1);
 			printf("\n");
 		}
 	}
