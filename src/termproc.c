@@ -105,6 +105,9 @@ void termFree(TERM *t) {
 void termGC() {
 	while(vector_size(termPool) > 0)
 		free(termNew());
+
+	vector_destroy(termPool);
+	termPool = NULL;
 }
 
 TERM *termNew() {
