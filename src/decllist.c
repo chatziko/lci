@@ -20,13 +20,29 @@
 #include <string.h>
 #include <assert.h>
 
+#include "ADTMap.h"
 #include "decllist.h"
 #include "termproc.h"
 #include "parser.h"
 
+static Map declarations = NULL;
+static Map operators = NULL;
 
-DECL *declList = NULL;
 
+static DECL *getDecl(char *id);
+
+static void buildAliasList(DECL *d);
+static int searchAliasList(IDLIST *list, char *id);
+static void findAliases(TERM *t, IDLIST *list);
+
+static CYCLE dfs(DECL *curNode);
+static int getCycleSize(DECL *start, DECL *end);
+static void removeCycle(CYCLE c);
+static TERM *getIndexTerm(int varno, int n, char *tuple);
+
+static int compare_pointers(Pointer a, Pointer b) {
+	return a - b;
+}
 
 // termAddDecl
 //
@@ -34,22 +50,28 @@ DECL *declList = NULL;
 // If a term with this id already exists it is replaced.
 
 void termAddDecl(char *id, TERM *term) {
-	DECL *decl;
-
 	// declared term must be closed
 	assert(term->closed);
 
+	if(declarations == NULL) {
+		// strings are interned, so we can just compare them as pointers
+		declarations = map_create(compare_pointers, NULL, free);
+		map_set_hash_function(declarations, hash_pointer);
+	}
+
 	// if a declaration with this id exists, replace it
-	if((decl = getDecl(id))) {
-		//free declaration memory
+	DECL *decl = getDecl(id);
+
+	if(decl != NULL) {
+		// free the term, it's going to be replaced
 		termFree(decl->term);
 
 	} else {
 		// if declaration not found, create a new one
 		decl = malloc(sizeof(DECL));
 		decl->aliases.next = NULL;
-		decl->next = declList;
-		declList = decl;
+
+		map_insert(declarations, id, decl);
 	}
 
 	decl->id = id;
@@ -62,14 +84,10 @@ void termAddDecl(char *id, TERM *term) {
 // Returns a record corresponding to the declaration with
 // the given (interned) id, or NULL if there is no such declaration.
 
-DECL *getDecl(char *id) {
-	DECL *decl;
-
-	for(decl = declList; decl; decl = decl->next)
-		if(decl->id == id)
-			return decl;
-
-	return NULL;
+static DECL *getDecl(char *id) {
+	return declarations  != NULL
+		? map_find(declarations, id)
+		: NULL;
 }
 
 // termFromDecl
@@ -88,11 +106,9 @@ TERM *termFromDecl(char *id) {
 //
 // Deletes the old alias list and creates a new one
 
-void buildAliasList(DECL *d) {
-	IDLIST *idl, *tmp;
- 
+static void buildAliasList(DECL *d) {
 	//free aliases list
-	for(idl = d->aliases.next; idl; idl = tmp) {
+	for(IDLIST *idl = d->aliases.next, *tmp; idl; idl = tmp) {
 		tmp = idl->next;
 		free(idl);
 	}
@@ -111,7 +127,7 @@ void buildAliasList(DECL *d) {
 //
 // Returns 1 if id exists in list, otherwise 0
 
-int searchAliasList(IDLIST *list, char *id) {
+static int searchAliasList(IDLIST *list, char *id) {
 	for(list = list->next; list; list = list->next)
 		if(list->id == id)
 			return 1;
@@ -123,7 +139,7 @@ int searchAliasList(IDLIST *list, char *id) {
 //
 // Finds all aliases used by term t and adds them to 'list'
 
-void findAliases(TERM *t, IDLIST *list) {
+static void findAliases(TERM *t, IDLIST *list) {
 	IDLIST *tmp;
 
 	switch(t->type) {
@@ -158,22 +174,25 @@ void printCycle(DECL *start, DECL *end) {
 }
 
 int findCycle() {
-	DECL *curNode;
-	CYCLE bestCycle, newCycle;
+	CYCLE bestCycle;
 
 	bestCycle.size = 0;
 
 	// initialize DFS
-	for(curNode = declList; curNode; curNode = curNode->next)
-		curNode->flag = 0;
+	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
+		DECL* decl = map_node_value(declarations, node);
+		decl->flag = 0;
+	}
 
 	// DFS might need to be executed multiple times if the graph is not connected
-	for(curNode = declList; curNode; curNode = curNode->next)
-		if(curNode->flag == 0) {
-			newCycle = dfs(curNode);
+	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
+		DECL* decl = map_node_value(declarations, node);
+		if(decl->flag == 0) {
+			CYCLE newCycle = dfs(decl);
 			if(newCycle.size > bestCycle.size)
 				bestCycle = newCycle;
 		}
+	}
 
 	// if a cycle was found, remove it
 	if(bestCycle.size > 0) {
@@ -191,7 +210,7 @@ int findCycle() {
 // Depth first search for finding cycles. Finds and returns a maximal
 // cycle, i.e. one not contained in some other cycle.
 
-CYCLE dfs(DECL *curNode) {
+static CYCLE dfs(DECL *curNode) {
 	CYCLE bestCycle, newCycle;
 	DECL *newNode;
 	IDLIST *idl;
@@ -234,7 +253,7 @@ CYCLE dfs(DECL *curNode) {
 //
 // Returns the size of a cycle
 
-int getCycleSize(DECL *start, DECL *end) {
+static int getCycleSize(DECL *start, DECL *end) {
 	DECL *cur;
 	int size = 1;
 
@@ -256,7 +275,7 @@ int getCycleSize(DECL *start, DECL *end) {
 // If an alias does not call itself then its replacement in the body
 // of the other aliases could eliminate the need for a tuple.
 
-void removeCycle(CYCLE c) {
+static void removeCycle(CYCLE c) {
 	DECL *d, *decl;
 	TERM *t, *newTerm, *tmpTerm;
 	char buffer[500],
@@ -305,8 +324,10 @@ void removeCycle(CYCLE c) {
 			termAddDecl(tmpId, tmpTerm);
 
 			// replace this specific alias with its definition in the whole program
-			for(decl = declList; decl; decl = decl->next)
+			for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
+				DECL* decl = map_node_value(declarations, node);
 				termRemoveAliases(decl->term, tmpId);
+			}
 		}
 	} else {
 		t = c.start->term;
@@ -343,8 +364,10 @@ void removeCycle(CYCLE c) {
 	decl->term = newTerm;
 
 	// reconstruct all alias lists
-	for(decl = declList; decl; decl = decl->next)
-		buildAliasList(decl);	
+	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
+		DECL* decl = map_node_value(declarations, node);
+		buildAliasList(decl);
+	}
 }
 
 // getIndexTerm
@@ -353,7 +376,7 @@ void removeCycle(CYCLE c) {
 //   TUPLE \x1.\x2. ... \xvarno.x<n>
 // which chooses the n-th element of a varno-tuple
 
-TERM *getIndexTerm(int varno, int n, char *tuple) {
+static TERM *getIndexTerm(int varno, int n, char *tuple) {
 	TERM *t;
 	char buffer[500];
 	int i;
@@ -379,39 +402,34 @@ TERM *getIndexTerm(int varno, int n, char *tuple) {
 // Prints the entire declaration list
 
 void printDeclList(char *id) {
-	DECL *d;
 
-	if(id)
-		if(!(d = getDecl(id)))
+	if(id) {
+		DECL *d = getDecl(id);
+		if(d == NULL) {
 			printf("Error: alias %s not found.\n", id);
-		else {
+		} else {
 			printf("%s = ", id);
 			termPrint(d->term, 1);
 			printf("\n");
 		}
-	else
-		for(d = declList; d; d = d->next) {
+	} else {
+		for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
+			DECL* d = map_node_value(declarations, node);
 			printf("%s = ", d->id);
 			termPrint(d->term, 1);
 			printf("\n");
 		}
+	}
 }
 
 
 
 // ------- Manage operators --------
 
-OPER *operList = NULL;
-
-
 OPER *getOper(char *id) {
-	OPER *op;
-
-	for(op = operList; op; op = op->next)
-		if(op->id == id)
-			return op;
-
-	return NULL;
+	return operators != NULL
+		? map_find(operators, id)
+		: NULL;
 }
 
 // addOper
@@ -419,17 +437,22 @@ OPER *getOper(char *id) {
 // Adds an operator declaration. Replace if already exists.
 
 void addOper(char *id, int preced, ASS_TYPE assoc) {
-	OPER *op;
 
-	// if id is already registered we replace
-	if(!(op = getOper(id))) {
-		// not found, create new
-		op = malloc(sizeof(OPER));
-		op->next = operList;
-		operList = op;
+	if(operators == NULL) {
+		// strings are interned, so we can just compare them as pointers
+		operators = map_create(compare_pointers, NULL, free);
+		map_set_hash_function(operators, hash_pointer);
 	}
 
-	op->id = id;
+	// if id is already registered we replace
+	OPER *op = getOper(id);
+	if(op == NULL) {
+		// not found, create new
+		op = malloc(sizeof(OPER));
+		op->id = id;
+		map_insert(operators, id, op);
+	}
+
 	op->preced = preced;
 	op->assoc = assoc;
 }

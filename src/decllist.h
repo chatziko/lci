@@ -27,7 +27,6 @@ typedef struct tag_idlist {
 typedef struct tag_decl {
 	char *id;
 	TERM *term;
-	struct tag_decl *next;
 	IDLIST aliases;
 
 	//for DFS
@@ -39,7 +38,6 @@ typedef struct tag_oper{
 	char *id;
 	int preced;
 	ASS_TYPE assoc;
-	struct tag_oper *next;
 } OPER;
 
 typedef struct {
@@ -50,19 +48,10 @@ typedef struct {
 
 
 void termAddDecl(char *id, TERM *term);
-DECL *getDecl(char *id);
 TERM *termFromDecl(char *id);
 
-void buildAliasList(DECL *d);
-int searchAliasList(IDLIST *list, char *id);
-void findAliases(TERM *t, IDLIST *list);
-
 int findCycle();
-CYCLE dfs(DECL *curNode);
-int getCycleSize(DECL *start, DECL *end);
-void removeCycle(CYCLE c);
 
-TERM *getIndexTerm(int varno, int n, char *tuple);
 void printDeclList(char *id);
 
 OPER *getOper(char *id);
