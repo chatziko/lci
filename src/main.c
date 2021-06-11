@@ -143,6 +143,9 @@ int main() {
 	}
 #endif
 
+	// cleanup
+	str_intern_cleanup();
+
 	return 0;
 }
 

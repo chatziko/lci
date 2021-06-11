@@ -16,3 +16,4 @@
 #pragma once
 
 char *str_intern(char *str);
+void str_intern_cleanup();

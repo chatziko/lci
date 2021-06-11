@@ -42,3 +42,9 @@ char *str_intern(char *str) {
 
     return res;
 }
+
+void str_intern_cleanup() {
+    if(interns != NULL)
+        map_destroy(interns);
+    interns = NULL;
+}
