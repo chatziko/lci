@@ -52,11 +52,22 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/queens.lci ${CMAKE_CURRENT_BINARY
 install(TARGETS lci RUNTIME)
 install(FILES src/.lcirc src/queens.lci DESTINATION share/lci)
 
-# simple test
-add_custom_target(test
-	DEPENDS lci
-	COMMAND printf "Consult 'queens.lci'\\nQueens 5" | ./lci
-	VERBATIM
+# simple tests
+enable_testing()
+list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+
+add_test(NAME queens
+	COMMAND sh -c "printf \"Consult 'queens.lci'\\nQueens 5\" | ./lci"
+)
+set_tests_properties(queens PROPERTIES
+	PASS_REGULAR_EXPRESSION "\\[\\[\\\\y.y, 3, 5, 2, 4\\], \\[\\\\y.y, 4, 2, 5, 3\\], \\[2, 4, \\\\y.y, 3, 5\\], \\[2, 5, 3, \\\\y.y, 4\\], \\[3, \\\\y.y, 4, 2, 5\\], \\[3, 5, 2, 4, \\\\y.y\\], \\[4, \\\\y.y, 3, 5, 2\\], \\[4, 2, 5, 3, \\\\y.y\\], \\[5, 2, 4, \\\\y.y, 3\\], \\[5, 3, \\\\y.y, 4, 2\\]\\]"
+)
+
+add_test(NAME fixed_point
+	COMMAND sh -c "printf \"FixedPoint\\nAppend 3:4:Nil 5:Nil\" | ./lci"
+)
+set_tests_properties(fixed_point PROPERTIES
+	PASS_REGULAR_EXPRESSION "\\[3, 4, 5\\]"
 )
 
 # Print all variables
