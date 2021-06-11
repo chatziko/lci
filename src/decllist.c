@@ -25,18 +25,37 @@
 #include "termproc.h"
 #include "parser.h"
 
+
+// node in the declaration graph (used for finding cycles)
+typedef struct graph_node {
+	char* id;
+	Vector neighbours;				// ids of neighbours
+	int flag;
+	struct graph_node *prev;		// previous node in the dfs traversal
+} GraphNode;
+
+typedef struct {
+	GraphNode *start;
+	GraphNode *end;
+	int size;
+} GraphCycle;
+
+typedef struct tag_decl {
+	char *id;
+	TERM *term;
+} DECL;
+
+
 static Map declarations = NULL;
 static Map operators = NULL;
 
 
 static DECL *getDecl(char *id);
 
-static void buildAliasList(DECL *d);
 static void findAliases(TERM *t, Vector aliases);
-
-static CYCLE dfs(DECL *curNode);
-static int getCycleSize(DECL *start, DECL *end);
-static void removeCycle(CYCLE c);
+static GraphCycle dfs(GraphNode *curNode, Map graph);
+static int getCycleSize(GraphNode *start, GraphNode *end);
+static void removeCycle(GraphCycle c);
 static TERM *getIndexTerm(int varno, int n, char *tuple);
 
 static int compare_pointers(Pointer a, Pointer b) {
@@ -68,14 +87,11 @@ void termAddDecl(char *id, TERM *term) {
 	} else {
 		// if declaration not found, create a new one
 		decl = malloc(sizeof(DECL));
-		decl->aliases = NULL;
-
 		map_insert(declarations, id, decl);
 	}
 
 	decl->id = id;
 	decl->term = term;
-	buildAliasList(decl);
 }
 
 // getDecl
@@ -99,25 +115,6 @@ TERM *termFromDecl(char *id) {
 	return decl
 		? termClone(decl->term)
 		: NULL;
-}
-
-// buildAliasesList
-//
-// Deletes the old alias list and creates a new one
-
-static void buildAliasList(DECL *d) {
-	//free aliases list
-	if(d->aliases != NULL)
-		vector_destroy(d->aliases);
-
-	d->aliases = vector_create(0, NULL);
-	findAliases(d->term, d->aliases);
-
-	//print alias list
-	//printf("%s: ", d->id);
-	//for(tmp = d->aliases.next; tmp; tmp = tmp->next)
-		//printf("%s, ", tmp->id);
-	//printf("\n");
 }
 
 // findAliases
@@ -145,43 +142,61 @@ static void findAliases(TERM *t, Vector aliases) {
 	}
 }
 
-void printCycle(DECL *start, DECL *end) {
-	DECL *curNode;
-	for(curNode = end; curNode != start; curNode = curNode->prev)
+void printCycle(GraphNode *start, GraphNode *end) {
+	for(GraphNode *curNode = end; curNode != start; curNode = curNode->prev)
 		printf("%s, ", curNode->id);
 	printf("%s\n", start->id);
 }
 
-int findCycle() {
-	CYCLE bestCycle;
+static void destroy_graph_node(Pointer n) {
+	GraphNode *node = n;
+	vector_destroy(node->neighbours);
+	free(node);
+}
 
-	bestCycle.size = 0;
+int findAndRemoveCycle() {
+	// create the graph
+	Map graph = map_create(compare_pointers, NULL, destroy_graph_node);		// id => GraphNode
+	map_set_hash_function(graph, hash_pointer);
 
-	// initialize DFS
 	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-		DECL* decl = map_node_value(declarations, node);
-		decl->flag = 0;
+		DECL *decl = map_node_value(declarations, node);
+
+		GraphNode *node = malloc(sizeof(GraphNode));
+		node->id = decl->id;
+		node->flag = 0;
+		node->prev = NULL;
+		node->neighbours = vector_create(0, NULL);		// vector of ids
+
+		findAliases(decl->term, node->neighbours);
+
+		map_insert(graph, decl->id, node);
 	}
 
 	// DFS might need to be executed multiple times if the graph is not connected
-	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-		DECL* decl = map_node_value(declarations, node);
-		if(decl->flag == 0) {
-			CYCLE newCycle = dfs(decl);
+	GraphCycle bestCycle = { .size = 0 };
+
+	for(MapNode map_node = map_first(graph); map_node != MAP_EOF; map_node = map_next(graph, map_node)) {
+		GraphNode *node = map_node_value(graph, map_node);
+		if(node->flag == 0) {
+			GraphCycle newCycle = dfs(node, graph);
 			if(newCycle.size > bestCycle.size)
 				bestCycle = newCycle;
 		}
 	}
 
 	// if a cycle was found, remove it
+	int res = 0;
 	if(bestCycle.size > 0) {
 		//printf("best cycle size: %d\n", bestCycle.size);
 		//printCycle(bestCycle.start, bestCycle.end);
 		removeCycle(bestCycle);
-		return 1;
+		res = 1;
 	}
 
-	return 0;
+	map_destroy(graph);
+
+	return res;
 }
 
 // dfs
@@ -189,9 +204,8 @@ int findCycle() {
 // Depth first search for finding cycles. Finds and returns a maximal
 // cycle, i.e. one not contained in some other cycle.
 
-static CYCLE dfs(DECL *curNode) {
-	CYCLE bestCycle, newCycle;
-	DECL *newNode;
+static GraphCycle dfs(GraphNode *curNode, Map graph) {
+	GraphCycle bestCycle, newCycle;
 	int curSize;
 
 	bestCycle.size = 0;
@@ -199,15 +213,17 @@ static CYCLE dfs(DECL *curNode) {
 	curNode->flag = 1;
 
 	// process neighborhoods
-	for(int i = 0; i < vector_size(curNode->aliases); i++) {
-		// if the alias is not defined, ignore it
-		if(!(newNode = getDecl(vector_get_at(curNode->aliases, i))))
+	for(int i = 0; i < vector_size(curNode->neighbours); i++) {
+		char *newNode_id = vector_get_at(curNode->neighbours, i);
+		GraphNode *newNode = map_find(graph, newNode_id);
+
+		if(!newNode) // if the alias is not defined, ignore it
 			continue;
 
 		switch(newNode->flag) {
 		 case 0:
 			 newNode->prev = curNode;
-			 newCycle = dfs(newNode);
+			 newCycle = dfs(newNode, graph);
 
 			 if(newCycle.size > bestCycle.size)
 				 bestCycle = newCycle;
@@ -231,11 +247,10 @@ static CYCLE dfs(DECL *curNode) {
 //
 // Returns the size of a cycle
 
-static int getCycleSize(DECL *start, DECL *end) {
-	DECL *cur;
+static int getCycleSize(GraphNode *start, GraphNode *end) {
 	int size = 1;
 
-	for(cur = end; cur != start; cur = cur->prev)
+	for(GraphNode *cur = end; cur != start; cur = cur->prev)
 		size++;
 
 	return size;
@@ -253,28 +268,27 @@ static int getCycleSize(DECL *start, DECL *end) {
 // If an alias does not call itself then its replacement in the body
 // of the other aliases could eliminate the need for a tuple.
 
-static void removeCycle(CYCLE c) {
-	DECL *d, *decl;
-	TERM *t, *newTerm, *tmpTerm;
+static void removeCycle(GraphCycle cycle) {
+	TERM *t;
 	char *newId;		// interned newId
-	int i;
 
 	// if there is more than one alias in the cycle, merge them in a tuple
-	if(c.size > 1) {
+	if(cycle.size > 1) {
 		//construct new id
-		char newId_raw[50];
-		newId_raw[0] = '\0';
-		for(i = 0, d = c.end; i < c.size; i++, d = d->prev) {
+		char newId_raw[50] = "";
+		GraphNode *node;
+		int i;
+		for(i = 0, node = cycle.end; i < cycle.size; i++, node = node->prev) {
 			if(i > 0) strcat(newId_raw, "_");
-			strcat(newId_raw, d->id);
+			strcat(newId_raw, node->id);
 		}
 		newId = str_intern(newId_raw);
 
 		// construct tupled function
 		char buffer[500];
 		strcpy(buffer, "\\y.y ");
-		for(i = 0, d = c.end; i < c.size; i++, d = d->prev) {
-			strcat(buffer, d->id);
+		for(i = 0, node = cycle.end; i < cycle.size; i++, node = node->prev) {
+			strcat(buffer, node->id);
 			strcat(buffer, " ");
 		}
 
@@ -292,23 +306,23 @@ static void removeCycle(CYCLE c) {
 
 		// Aliases contained in the cycle have been merged in a tuple.
 		// So their appearances are replaced by Index calls
-		for(i = 0, d = c.end; i < c.size; i++) {
-			char* tmpId = d->id;
-			d = d->prev;
+		for(i = 0, node = cycle.end; i < cycle.size; i++) {
+			char *tmpId = node->id;
+			node = node->prev;
 
-			tmpTerm = getIndexTerm(c.size, i, newId);
+			TERM *tmpTerm = getIndexTerm(cycle.size, i, newId);
 			termSetClosedFlag(tmpTerm);
 			termAddDecl(tmpId, tmpTerm);
 
 			// replace this specific alias with its definition in the whole program
 			for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-				DECL* decl = map_node_value(declarations, node);
+				DECL *decl = map_node_value(declarations, node);
 				termRemoveAliases(decl->term, tmpId);
 			}
 		}
 	} else {
-		t = c.start->term;
-		newId = c.start->id;
+		t = getDecl(cycle.start->id)->term;
+		newId = cycle.start->id;
 	}
 
 	// To remove recursion, appearances of the alias within its body are replaced with the
@@ -316,7 +330,7 @@ static void removeCycle(CYCLE c) {
 	// Hence the term A=N becomes A=� \_me.N[A:=_me]
 	termAlias2Var(t, newId, str_intern("_me"));						// Change alias to _me
 
-	newTerm = termNew();											// Application of Y to the term
+	TERM *newTerm = termNew();										// Application of Y to the term
 	newTerm->type = TM_APPL;
 	newTerm->name = NULL;
 
@@ -325,7 +339,7 @@ static void removeCycle(CYCLE c) {
 	newTerm->lterm->name = str_intern("Y");
 
 	newTerm->rterm = termNew();								// Remove \_me.
-	tmpTerm = newTerm->rterm;
+	TERM *tmpTerm = newTerm->rterm;
 	tmpTerm->type = TM_ABSTR;
 	tmpTerm->name = NULL;
 	tmpTerm->rterm = t;
@@ -337,14 +351,7 @@ static void removeCycle(CYCLE c) {
 	// Change declaration
 	// Note: can't use termAddDecl because it frees the old term (used in the new one)
 	termSetClosedFlag(newTerm);
-	decl = getDecl(newId);
-	decl->term = newTerm;
-
-	// reconstruct all alias lists
-	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-		DECL* decl = map_node_value(declarations, node);
-		buildAliasList(decl);
-	}
+	getDecl(newId)->term = newTerm;
 }
 
 // getIndexTerm
@@ -354,13 +361,10 @@ static void removeCycle(CYCLE c) {
 // which chooses the n-th element of a varno-tuple
 
 static TERM *getIndexTerm(int varno, int n, char *tuple) {
-	TERM *t;
-	char buffer[500];
-	int i;
-
 	//build string
+	char buffer[500];
 	sprintf(buffer, "%s (", tuple);
-	for(i = 0; i < varno; i++)
+	for(int i = 0; i < varno; i++)
 		sprintf(buffer + strlen(buffer), "\\x%d.", i);
 
 	sprintf(buffer + strlen(buffer), "x%d)", n);
@@ -369,6 +373,7 @@ static TERM *getIndexTerm(int varno, int n, char *tuple) {
 	scInputType = SC_BUFFER;
 	scInput = buffer;
 	getToken(NULL);
+	TERM *t;
 	parse((void**)&t, TK_TERM);
 
 	return t;
@@ -391,7 +396,7 @@ void printDeclList(char *id) {
 		}
 	} else {
 		for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
-			DECL* d = map_node_value(declarations, node);
+			DECL *d = map_node_value(declarations, node);
 			printf("%s = ", d->id);
 			termPrint(d->term, 1);
 			printf("\n");

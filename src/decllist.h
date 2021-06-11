@@ -19,33 +19,17 @@
 #include "grammar.h"
 
 
-typedef struct tag_decl {
-	char *id;
-	TERM *term;
-	Vector aliases;
-
-	//for DFS
-	int flag;
-	struct tag_decl *prev;
-} DECL;
-
 typedef struct tag_oper{ 
 	char *id;
 	int preced;
 	ASS_TYPE assoc;
 } OPER;
 
-typedef struct {
-	DECL *start;
-	DECL *end;
-	int size;
-} CYCLE;
-
 
 void termAddDecl(char *id, TERM *term);
 TERM *termFromDecl(char *id);
 
-int findCycle();
+int findAndRemoveCycle();
 
 void printDeclList(char *id);
 

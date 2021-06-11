@@ -273,7 +273,7 @@ int execSystemCmd(TERM *t) {
 
 		if(parno != 0) return -1;
 
-		while(findCycle())
+		while(findAndRemoveCycle())
 			n++;
 
 		if(n > 0)
