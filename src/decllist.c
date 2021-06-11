@@ -32,8 +32,7 @@ static Map operators = NULL;
 static DECL *getDecl(char *id);
 
 static void buildAliasList(DECL *d);
-static int searchAliasList(IDLIST *list, char *id);
-static void findAliases(TERM *t, IDLIST *list);
+static void findAliases(TERM *t, Vector aliases);
 
 static CYCLE dfs(DECL *curNode);
 static int getCycleSize(DECL *start, DECL *end);
@@ -69,7 +68,7 @@ void termAddDecl(char *id, TERM *term) {
 	} else {
 		// if declaration not found, create a new one
 		decl = malloc(sizeof(DECL));
-		decl->aliases.next = NULL;
+		decl->aliases = NULL;
 
 		map_insert(declarations, id, decl);
 	}
@@ -108,13 +107,11 @@ TERM *termFromDecl(char *id) {
 
 static void buildAliasList(DECL *d) {
 	//free aliases list
-	for(IDLIST *idl = d->aliases.next, *tmp; idl; idl = tmp) {
-		tmp = idl->next;
-		free(idl);
-	}
+	if(d->aliases != NULL)
+		vector_destroy(d->aliases);
 
-	d->aliases.next = NULL;
-	findAliases(d->term, &d->aliases);
+	d->aliases = vector_create(0, NULL);
+	findAliases(d->term, d->aliases);
 
 	//print alias list
 	//printf("%s: ", d->id);
@@ -123,45 +120,27 @@ static void buildAliasList(DECL *d) {
 	//printf("\n");
 }
 
-// searchAliasList
-//
-// Returns 1 if id exists in list, otherwise 0
-
-static int searchAliasList(IDLIST *list, char *id) {
-	for(list = list->next; list; list = list->next)
-		if(list->id == id)
-			return 1;
-
-	return 0;
-}
-
 // findAliases
 //
-// Finds all aliases used by term t and adds them to 'list'
+// Finds all aliases used by term t and adds them to 'aliases'
 
-static void findAliases(TERM *t, IDLIST *list) {
-	IDLIST *tmp;
-
+static void findAliases(TERM *t, Vector aliases) {
 	switch(t->type) {
 	 case TM_VAR:
 		return;
 
 	 case TM_ALIAS:
-		if(!searchAliasList(list, t->name)) {
-			tmp = malloc(sizeof(IDLIST));
-			tmp->id = t->name;
-			tmp->next = list->next;
-			list->next = tmp;
-		}
+		if(!vector_find(aliases, t->name, compare_pointers))
+			vector_insert_last(aliases, t->name);
 		return;
 
 	 case TM_ABSTR:
-		findAliases(t->rterm, list);
+		findAliases(t->rterm, aliases);
 		return;
 
 	 case TM_APPL:
-		findAliases(t->lterm, list);
-		findAliases(t->rterm, list);
+		findAliases(t->lterm, aliases);
+		findAliases(t->rterm, aliases);
 		return;
 	}
 }
@@ -213,7 +192,6 @@ int findCycle() {
 static CYCLE dfs(DECL *curNode) {
 	CYCLE bestCycle, newCycle;
 	DECL *newNode;
-	IDLIST *idl;
 	int curSize;
 
 	bestCycle.size = 0;
@@ -221,9 +199,9 @@ static CYCLE dfs(DECL *curNode) {
 	curNode->flag = 1;
 
 	// process neighborhoods
-	for(idl = curNode->aliases.next; idl; idl = idl->next) {
+	for(int i = 0; i < vector_size(curNode->aliases); i++) {
 		// if the alias is not defined, ignore it
-		if(!(newNode = getDecl(idl->id)))
+		if(!(newNode = getDecl(vector_get_at(curNode->aliases, i))))
 			continue;
 
 		switch(newNode->flag) {
@@ -278,9 +256,7 @@ static int getCycleSize(DECL *start, DECL *end) {
 static void removeCycle(CYCLE c) {
 	DECL *d, *decl;
 	TERM *t, *newTerm, *tmpTerm;
-	char buffer[500],
-		  *newId,		// interned newId
-		  *tmpId;
+	char *newId;		// interned newId
 	int i;
 
 	// if there is more than one alias in the cycle, merge them in a tuple
@@ -295,6 +271,7 @@ static void removeCycle(CYCLE c) {
 		newId = str_intern(newId_raw);
 
 		// construct tupled function
+		char buffer[500];
 		strcpy(buffer, "\\y.y ");
 		for(i = 0, d = c.end; i < c.size; i++, d = d->prev) {
 			strcat(buffer, d->id);
@@ -316,7 +293,7 @@ static void removeCycle(CYCLE c) {
 		// Aliases contained in the cycle have been merged in a tuple.
 		// So their appearances are replaced by Index calls
 		for(i = 0, d = c.end; i < c.size; i++) {
-			tmpId = d->id;
+			char* tmpId = d->id;
 			d = d->prev;
 
 			tmpTerm = getIndexTerm(c.size, i, newId);

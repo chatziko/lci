@@ -16,18 +16,14 @@
 #ifndef DECLLIST_H
 #define DECLLIST_H
 
+#include "ADTVector.h"
 #include "grammar.h"
 
-
-typedef struct tag_idlist {
-	char* id;
-	struct tag_idlist *next;
-} IDLIST;
 
 typedef struct tag_decl {
 	char *id;
 	TERM *term;
-	IDLIST aliases;
+	Vector aliases;
 
 	//for DFS
 	int flag;
