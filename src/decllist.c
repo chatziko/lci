@@ -133,7 +133,7 @@ void findAliases(TERM *t, IDLIST *list) {
 	 case TM_ALIAS:
 		if(!searchAliasList(list, t->name)) {
 			tmp = malloc(sizeof(IDLIST));
-			strcpy(tmp->id, t->name);
+			tmp->id = t->name;
 			tmp->next = list->next;
 			list->next = tmp;
 		}
@@ -422,9 +422,7 @@ void addOper(char *id, int preced, ASS_TYPE assoc) {
 	OPER *op;
 
 	// if id is already registered we replace
-	if((op = getOper(id)))
-		free(op->id);
-	else {
+	if(!(op = getOper(id))) {
 		// not found, create new
 		op = malloc(sizeof(OPER));
 		op->next = operList;

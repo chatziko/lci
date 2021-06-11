@@ -20,7 +20,7 @@
 
 
 typedef struct tag_idlist {
-	char id[50];
+	char* id;
 	struct tag_idlist *next;
 } IDLIST;
 
