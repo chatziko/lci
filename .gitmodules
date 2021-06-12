@@ -1,0 +1,3 @@
+[submodule "dparser"]
+	path = dparser
+	url = https://github.com/jplevyak/dparser.git
