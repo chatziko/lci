@@ -140,7 +140,6 @@ TERM *termClone(TERM *t) {
 
 	newTerm = termNew();
 	newTerm->type = t->type;
-	newTerm->preced = t->preced;
 	newTerm->closed = t->closed;
 	//newTerm->assoc = t->assoc;			// assoc used only in parsing, no need to copy it
 
@@ -313,6 +312,10 @@ int termIsFreeVar(TERM *t, char *name) {
 // opposite should hold, terms marked as closed MUST be closed.
 
 int termConv(TERM *t) {
+	static char* str_tilde = NULL;
+	if(str_tilde == NULL)
+		str_tilde = str_intern("~");
+
 	TERM *L, *M, *N, *x;
 	int res, found;
 	char closed;
@@ -367,9 +370,9 @@ int termConv(TERM *t) {
 				: termConv(t->rterm);
 		}
 
-		// If preced == 255 then the application has beed defined with ~. In this case
+		// If the application has beed defined with ~,
 		// we perform the reductions in the right subtree first (call-by-value)
-		if(t->preced == 255 && (res = termConv(t->rterm)) != 0)
+		if(t->name == str_tilde && (res = termConv(t->rterm)) != 0)
 			return res;
 
 		L = t->lterm;		// L = \x.M
@@ -425,7 +428,6 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 	else {
 		newTerm = termNew();
 		newTerm->type = TM_APPL;
-		newTerm->preced = APPL_PRECED;
 		newTerm->name = NULL;
 		newTerm->lterm = termClone(f);
 		newTerm->rterm = termPower(f, a, pow-1);
@@ -664,13 +666,9 @@ void termRemoveOper(TERM *t) {
 		//		a op b -> 'op' a b
 		//
 		//	Operator '~' has a special meaning, used during execution to decide the evaluation
-		//	order. Setting preced = 255 we just "mark" the term.
+		//	order.
 
-		if(t->name == str_tilde) {
-			t->preced = 255;
-			t->name = NULL;
-
-		} else if(t->name) {
+		if(t->name && t->name != str_tilde) {
 			// alias = op
 			alias = termNew();
 			alias->type = TM_ALIAS;
@@ -682,7 +680,6 @@ void termRemoveOper(TERM *t) {
 			appl = termNew();
 			appl->type = TM_APPL;
 			appl->name = NULL;
-			appl->preced = APPL_PRECED;
 
 			appl->lterm = alias;
 			appl->rterm = t->lterm;

@@ -35,7 +35,7 @@
 // Note: ATTR_PACKED (#defined __atribute__((packed))) instructs the compiler to
 // use 1 byte instead of 4 for the enum
 typedef enum { TM_ABSTR, TM_APPL, TM_VAR, TM_ALIAS } ATTR_PACKED TERM_TYPE;
-typedef enum ass_type_tag { ASS_LEFT, ASS_RIGHT, ASS_NONE } ATTR_PACKED ASS_TYPE;
+typedef enum { ASS_LEFT, ASS_RIGHT, ASS_NONE } ATTR_PACKED ASS_TYPE;
 
 // Note: put bigger fields first (lterm, rterm, name) to allow
 // the compiler to align the struct without wasting space.
@@ -46,8 +46,6 @@ typedef struct term_tag {
 	struct term_tag *rterm;					// (for applications and abstractions)
 	char *name;									// name (for variables, aliases and applications with an operator)
 	TERM_TYPE type;							// variable, application or abstraction
-	ASS_TYPE assoc;
-	unsigned char preced;
 	char closed;
 } TERM;
 
