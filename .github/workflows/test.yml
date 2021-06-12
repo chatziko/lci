@@ -9,6 +9,8 @@ jobs:
         # os: [ubuntu-20.04, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - run: |
           cmake -B build
