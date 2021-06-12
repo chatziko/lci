@@ -269,11 +269,11 @@ static void removeCycle(GraphCycle cycle) {
 		newId = str_intern(newId_raw);
 
 		// construct tupled function
-		TERM *body = parse_variable(str_intern("y"));
+		TERM *body = create_variable(str_intern("y"));
 		for(i = 0, node = cycle.end; i < cycle.size; i++, node = node->prev)
-			body = parse_application(body, NULL, parse_alias(node->id));
+			body = create_application(body, NULL, create_alias(node->id));
 
-		t = parse_abstraction(parse_variable(str_intern("y")), body);
+		t = create_abstraction(create_variable(str_intern("y")), body);
 
 		termSetClosedFlag(t);				// mark sub-terms as closed
 		termAddDecl(newId, t);
@@ -340,15 +340,15 @@ static void removeCycle(GraphCycle cycle) {
 static TERM *getIndexTerm(int varno, int n, char *tuple) {
 	char name[20];
 	sprintf(name, "x%d", n);
-	TERM *var = parse_variable(str_intern(name));	// x<n>
+	TERM *var = create_variable(str_intern(name));	// x<n>
 
 	TERM *abstr = var;								// \x1.\x2...\x<varno>.x<n>
 	for(int i = varno-1; i >= 0; i--) {
 		sprintf(name, "x%d", i);
-		abstr = parse_abstraction(parse_variable(str_intern(name)), abstr);
+		abstr = create_abstraction(create_variable(str_intern(name)), abstr);
 	}
 
-	return parse_application(parse_alias(tuple), NULL, abstr);
+	return create_application(create_alias(tuple), NULL, abstr);
 }
 
 // printDeclList

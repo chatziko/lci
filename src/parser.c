@@ -8,7 +8,7 @@
 
 extern D_ParserTables parser_tables_gram;
 
-int parse_new(char *source) {
+int parse_string(char *source) {
 	D_Parser *parser = new_D_Parser(&parser_tables_gram, sizeof(D_ParseNode_User));
 	// parser->save_parse_tree = 1;
 
@@ -39,21 +39,21 @@ int parse_new(char *source) {
 	return success;
 }
 
-TERM *parse_variable(char *name) {
+TERM *create_variable(char *name) {
 	TERM *t = termNew();
 	t->type = TM_VAR;
 	t->name = name;
 	return t;
 }
 
-TERM *parse_alias(char *name) {
+TERM *create_alias(char *name) {
 	TERM *t = termNew();
 	t->type = TM_ALIAS;
 	t->name = name;
 	return t;
 }
 
-TERM *parse_abstraction(TERM *var, TERM *right) {
+TERM *create_abstraction(TERM *var, TERM *right) {
 	TERM *t = termNew();
 	t->type = TM_ABSTR;
 	t->lterm = var;
@@ -91,7 +91,7 @@ TERM *parse_abstraction(TERM *var, TERM *right) {
 // 	return s2;
 // }
 
-TERM *parse_application(TERM *left, char *oper_name, TERM *right) {
+TERM *create_application(TERM *left, char *oper_name, TERM *right) {
 	TERM *t = termNew();
 	t->type = TM_APPL;
 	t->name = oper_name;
@@ -109,7 +109,7 @@ TERM *parse_application(TERM *left, char *oper_name, TERM *right) {
 	return t;
 }
 
-TERM *parse_number(char *s) {
+TERM *create_number(char *s) {
 	int num = 0;
 
 	if(strlen(s) > 4)

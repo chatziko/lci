@@ -116,7 +116,7 @@ int main() {
 		add_history(buffer);
 #endif
 
-		parse_new(buffer);
+		parse_string(buffer);
 		// if(parse((void*)&t, TK_TERM) == PAR_OK) {
 			// if(execTerm(t) != 0)
 				// break;
