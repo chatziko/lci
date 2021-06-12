@@ -6,33 +6,33 @@
 
 
 # Operator declaration. Must be in the form
-#		? DefOp 'oper' precedence associativity
+#		DefOp 'oper' precedence associativity
 
-? DefOp '~'		100 yfx;			# Enforces call-by-value (used internally)
+DefOp '~'	100 yfx;		# Enforces call-by-value (used internally)
 
-? DefOp '&&'	80 yfx;			# Logical and
-? DefOp '||'	80 yfx;			# Logical or
+DefOp '&&'	80 yfx;			# Logical and
+DefOp '||'	80 yfx;			# Logical or
 
-? DefOp '<'		70 xfx;			# Less than
-? DefOp '<='	70 xfx;			# Less or equal
-? DefOp '>'		70 xfx;			# Greater than
-? DefOp '>='	70 xfx;			# Greater or equal
-? DefOp '=='	70 xfx;			# Equal
-? DefOp '!='	70 xfx;			# Not equal
+DefOp '<'	70 xfx;			# Less than
+DefOp '<='	70 xfx;			# Less or equal
+DefOp '>'	70 xfx;			# Greater than
+DefOp '>='	70 xfx;			# Greater or equal
+DefOp '=='	70 xfx;			# Equal
+DefOp '!='	70 xfx;			# Not equal
 
-? DefOp '++'	60 xfy;			# Append lists
-? DefOp ':'		60 xfy;			# Construct list (Head:Tail)
+DefOp '++'	60 xfy;			# Append lists
+DefOp ':'	60 xfy;			# Construct list (Head:Tail)
 
-? DefOp ','		55 xfx;			# Construct ordered pair (a,b)
-? DefOp '..'	55 xfx;			# n..m = [n,n+1,...,m]
+DefOp ','	55 xfx;			# Construct ordered pair (a,b)
+DefOp '..'	55 xfx;			# n..m = [n,n+1,...,m]
 
-? DefOp '+'		50 yfx;			# Add
-? DefOp '-'		50 yfx;			# Monus
+DefOp '+'	50 yfx;			# Add
+DefOp '-'	50 yfx;			# Monus
 
-? DefOp '*'		40 yfx;			# Multiply
-? DefOp '/'		40 yfx;			# Integer division
+DefOp '*'	40 yfx;			# Multiply
+DefOp '/'	40 yfx;			# Integer division
 
-? DefOp '**'	35 yfx;			# Exponential
+DefOp '**'	35 yfx;			# Exponential
 
 # Operator definition.
 
