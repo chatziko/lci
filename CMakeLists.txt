@@ -6,6 +6,7 @@ include(CheckIncludeFile)
 
 project(lci C)
 
+add_subdirectory(dparser EXCLUDE_FROM_ALL)
 add_subdirectory(doc)
 
 # default type is Release, change with cmake -DCMAKE_BUILD_TYPE=
@@ -17,11 +18,19 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 # compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")	# common flags
 
-# sources
-file(GLOB SOURCES src/*.c src/**/*.c)
+# generate parser
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c
+	DEPENDS make_dparser src/grammar.g
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} VERBATIM
+	COMMAND $<TARGET_FILE:make_dparser> ${CMAKE_CURRENT_SOURCE_DIR}/src/grammar.g -o ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c
+)
 
-add_executable(lci ${SOURCES})
-target_include_directories(lci PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/k08)
+# lci executable
+file(GLOB SOURCES src/*.c src/**/*.c)
+add_executable(lci ${SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c)
+
+target_link_libraries(lci dparse)
+target_include_directories(lci PUBLIC src src/k08 dparser)
 
 # search for readline
 find_package(Readline)

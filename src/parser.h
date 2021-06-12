@@ -69,3 +69,16 @@ extern STATE fsm[VALIDCHNO][STATENO];
 
 extern GRAM_RULE grammar[RULENO];
 extern int LL1[NONTRMNO][TRMNO];
+
+
+
+TERM *parse_new(char *source);
+
+TERM *parse_variable(char *name);
+TERM *parse_number(char *s);
+TERM *parse_alias(char *name);
+TERM *parse_abstraction(TERM *var, TERM *right);
+TERM *parse_application(TERM *left, char *oper_name, TERM *right);
+
+void parse_cmd_declaration(char *id, TERM *t);
+void parse_cmd_term(TERM *t);

@@ -16,4 +16,5 @@
 #pragma once
 
 char *str_intern(char *str);
+char *str_intern_range(char *start, char *end);
 void str_intern_cleanup();

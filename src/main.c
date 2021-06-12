@@ -30,7 +30,6 @@
 
 
 int main() {
-	TERM *t;
 	char *home = getenv("HOME"),
 		 *lcirc = ".lcirc",
 		 *path;
@@ -121,11 +120,13 @@ int main() {
 		scInput = buffer;
 		getToken(NULL);
 
-		if(parse((void*)&t, TK_TERM) == PAR_OK) {
-			if(execTerm(t) != 0)
-				break;
-		} else
-			printf("Syntax error\n\n");
+		parse_new(buffer);
+		// if(parse((void*)&t, TK_TERM) == PAR_OK) {
+			// if(execTerm(t) != 0)
+				// break;
+		// } 
+			// else
+			// printf("Aborted due to syntax errors\n\n");
 	}
 
 #ifdef HAS_READLINE

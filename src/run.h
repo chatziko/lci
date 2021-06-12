@@ -20,9 +20,11 @@
 #define OPTNO	5
 typedef enum {OPT_TRACE = 0, OPT_SHOWPAR, OPT_GREEKLAMBDA, OPT_SHOWEXEC, OPT_READABLE} OPT;
 
+extern int quit_called;
+
 
 void progInterpret(COMMAND *cmdList);
-int execTerm(TERM *t);
+void execTerm(TERM *t);
 void progFree(COMMAND *cmdList);
 int execSystemCmd(TERM *t);
 int consultFile(char *fname);
