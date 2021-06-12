@@ -24,6 +24,7 @@
 #include "decllist.h"
 #include "termproc.h"
 #include "parser.h"
+#include "str_intern.h"
 
 
 // node in the declaration graph (used for finding cycles)

@@ -16,7 +16,7 @@
 #pragma once
 
 #include "kazlib/list.h"
-#include "grammar.h"
+#include "parser.h"
 
 
 void termPrint(TERM *t, int isMostRight);

@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "grammar.h"
+#include "parser.h"
 
 #define OPTNO	5
 typedef enum {OPT_TRACE = 0, OPT_SHOWPAR, OPT_GREEKLAMBDA, OPT_SHOWEXEC, OPT_READABLE} OPT;
@@ -23,9 +23,7 @@ typedef enum {OPT_TRACE = 0, OPT_SHOWPAR, OPT_GREEKLAMBDA, OPT_SHOWEXEC, OPT_REA
 extern int quit_called;
 
 
-void progInterpret(COMMAND *cmdList);
 void execTerm(TERM *t);
-void progFree(COMMAND *cmdList);
 int execSystemCmd(TERM *t);
 int consultFile(char *fname);
 int getOption(OPT opt);

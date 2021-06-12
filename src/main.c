@@ -22,9 +22,9 @@
 #include <readline/history.h>
 #endif
 
-#include "grammar.h"
 #include "parser.h"
 #include "run.h"
+#include "str_intern.h"
 
 #define MAX_HISTORY_ENTRIES 100
 
@@ -91,7 +91,7 @@ int main() {
 	   fprintf(stderr, "warning: no .lcirc file was found\n");
 
 	// read and execute commands
-	while(1) {
+	while(!quit_called) {
 		// read command
 #ifdef HAS_READLINE
 		free(buffer);
@@ -115,10 +115,6 @@ int main() {
 		// add line to readline history
 		add_history(buffer);
 #endif
-
-		scInputType = SC_BUFFER;
-		scInput = buffer;
-		getToken(NULL);
 
 		parse_new(buffer);
 		// if(parse((void*)&t, TK_TERM) == PAR_OK) {

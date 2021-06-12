@@ -34,6 +34,7 @@
 #include "parser.h"
 #include "termproc.h"
 #include "decllist.h"
+#include "str_intern.h"
 
 
 int trace;
@@ -382,7 +383,7 @@ int consultFile(char *fname) {
 	fclose(f);
 
 	// parse (see dparser/sample_parser.c)
-	if(parse_new(source) != NULL) {
+	if(!parse_new(source)) {
 		fprintf(stderr, "Errors found in %s.\n", fname);
 		return -2;
 	}
