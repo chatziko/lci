@@ -379,8 +379,11 @@ int consultFile(char *fname) {
 	fseek(f, 0, SEEK_SET);
 	char *source = malloc((length+1) * sizeof(char));
 	source[length] = '\0';
-	fread(source, 1, length, f);
+	int read = fread(source, 1, length, f);
 	fclose(f);
+	
+	if(read != length)
+		return -1;
 
 	// parse (see dparser/sample_parser.c)
 	if(!parse_string(source)) {

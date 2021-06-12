@@ -75,9 +75,9 @@ void termPrint(TERM *t, int isMostRight) {
 
 		termPrint(t->lterm, 0);
 
-		//if(t->name)
-			//printf(" %s ", t->name);
-		//else
+		if(t->name)
+			printf(" %s ", t->name);
+		else
 			printf(" ");
 
 		if(!showPar && t->rterm->type == TM_APPL) printf("(");
@@ -141,12 +141,9 @@ TERM *termClone(TERM *t) {
 	newTerm = termNew();
 	newTerm->type = t->type;
 	newTerm->closed = t->closed;
-	//newTerm->assoc = t->assoc;			// assoc used only in parsing, no need to copy it
+	newTerm->name = t->name;			// fast copy, strings are interned
 
-	if(t->type == TM_VAR || t->type == TM_ALIAS)
-		newTerm->name = t->name;			// fast copy, strings are interned
-	else {									// TM_ABRST or TM_APPL
-		newTerm->name = NULL;
+	if(t->type == TM_APPL || t->type == TM_ABSTR) {
 		newTerm->lterm = termClone(t->lterm);
 		newTerm->rterm = termClone(t->rterm);
 	}

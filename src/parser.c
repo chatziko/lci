@@ -61,35 +61,55 @@ TERM *create_abstraction(TERM *var, TERM *right) {
 	return t;
 }
 
-// static TERM *fix_application_grouping(TERM* op) {
-// 	TERM *s2 = op->rterm;
-// 	char breakOp = 0;
+static void get_assoc_preced(TERM *t, int *preced, ASS_TYPE *assoc) {
+	OPER *oper = t->name != NULL ? getOper(t->name) : NULL;
 
-// 	// If s2 is an application, then op might need to "go inside" the application.
-// 	// Eg. if op = * and s2 = (a + b) then instead of s1 * (a + b) we need to
-// 	// get (s1 * a) + b, that is * should go inside +.
-// 	// This happens in the following 2 cases:
-// 	// 	- op has lower precedence than s2
-// 	// 	- they have the same precedence and op is _not_ right-associative, hence it
-// 	// 	  _cannot_ have s2 on its right. In this case:
-// 	// 		* if s2 is left-associative (so it can have op on its left) then op goes inside
-// 	// 		* otherwise there is an ambiguity and a warning is printed
+	if(oper == NULL) {
+		*preced = APPL_PRECED;
+		*assoc = APPL_ASSOC;
+	} else {
+		*preced = oper->preced;
+		*assoc = oper->assoc;
+	}
+}
 
-// 	if(s2->type == TM_APPL && op->preced <= s2->preced) {
-// 		if(op->preced < s2->preced || (op->assoc != ASS_RIGHT && s2->assoc == ASS_LEFT))
-// 			breakOp = 1;
-// 		else if(op->assoc != ASS_RIGHT)
-// 			fprintf(stderr, "Warning: Precedence ambiguity between operators '%s' and '%s'. Use brackets.\n",
-// 				(op->name ? op->name : "APPL"), (s2->name ? s2->name : "APPL"));
-// 	}
+static TERM *fix_application_grouping(TERM* op) {
+	TERM *s2 = op->rterm;
+	if(s2->type != TM_APPL || s2->closed)
+		return op;
 
-// 	if(!breakOp)
-// 		return op;
+	// get associativity and precedence
+	int op_preced, s2_preced;
+	ASS_TYPE op_assoc, s2_assoc;
+	get_assoc_preced(op, &op_preced, &op_assoc);
+	get_assoc_preced(s2, &s2_preced, &s2_assoc);
 
-// 	op->rterm = s2->lterm;
-// 	s2->lterm = fix_application_grouping(op);
-// 	return s2;
-// }
+	// If s2 is an application, then op might need to "go inside" the application.
+	// Eg. if op = * and s2 = (a + b) then instead of s1 * (a + b) we need to
+	// get (s1 * a) + b, that is * should go inside +.
+	// This happens in the following 2 cases:
+	// 	- op has lower precedence than s2
+	// 	- they have the same precedence and op is _not_ right-associative, hence it
+	// 	  _cannot_ have s2 on its right. In this case:
+	// 		* if s2 is left-associative (so it can have op on its left) then op goes inside
+	// 		* otherwise there is an ambiguity and a warning is printed
+
+	char breakOp = 0;
+	if(op_preced <= s2_preced) {
+		if(op_preced < s2_preced || (op_assoc != ASS_RIGHT && s2_assoc == ASS_LEFT))
+			breakOp = 1;
+		else if(op_assoc != ASS_RIGHT)
+			fprintf(stderr, "Warning: Precedence ambiguity between operators '%s' and '%s'. Use brackets.\n",
+				(op->name ? op->name : "APPL"), (s2->name ? s2->name : "APPL"));
+	}
+
+	if(!breakOp)
+		return op;
+
+	op->rterm = s2->lterm;
+	s2->lterm = fix_application_grouping(op);
+	return s2;
+}
 
 TERM *create_application(TERM *left, char *oper_name, TERM *right) {
 	TERM *t = termNew();
@@ -97,14 +117,9 @@ TERM *create_application(TERM *left, char *oper_name, TERM *right) {
 	t->name = oper_name;
 	t->lterm = left;
 	t->rterm = right;
+	t->closed = 0;
 
-	// if(oper_name != NULL) {
-	// 	OPER *oper = getOper(oper_name);
-	// 	t->preced = (oper ? oper->preced : APPL_PRECED);
-	// 	t->assoc = (oper ? oper->assoc : APPL_ASSOC);
-
-	// 	t = fix_application_grouping(t);
-	// }
+	t = fix_application_grouping(t);
 
 	return t;
 }

@@ -18,11 +18,11 @@
 #pragma once
 
 // Add __attribute__((packed)) if compiler supports it
-#if defined(__GNUC__) || defined(__clang__)
-#define ATTR_PACKED __attribute__((packed))
-#else
+// #if defined(__GNUC__) || defined(__clang__)
+// #define ATTR_PACKED __attribute__((packed))
+// #else
 #define ATTR_PACKED
-#endif
+// #endif
 
 // Precedence and associativity of applications
 #define APPL_PRECED	100
@@ -44,10 +44,10 @@ typedef enum { ASS_LEFT, ASS_RIGHT, ASS_NONE } ATTR_PACKED ASS_TYPE;
 typedef struct term_tag {
 	struct term_tag *lterm;					// left and right children
 	struct term_tag *rterm;					// (for applications and abstractions)
-	char *name;									// name (for variables, aliases and applications with an operator)
+	char *name;								// name (for variables, aliases and applications with an operator)
 	TERM_TYPE type;							// variable, application or abstraction
-	char closed;
-} TERM;
+	char closed;							// during parsing: 1 if application in parenthesis. during execution: 1 if no free vars
+} ATTR_PACKED TERM;
 
 
 int parse_string(char *source);
