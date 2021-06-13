@@ -29,8 +29,9 @@
 #include "run.h"
 #include "str_intern.h"
 
+static int termIsIdentity(TERM *t);
 
-Vector termPool = NULL;
+static Vector termPool = NULL;
 
 
 // termPrint
@@ -58,6 +59,8 @@ void termPrint(TERM *t, int isMostRight) {
 			printf("%d", num);
 		else if(readable && termIsList(t))
 			termPrintList(t);
+		else if(readable && termIsIdentity(t))
+			printf("I");
 		else {
 			if(showPar || !isMostRight) printf("(");
 
@@ -532,6 +535,13 @@ int termIsList(TERM *t) {
 	}
 
 	return 0;
+}
+
+static int termIsIdentity(TERM *t) {
+	return
+		t->type == TM_ABSTR &&
+		t->rterm->type == TM_VAR &&
+		t->lterm->name == t->rterm->name;
 }
 
 // termPrintList
