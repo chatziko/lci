@@ -55,6 +55,10 @@ DefOp '**'	35 yfx;			# Exponential
 '..'	= \n.\m.(m-n) (\l.(Pred (Head l)):l) m:Nil;
 
 
+# --- Basic functions -------------------------------------------------
+
+I = \x.x;
+
 # --- Fixed point combinators -----------------------------------------
 
 Y = \f.(\x.f(x x))(\x.f(x x));
@@ -67,7 +71,7 @@ False	= \x.\y.y;
 Not = \z.z False True;
 And = \x.\y.(x (y True False) False);
 Or = \x.\y.(x True (y True False));
-If = \z.\x.\y.z x y;
+If = I;						# \z.\x.\y.z x y which is equivalent to I
 
 # --- Arithmetic functions --------------------------------------------
 
