@@ -43,6 +43,14 @@ char *str_intern(char *str) {
     return res;
 }
 
+char *str_intern_range(char *start, char *end) {
+    char old = *end;
+    *end = '\0';                    // quick and dirty
+    char *res = str_intern(start);  // the string is copied
+    *end = old;                     // restore
+    return res;
+}
+
 void str_intern_cleanup() {
     if(interns != NULL)
         map_destroy(interns);

@@ -30,7 +30,19 @@
 #include "str_intern.h"
 
 
-Vector termPool = NULL;
+static TERM *termPower(TERM *f, TERM *a, int pow);
+static int termIsIdentity(TERM *t);
+static int termIsList(TERM *t);
+static void termPrintList(TERM *t);
+
+static int termIsFreeVar(TERM *t, char *name);
+static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone);
+static int termAliasSubst(TERM *t);
+static list_t* termFreeVars(TERM *t);
+static char *getVariable(TERM *t1, TERM *t2);
+
+
+static Vector termPool = NULL;
 
 
 // termPrint
@@ -58,6 +70,8 @@ void termPrint(TERM *t, int isMostRight) {
 			printf("%d", num);
 		else if(readable && termIsList(t))
 			termPrintList(t);
+		else if(readable && termIsIdentity(t))
+			printf("I");
 		else {
 			if(showPar || !isMostRight) printf("(");
 
@@ -75,9 +89,9 @@ void termPrint(TERM *t, int isMostRight) {
 
 		termPrint(t->lterm, 0);
 
-		//if(t->name)
-			//printf(" %s ", t->name);
-		//else
+		if(t->name)
+			printf(" %s ", t->name);
+		else
 			printf(" ");
 
 		if(!showPar && t->rterm->type == TM_APPL) printf("(");
@@ -140,14 +154,10 @@ TERM *termClone(TERM *t) {
 
 	newTerm = termNew();
 	newTerm->type = t->type;
-	newTerm->preced = t->preced;
 	newTerm->closed = t->closed;
-	//newTerm->assoc = t->assoc;			// assoc used only in parsing, no need to copy it
+	newTerm->name = t->name;			// fast copy, strings are interned
 
-	if(t->type == TM_VAR || t->type == TM_ALIAS)
-		newTerm->name = t->name;			// fast copy, strings are interned
-	else {									// TM_ABRST or TM_APPL
-		newTerm->name = NULL;
+	if(t->type == TM_APPL || t->type == TM_ABSTR) {
 		newTerm->lterm = termClone(t->lterm);
 		newTerm->rterm = termClone(t->rterm);
 	}
@@ -167,7 +177,7 @@ TERM *termClone(TERM *t) {
 // without cost, so a term marked as non-closed could in fact be closed. But the
 // opposite should hold, terms marked as closed MUST be closed.
 
-int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
+static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 	TERM z, *y, *P, *clone;
 	int found = 0;
 
@@ -267,7 +277,7 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 #ifndef NDEBUG
 int freeNo;				// count the number of calls of termIsFree
 #endif
-int termIsFreeVar(TERM *t, char *name) {
+static int termIsFreeVar(TERM *t, char *name) {
 	// closed terms have no free variables
 	if(t->closed)
 		 return 0;
@@ -313,6 +323,10 @@ int termIsFreeVar(TERM *t, char *name) {
 // opposite should hold, terms marked as closed MUST be closed.
 
 int termConv(TERM *t) {
+	static char* str_tilde = NULL;
+	if(str_tilde == NULL)
+		str_tilde = str_intern("~");
+
 	TERM *L, *M, *N, *x;
 	int res, found;
 	char closed;
@@ -367,9 +381,9 @@ int termConv(TERM *t) {
 				: termConv(t->rterm);
 		}
 
-		// If preced == 255 then the application has beed defined with ~. In this case
+		// If the application has beed defined with ~,
 		// we perform the reductions in the right subtree first (call-by-value)
-		if(t->preced == 255 && (res = termConv(t->rterm)) != 0)
+		if(t->name == str_tilde && (res = termConv(t->rterm)) != 0)
 			return res;
 
 		L = t->lterm;		// L = \x.M
@@ -417,7 +431,7 @@ int termConv(TERM *t) {
 //
 // Returns term f^pow(a) = a if pow == 0, f( f^{pow-1}(a) ) otherwise
 
-TERM *termPower(TERM *f, TERM *a, int pow) {
+static TERM *termPower(TERM *f, TERM *a, int pow) {
 	TERM *newTerm;
 
 	if(pow == 0)
@@ -425,7 +439,6 @@ TERM *termPower(TERM *f, TERM *a, int pow) {
 	else {
 		newTerm = termNew();
 		newTerm->type = TM_APPL;
-		newTerm->preced = APPL_PRECED;
 		newTerm->name = NULL;
 		newTerm->lterm = termClone(f);
 		newTerm->rterm = termPower(f, a, pow-1);
@@ -505,7 +518,7 @@ int termNumber(TERM *t) {
 // Returns 1 if t is an encoding of a list, that is of the form
 // \s.s Head Tail h Nil: \x.\x.\y.x
 
-int termIsList(TERM *t) {
+static int termIsList(TERM *t) {
 	TERM *r;
 
 	if(t->type != TM_ABSTR) return 0;
@@ -535,12 +548,19 @@ int termIsList(TERM *t) {
 	return 0;
 }
 
+static int termIsIdentity(TERM *t) {
+	return
+		t->type == TM_ABSTR &&
+		t->rterm->type == TM_VAR &&
+		t->lterm->name == t->rterm->name;
+}
+
 // termPrintList
 //
 // Prints a term of the form [A, B, C, ...]. The term must be the encoding of a list
 // (termIsList(t) must return 1).
 
-void termPrintList(TERM *t) {
+static void termPrintList(TERM *t) {
 	TERM *r;
 	int i = 0;
 
@@ -559,7 +579,7 @@ void termPrintList(TERM *t) {
 // Substitutes aliast t with its corresponding term. Returns 0 if the term was found
 // or 1 if the alias is undefined.
 
-int termAliasSubst(TERM *t) {
+static int termAliasSubst(TERM *t) {
 	TERM *newTerm;
 
 	if(!(newTerm = termFromDecl(t->name))) {
@@ -664,13 +684,9 @@ void termRemoveOper(TERM *t) {
 		//		a op b -> 'op' a b
 		//
 		//	Operator '~' has a special meaning, used during execution to decide the evaluation
-		//	order. Setting preced = 255 we just "mark" the term.
+		//	order.
 
-		if(t->name == str_tilde) {
-			t->preced = 255;
-			t->name = NULL;
-
-		} else if(t->name) {
+		if(t->name && t->name != str_tilde) {
 			// alias = op
 			alias = termNew();
 			alias->type = TM_ALIAS;
@@ -682,7 +698,6 @@ void termRemoveOper(TERM *t) {
 			appl = termNew();
 			appl->type = TM_APPL;
 			appl->name = NULL;
-			appl->preced = APPL_PRECED;
 
 			appl->lterm = alias;
 			appl->rterm = t->lterm;
@@ -706,7 +721,7 @@ static int compare_pointers(const void *key1, const void *key2) {
     return key1 - key2;
 }
 
-list_t* termFreeVars(TERM *t) {
+static list_t* termFreeVars(TERM *t) {
 	list_t *vars = NULL, *rvars;
 	lnode_t *node;
 
@@ -745,7 +760,7 @@ list_t* termFreeVars(TERM *t) {
 // the following order:
 //		a, b, ..., z, aa, ab, .., ba, bb, ..., zz, aaa, aab, ...
 
-char *getVariable(TERM *t1, TERM *t2) {
+static char *getVariable(TERM *t1, TERM *t2) {
 	char s[10] = "a";
 	int curLen = 1, i;
 

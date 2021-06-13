@@ -2,3 +2,4 @@
 /.vscode
 *.swp
 *.swo
+*.d_parser.c

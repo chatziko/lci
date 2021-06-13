@@ -22,15 +22,14 @@
 #include <readline/history.h>
 #endif
 
-#include "grammar.h"
 #include "parser.h"
 #include "run.h"
+#include "str_intern.h"
 
 #define MAX_HISTORY_ENTRIES 100
 
 
 int main() {
-	TERM *t;
 	char *home = getenv("HOME"),
 		 *lcirc = ".lcirc",
 		 *path;
@@ -92,7 +91,7 @@ int main() {
 	   fprintf(stderr, "warning: no .lcirc file was found\n");
 
 	// read and execute commands
-	while(1) {
+	while(!quit_called) {
 		// read command
 #ifdef HAS_READLINE
 		free(buffer);
@@ -117,15 +116,13 @@ int main() {
 		add_history(buffer);
 #endif
 
-		scInputType = SC_BUFFER;
-		scInput = buffer;
-		getToken(NULL);
-
-		if(parse((void*)&t, TK_TERM) == PAR_OK) {
-			if(execTerm(t) != 0)
-				break;
-		} else
-			printf("Syntax error\n\n");
+		parse_string(buffer);
+		// if(parse((void*)&t, TK_TERM) == PAR_OK) {
+			// if(execTerm(t) != 0)
+				// break;
+		// } 
+			// else
+			// printf("Aborted due to syntax errors\n\n");
 	}
 
 #ifdef HAS_READLINE

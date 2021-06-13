@@ -17,55 +17,51 @@
 
 #pragma once
 
-#include "grammar.h"
-#include "str_intern.h"
+#include "dparse.h"
 
-#define PAR_OK			0
-#define PAR_ERROR		-1
+// Add __attribute__((packed)) if compiler supports it
+// #if defined(__GNUC__) || defined(__clang__)
+// #define ATTR_PACKED __attribute__((packed))
+// #else
+#define ATTR_PACKED
+// #endif
 
-
-// lexer's input type
-typedef enum { SC_BUFFER, SC_FILE } INPUT_TYPE;
-
-
-// token info
-typedef struct {
-	TOKEN_TYPE type;
-	char *value;
-} TOKEN;
-
-// grammar symbol info
-typedef struct tag_symb_info {
-	char isTerminal;
-	TOKEN_TYPE type;
-	int ruleNo;
-	struct tag_symb_info *chl[MAXRULELEN];
-	void *value;
-} SYMB_INFO;
-
-// grammar rule info
-typedef struct {
-	int rsNo;								// number of symbols in the right-hand side
-	TOKEN_TYPE rs[MAXRULELEN];			// array of right-hand side symbols
-	void(*func)(SYMB_INFO*);			// rule processing function
-} GRAM_RULE;
+// Precedence and associativity of applications
+#define APPL_PRECED	100
+#define APPL_ASSOC	ASS_LEFT
 
 
-// functions provided by parser
+// Structs for representing a lambda-program as a tree. During parsing, we will
+// use the parse tree to construct the program tree used during execution.
 
-int getToken(TOKEN *curToken);
-int parse(void **progTree, int uGrammar);
+// Note: ATTR_PACKED (#defined __atribute__((packed))) instructs the compiler to
+// use 1 byte instead of 4 for the enum
+typedef enum { TM_ABSTR, TM_APPL, TM_VAR, TM_ALIAS } ATTR_PACKED TERM_TYPE;
+typedef enum { ASS_LEFT, ASS_RIGHT, ASS_NONE } ATTR_PACKED ASS_TYPE;
+
+// Note: put bigger fields first (lterm, rterm, name) to allow
+// the compiler to align the struct without wasting space.
+// results in a smaller sizeof(TERM)
+//
+typedef struct term_tag {
+	struct term_tag *lterm;					// left and right children
+	struct term_tag *rterm;					// (for applications and abstractions)
+	char *name;								// name (for variables, aliases and applications with an operator)
+	TERM_TYPE type;							// variable, application or abstraction
+	char closed;							// during parsing: 1 if application in parenthesis. during execution: 1 if no free vars
+} ATTR_PACKED TERM;
 
 
-// Variables available outside parser.c
-extern void *scInput;
-extern INPUT_TYPE scInputType;
-extern int scLineNo;
+int parse_string(char *source);
 
-// arrays modelling the finite state automaton (fsm) and the grammar
-// must be defined in some .c file
-extern char *validChars[VALIDCHNO];
-extern STATE fsm[VALIDCHNO][STATENO];
+// used in grammar.g
+TERM *create_variable(char *name);
+TERM *create_number(char *s);
+TERM *create_alias(char *name);
+TERM *create_abstraction(TERM *var, TERM *right);
+TERM *create_application(TERM *left, char *oper_name, TERM *right);
+TERM *create_list(TERM *first, D_ParseNode *rest);
+TERM *create_bracket(TERM *t);
 
-extern GRAM_RULE grammar[RULENO];
-extern int LL1[NONTRMNO][TRMNO];
+void parse_cmd_declaration(char *id, TERM *t);
+void parse_cmd_term(TERM *t);

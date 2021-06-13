@@ -16,7 +16,7 @@
 #pragma once
 
 #include "kazlib/list.h"
-#include "grammar.h"
+#include "parser.h"
 
 
 void termPrint(TERM *t, int isMostRight);
@@ -25,22 +25,14 @@ void termFree(TERM *t);
 void termGC();
 TERM *termClone(TERM *t);
 
-int termSubst(TERM *x, TERM *M, TERM *N, int mustClone);
-int termIsFreeVar(TERM *t, char *name);
 int termConv(TERM *t);
 
-TERM *termPower(TERM *f, TERM *a, int pow);
 TERM *termChurchNum(int n);
 int termNumber(TERM *t);
-int termIsList(TERM *t);
-void termPrintList(TERM *t);
 
-int termAliasSubst(TERM *t);
 int termRemoveAliases(TERM *t, char *id);
 void termAlias2Var(TERM *t, char *alias, char *var);
 
 void termRemoveOper(TERM *t);
 void termSetClosedFlag(TERM *t);
-list_t* termFreeVars(TERM *t);
 
-char *getVariable(TERM *t1, TERM *t2);

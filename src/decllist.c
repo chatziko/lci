@@ -24,6 +24,7 @@
 #include "decllist.h"
 #include "termproc.h"
 #include "parser.h"
+#include "str_intern.h"
 
 
 // node in the declaration graph (used for finding cycles)
@@ -267,19 +268,12 @@ static void removeCycle(GraphCycle cycle) {
 		}
 		newId = str_intern(newId_raw);
 
-		// construct tupled function
-		char buffer[500];
-		strcpy(buffer, "\\y.y ");
-		for(i = 0, node = cycle.end; i < cycle.size; i++, node = node->prev) {
-			strcat(buffer, node->id);
-			strcat(buffer, " ");
-		}
+		// construct tupled function  \y.y Alias1 Alias2 ... Alias<n>
+		TERM *body = create_variable(str_intern("y"));
+		for(i = 0, node = cycle.end; i < cycle.size; i++, node = node->prev)
+			body = create_application(body, NULL, create_alias(node->id));
 
-		// create term using parser and insert it into the list
-		scInputType = SC_BUFFER;
-		scInput = buffer;
-		getToken(NULL);
-		parse((void**)&t, TK_TERM);
+		t = create_abstraction(create_variable(str_intern("y")), body);
 
 		termSetClosedFlag(t);				// mark sub-terms as closed
 		termAddDecl(newId, t);
@@ -310,7 +304,7 @@ static void removeCycle(GraphCycle cycle) {
 
 	// To remove recursion, appearances of the alias within its body are replaced with the
 	// variable _me and we add a fixed point combinator.
-	// Hence the term A=N becomes A=� \_me.N[A:=_me]
+	// Hence the term A=N becomes A=Y \_me.N[A:=_me]
 	termAlias2Var(t, newId, str_intern("_me"));						// Change alias to _me
 
 	TERM *newTerm = termNew();										// Application of Y to the term
@@ -344,22 +338,17 @@ static void removeCycle(GraphCycle cycle) {
 // which chooses the n-th element of a varno-tuple
 
 static TERM *getIndexTerm(int varno, int n, char *tuple) {
-	//build string
-	char buffer[500];
-	sprintf(buffer, "%s (", tuple);
-	for(int i = 0; i < varno; i++)
-		sprintf(buffer + strlen(buffer), "\\x%d.", i);
+	char name[20];
+	sprintf(name, "x%d", n);
+	TERM *var = create_variable(str_intern(name));	// x<n>
 
-	sprintf(buffer + strlen(buffer), "x%d)", n);
+	TERM *abstr = var;								// \x1.\x2...\x<varno>.x<n>
+	for(int i = varno-1; i >= 0; i--) {
+		sprintf(name, "x%d", i);
+		abstr = create_abstraction(create_variable(str_intern(name)), abstr);
+	}
 
-	//create term
-	scInputType = SC_BUFFER;
-	scInput = buffer;
-	getToken(NULL);
-	TERM *t;
-	parse((void**)&t, TK_TERM);
-
-	return t;
+	return create_application(create_alias(tuple), NULL, abstr);
 }
 
 // printDeclList

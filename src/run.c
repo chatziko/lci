@@ -29,23 +29,25 @@
 #include <termio.h>
 #endif
 
+#include "dparse.h"
 #include "run.h"
 #include "parser.h"
 #include "termproc.h"
 #include "decllist.h"
+#include "str_intern.h"
 
 
 int trace;
 int options[OPTNO] = {0, 0, 0, 0, 1};
+int quit_called = 0;
 
 #ifndef NDEBUG
 extern int freeNo;
 #endif
 
-int execTerm(TERM *t) {
+void execTerm(TERM *t) {
 	int redno = -1, res = 1,
 		showExec = getOption(OPT_SHOWEXEC);
-	int retval = 0;
 	long stime = clock();
 	char c;
 
@@ -150,7 +152,7 @@ int execTerm(TERM *t) {
 
 	 case -2:
 		// Quit command. Return 1 to exit the program
-		retval = 1;
+		quit_called = 1;
 		break;
 
 	 default:
@@ -160,8 +162,6 @@ int execTerm(TERM *t) {
 	// free memory
 	termFree(t);
 	termGC();					// call terms garbageCollector
-
-	return retval;
 }
 
 // execSystemCmd
@@ -369,23 +369,28 @@ int execSystemCmd(TERM *t) {
 //   -2  syntax error
 
 int consultFile(char *fname) {
-	FILE *f;
-
-	if(!(f = fopen(fname, "r")))
+	FILE *f = fopen(fname, "r");
+	if(f == NULL)
 		return -1;
 
-	//parse file
-	scInputType = SC_FILE;
-	scInput = f;
-	getToken(NULL);
+	// read the whole file in 'source'
+	fseek(f, 0, SEEK_END);
+	int length = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	char *source = malloc((length+1) * sizeof(char));
+	source[length] = '\0';
+	int read = fread(source, 1, length, f);
+	fclose(f);
+	
+	if(read != length)
+		return -1;
 
-	if(parse(NULL, -1) != PAR_OK) {
-		fprintf(stderr, "Error: syntax error in line %d.\n", scLineNo);
-		fclose(f);
+	// parse (see dparser/sample_parser.c)
+	if(!parse_string(source)) {
+		fprintf(stderr, "Errors found in %s.\n", fname);
 		return -2;
 	}
 
-	fclose(f);
 	return 0;
 }
 

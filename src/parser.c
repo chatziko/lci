@@ -1,249 +1,181 @@
-// vim:noet:ts=3
-
-/* Lexical analyzer and parser
-
-	Copyright (C) 2004-8 Kostas Chatzikokolakis
-	This file is part of LCI
-
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details. */
-
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
+#include <stdio.h>
 
-#include "parser.h"
+#include "dparse.h"
+#include "termproc.h"
+#include "decllist.h"
+#include "run.h"
+#include "str_intern.h"
 
+extern D_ParserTables parser_tables_gram;
 
+int parse_string(char *source) {
+	D_Parser *parser = new_D_Parser(&parser_tables_gram, sizeof(D_ParseNode_User));
+	// parser->save_parse_tree = 1;
 
-void buildParseTree(SYMB_INFO *symb);
+	// not sure how these are used
+    // parser->loc.pathname = "gaga";
+    // parser->loc.line = 1;
+    // parser->loc.col = 0;
 
+	// If error_recovery == 1, dparser tries to recover from errors and might
+	// call the grammar's actions on incorrect derivations!! (so some terms
+	// might be missing) For the moment we execute the terms during parsing
+	// (see parse_cmd_term) so we cannot accept this.
+	//
+	// However error_recovery == 1 produces better error messages (shows the location
+	// of the error) so it's good to have. We should simply store the tree while
+	// parsing and execute afterwards, if the parsing was successful.
+	//
+	// parser->error_recovery = 0;
 
-void *scInput;
-INPUT_TYPE scInputType;
-int scLineNo;
+	D_ParseNode *node = dparse(parser, source, strlen(source));
 
+	int success = node != NULL && parser->syntax_errors == 0;
+	if(!success)
+		printf("Syntax errors found.\n");
 
+	free_D_Parser(parser);
 
-// getToken
-//
-// Reads one token from stdin and stores it in ptok.
-// If called with ptok=NULL then initializes the scanner.
-//
-// Return Value:
-//		PAR_OK		Successfully read token
-//		PAR_ERROR	Syntax error
-// 
-
-int getToken(TOKEN *ptok) {
-	static char tokenBuffer[100], *tbuf;
-	static STATE prevState;
-	static int charNo[255];
-
-	//if getToken is called without ptok then initialize scanner
-	if(!ptok) {
-		int i;
-		char *cpt;
-
-		tbuf = tokenBuffer;
-		prevState = S_INI;
-		scLineNo = 1;
-
-		//initialize charNums table
-		for(i = 0; i < 255; i++)
-			charNo[i] = -1;
-
-		for(i = 0; i < VALIDCHNO; i++)
-			for(cpt = validChars[i]; *cpt != '\0'; cpt++)
-				charNo[(unsigned char)*cpt] = i;
-
-		return PAR_OK;
-	}
-
-	ptok->type = -1;
-
-	while(prevState != S_EOF) {
-		STATE newState;
-		char c;
-
-		//get a character
-		if(scInputType == SC_FILE) {
-			c = fgetc(scInput);
-
-			if ((c & 0xFF) == 0xCE) {
-				char oldc = c;
-				c = fgetc(scInput);
-
-				if ((c & 0xFF) == 0xBB) {
-					c = '\\';
-				} else {
-					c = oldc;
-					fseek(scInput, -1, SEEK_CUR);
-				}
-			}
-		} else {
-			if(!(c = *(char*)scInput++))
-				c = EOF;
-
-			if ((c & 0xFF) == 0xCE) {
-				c = *(char*)scInput++;
-				if ((c & 0xFF) == 0xBB) {
-					c = '\\';
-				} else {
-					c--;
-				}
-			}
-		}
-		//printf("%c", c);
-
-		//handle comments
-		if(scInputType == SC_FILE && c == '#')
-			do {
-				c = fgetc(scInput);
-			} while(c != '\n' && c != '\r' && c != EOF);
-
-		//count lines
-		if(c == '\n') scLineNo++;
-
-		//get new state
-		if(c != EOF) {
-			if(charNo[(unsigned char)c] == -1)						//invalid character
-				return PAR_ERROR;
-
-			if((newState = fsm[charNo[(unsigned char)c]][prevState]) == S_IGN)
-				continue;
-		} else
-			newState = S_EOF;
-
-		//if completed a terminal token then return it
-		if(newState != prevState && (prevState < FINALSTATES || prevState == S_INI)) {
-			*tbuf = '\0';								//reset buffer
-			tbuf = tokenBuffer;
-
-			if(prevState != S_INI) {
-				ptok->type = prevState == S_OP
-					? selectOper(tbuf)
-					: (TOKEN_TYPE)prevState;
-				ptok->value = strdup(tbuf);
-			}
-		}
-
-		//store character
-		*tbuf++ = c;
-		if(newState != S_NEW)
-			prevState = newState;
-
-		//if token completed then return
-		if(ptok->type != -1)
-			return PAR_OK;
-	}
-
-	// Exiting while means that we reached EOF. If the buffer is not empty
-	// it means that the last token was not completed.
-	if(tokenBuffer[0] != EOF)
-		return PAR_ERROR;
-
-	ptok->type = TK_EOF;
-	return PAR_OK;
+	return success;
 }
 
-
-// parse
-//
-// LL(1) parser
-// Implements the classic algorithm for LL(1) top-down parsing. Uses the 'grammar' array
-// which contains the grammar rules and the 'LL1' parsing table for selecting rules.
-
-int parse(void **progTree, int uGrammar) {
-	SYMB_INFO *stack[200],
-				 **spt = stack,
-				 *curSymb,
-				 mainSymb = {0, INIT_SYMB, 0, {}, NULL};
-	TOKEN curToken;
-	int ruleNo, i;
-
-	if(uGrammar >= 0)
-		mainSymb.type = uGrammar;
-
-	// insert main symbol in stack and read first token
-	*spt++ = &mainSymb;
-	if(getToken(&curToken) != PAR_OK)
-		return PAR_ERROR;
-
-	while(spt != stack) {
-		curSymb = *--spt;
-
-		if(curSymb->isTerminal) {
-			// terminal symbol
-			if(curSymb->type == curToken.type) {
-				// matches the input symbol
-				curSymb->value = curToken.value;					//Apo8hkeysh timhs
-				if(getToken(&curToken) != PAR_OK)				//pairnoyme neo symbolo
-					return PAR_ERROR;
-
-			} else
-				return PAR_ERROR;
-		} else {
-			// non-terminal symbol
-			ruleNo = LL1[curSymb->type - TRMNO][curToken.type];		//eyresh kanona
-			if(ruleNo == -1) return PAR_ERROR;								//syntaktiko la8os
-
-			// add all symbols in the rule's RHS to the stack in reverse order. We keep
-			// these symbols in the chl array.
-			curSymb->ruleNo = ruleNo;
-			for(i = grammar[ruleNo].rsNo - 1; i >= 0; i--) {
-				SYMB_INFO *tmpSymb = malloc(sizeof(SYMB_INFO));
-				curSymb->chl[i] = tmpSymb;
-	
-				tmpSymb->type = grammar[ruleNo].rs[i];
-				tmpSymb->isTerminal = (tmpSymb->type < TRMNO);
-				tmpSymb->value = NULL;
-				*spt++ = tmpSymb;
-			}
-		}
-	}
-
-	// create parse tree
-	buildParseTree(&mainSymb);
-
-	// success
-	if(progTree) *progTree = mainSymb.value;
-	return PAR_OK;
+TERM *create_variable(char *name) {
+	TERM *t = termNew();
+	t->type = TM_VAR;
+	t->name = name;
+	return t;
 }
 
+TERM *create_alias(char *name) {
+	TERM *t = termNew();
+	t->type = TM_ALIAS;
+	t->name = name;
+	return t;
+}
 
-// buildParseTree
-//
-// Called after scanning the whole input. Starting from the leaves, it calls
-// each rule's processing function to build the parse tree.
+TERM *create_abstraction(TERM *var, TERM *right) {
+	TERM *t = termNew();
+	t->type = TM_ABSTR;
+	t->lterm = var;
+	t->rterm = right;
+	return t;
+}
 
-void buildParseTree(SYMB_INFO *symb) {
-	int i;
+static void get_assoc_preced(TERM *t, int *preced, ASS_TYPE *assoc) {
+	OPER *oper = t->name != NULL ? getOper(t->name) : NULL;
 
-	// terminal symbol, no processing is needed
-	if(symb->isTerminal)
-		return;
-
-	// first process all children
-	for(i = 0; i < grammar[symb->ruleNo].rsNo; i++)
-		buildParseTree(symb->chl[i]);
-
-	// process the rule
-	grammar[symb->ruleNo].func(symb);
-
-	// free memory
-	for(i = 0; i < grammar[symb->ruleNo].rsNo; i++) {
-		if(symb->chl[i]->isTerminal)
-			free(symb->chl[i]->value);
-		free(symb->chl[i]);
+	if(oper == NULL) {
+		*preced = APPL_PRECED;
+		*assoc = APPL_ASSOC;
+	} else {
+		*preced = oper->preced;
+		*assoc = oper->assoc;
 	}
 }
 
+// applications in lambda-calculus are left-associative "a b c = ((a b) c)"
+// so grammar.g parses applications/operators in a left-associative way,
+// and without any knowledge of precedece. Here we check whether
+// (a OP' b) OP c should be changed to a OP' (b OP c) due to
+// the precedence and/or associativity of OP/OP'.
+//
+// TODO: dparser supports user-defined scanners which allow to provide the precedence/associativity
+//       of operators at runtime, to directly produce a correct parse. I gave it a quick try
+//       but couldn't make it to work.
 
+static TERM *fix_precedence(TERM* op) {
+	TERM *left = op->lterm;
+	if(left->type != TM_APPL || left->closed)	// "closed" means it is protected by parenthesis
+		return op;
+
+	// get associativity and precedence
+	int op_preced, left_preced;
+	ASS_TYPE op_assoc, left_assoc;
+	get_assoc_preced(op, &op_preced, &op_assoc);
+	get_assoc_preced(left, &left_preced, &left_assoc);
+
+	// If left is an application, then op might need to "go inside" the application.
+	// Eg. if op = * and left = (a + b) then instead of (a + b) * right we need to
+	// get a + (b * right), that is * should go inside +.
+	// This happens in the following 2 cases:
+	// 	- op has lower precedence than left
+	// 	- they have the same precedence and op is _not_ left-associative, hence it
+	// 	  _cannot_ have 'left' on its left. In this case:
+	// 		* if left is right-associative (so it can have op on its right) then op goes inside
+	// 		* otherwise there is an ambiguity and a warning is printed
+
+	char breakOp = 0;
+	if(op_preced <= left_preced) {
+		if(op_preced < left_preced || (op_assoc != ASS_LEFT && left_assoc == ASS_RIGHT))
+			breakOp = 1;
+		else if(op_assoc != ASS_LEFT)
+			fprintf(stderr, "Warning: Precedence ambiguity between operators '%s' and '%s'. Use brackets.\n",
+				(op->name ? op->name : "APPL"), (left->name ? left->name : "APPL"));
+	}
+
+	if(!breakOp)
+		return op;
+
+	op->lterm = left->rterm;
+	left->rterm = fix_precedence(op);
+	return left;
+}
+
+TERM *create_application(TERM *left, char *oper_name, TERM *right) {
+	TERM *t = termNew();
+	t->type = TM_APPL;
+	t->name = oper_name;
+	t->lterm = left;
+	t->rterm = right;
+	t->closed = 0;
+
+	t = fix_precedence(t);
+
+	return t;
+}
+
+TERM *create_number(char *s) {
+	int num = 0;
+
+	if(strlen(s) > 4)
+		fprintf(stderr, "Error: integers must be in the range 0-9999. Changing to 0.\n");
+	else
+		num = atoi(s);
+
+	return termChurchNum(num);
+}
+
+TERM* create_bracket(TERM *t) {
+	t->closed = 1;		// during parsing, 'closed' means enclosed in brackets
+	return t;
+}
+
+// Syntactic sugar for Term1:(Term2:(...:(Term<n>:Nil)))
+TERM *create_list(TERM *first, D_ParseNode *rest) {
+	TERM *list = create_alias(str_intern("Nil"));
+
+	if(first != NULL) {
+		char *str_colon = str_intern(":");
+		for(int i = d_get_number_of_children(rest) - 1; i >= 0; i--) {
+			TERM *t = d_get_child(d_get_child(rest, i), 1)->user;
+			list = create_application(t, str_colon, list);
+		}
+		list = create_application(first, str_colon, list);
+	}
+	return list;
+}
+
+void parse_cmd_declaration(char *id, TERM *t) {
+	termRemoveOper(t);
+	termSetClosedFlag(t);
+
+	if(t->closed)
+		termAddDecl(id, t);
+	else
+		fprintf(stderr, "Error: alias %s is not a closed term and won't be registered\n", id);
+}
+
+void parse_cmd_term(TERM *t) {
+	execTerm(t);
+}
