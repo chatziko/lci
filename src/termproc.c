@@ -29,7 +29,18 @@
 #include "run.h"
 #include "str_intern.h"
 
+
+static TERM *termPower(TERM *f, TERM *a, int pow);
 static int termIsIdentity(TERM *t);
+static int termIsList(TERM *t);
+static void termPrintList(TERM *t);
+
+static int termIsFreeVar(TERM *t, char *name);
+static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone);
+static int termAliasSubst(TERM *t);
+static list_t* termFreeVars(TERM *t);
+static char *getVariable(TERM *t1, TERM *t2);
+
 
 static Vector termPool = NULL;
 
@@ -166,7 +177,7 @@ TERM *termClone(TERM *t) {
 // without cost, so a term marked as non-closed could in fact be closed. But the
 // opposite should hold, terms marked as closed MUST be closed.
 
-int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
+static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 	TERM z, *y, *P, *clone;
 	int found = 0;
 
@@ -266,7 +277,7 @@ int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 #ifndef NDEBUG
 int freeNo;				// count the number of calls of termIsFree
 #endif
-int termIsFreeVar(TERM *t, char *name) {
+static int termIsFreeVar(TERM *t, char *name) {
 	// closed terms have no free variables
 	if(t->closed)
 		 return 0;
@@ -420,7 +431,7 @@ int termConv(TERM *t) {
 //
 // Returns term f^pow(a) = a if pow == 0, f( f^{pow-1}(a) ) otherwise
 
-TERM *termPower(TERM *f, TERM *a, int pow) {
+static TERM *termPower(TERM *f, TERM *a, int pow) {
 	TERM *newTerm;
 
 	if(pow == 0)
@@ -507,7 +518,7 @@ int termNumber(TERM *t) {
 // Returns 1 if t is an encoding of a list, that is of the form
 // \s.s Head Tail h Nil: \x.\x.\y.x
 
-int termIsList(TERM *t) {
+static int termIsList(TERM *t) {
 	TERM *r;
 
 	if(t->type != TM_ABSTR) return 0;
@@ -549,7 +560,7 @@ static int termIsIdentity(TERM *t) {
 // Prints a term of the form [A, B, C, ...]. The term must be the encoding of a list
 // (termIsList(t) must return 1).
 
-void termPrintList(TERM *t) {
+static void termPrintList(TERM *t) {
 	TERM *r;
 	int i = 0;
 
@@ -568,7 +579,7 @@ void termPrintList(TERM *t) {
 // Substitutes aliast t with its corresponding term. Returns 0 if the term was found
 // or 1 if the alias is undefined.
 
-int termAliasSubst(TERM *t) {
+static int termAliasSubst(TERM *t) {
 	TERM *newTerm;
 
 	if(!(newTerm = termFromDecl(t->name))) {
@@ -710,7 +721,7 @@ static int compare_pointers(const void *key1, const void *key2) {
     return key1 - key2;
 }
 
-list_t* termFreeVars(TERM *t) {
+static list_t* termFreeVars(TERM *t) {
 	list_t *vars = NULL, *rvars;
 	lnode_t *node;
 
@@ -749,7 +760,7 @@ list_t* termFreeVars(TERM *t) {
 // the following order:
 //		a, b, ..., z, aa, ab, .., ba, bb, ..., zz, aaa, aab, ...
 
-char *getVariable(TERM *t1, TERM *t2) {
+static char *getVariable(TERM *t1, TERM *t2) {
 	char s[10] = "a";
 	int curLen = 1, i;
 
