@@ -73,10 +73,10 @@ set_tests_properties(queens PROPERTIES
 )
 
 add_test(fixed_point
-	sh -c "printf \"FixedPoint\\nAppend 3:4:Nil 5:Nil\" | ./lci"
+	sh -c "printf \"FixedPoint\\nAppend [3,4,[]] [5]\" | ./lci"
 )
 set_tests_properties(fixed_point PROPERTIES
-	PASS_REGULAR_EXPRESSION "cycles removed.*\\[3, 4, 5\\]"
+	PASS_REGULAR_EXPRESSION "cycles removed.*\\[3, 4, \\[\\], 5\\]"
 )
 
 # Print all variables

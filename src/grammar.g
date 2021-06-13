@@ -17,6 +17,7 @@
 	int is_reserved_oper(char *oper) {
 		return strcmp(oper, "=" ) == 0 ||
 			   strcmp(oper, "\\") == 0 ||
+			   strcmp(oper, "," ) == 0 ||
 			   strcmp(oper, "." ) == 0;
 	}
 }
@@ -35,8 +36,11 @@ term
 	: variable						{ $$ = create_variable($0); }
     | number						{ $$ = create_number($0); }
 	| alias							{ $$ = create_alias($0); }
-	| '(' term ')'					{ $$ = $1; ((TERM*)$$)->closed = 1; }
+	| '(' term ')'					{ $$ = create_bracket($1); }
 	| lambda variable '.' term		{ $$ = create_abstraction(create_variable($1), $3); }
+	| '[' ']'					 	{ $$ = create_list(NULL, NULL); }
+	| '[' term ( ',' term )* ']'	{ $$ = create_list($1, &$n2); }
+	| '(' term ',' term ')'			{ $$ = create_bracket(create_application($1, str($n2), $3)); }
 
 	// applications are left-associative, so we parse as such (see fix_precedence in parser.c)
 	| term operator? term $left 1	{ char *op = $#1 ? ${child 1,0}->user : NULL;

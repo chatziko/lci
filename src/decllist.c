@@ -268,7 +268,7 @@ static void removeCycle(GraphCycle cycle) {
 		}
 		newId = str_intern(newId_raw);
 
-		// construct tupled function
+		// construct tupled function  \y.y Alias1 Alias2 ... Alias<n>
 		TERM *body = create_variable(str_intern("y"));
 		for(i = 0, node = cycle.end; i < cycle.size; i++, node = node->prev)
 			body = create_application(body, NULL, create_alias(node->id));

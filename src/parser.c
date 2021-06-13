@@ -5,6 +5,7 @@
 #include "termproc.h"
 #include "decllist.h"
 #include "run.h"
+#include "str_intern.h"
 
 extern D_ParserTables parser_tables_gram;
 
@@ -143,6 +144,26 @@ TERM *create_number(char *s) {
 		num = atoi(s);
 
 	return termChurchNum(num);
+}
+
+TERM* create_bracket(TERM *t) {
+	t->closed = 1;		// during parsing, 'closed' means enclosed in brackets
+	return t;
+}
+
+// Syntactic sugar for Term1:(Term2:(...:(Term<n>:Nil)))
+TERM *create_list(TERM *first, D_ParseNode *rest) {
+	TERM *list = create_alias(str_intern("Nil"));
+
+	if(first != NULL) {
+		char *str_colon = str_intern(":");
+		for(int i = d_get_number_of_children(rest) - 1; i >= 0; i--) {
+			TERM *t = d_get_child(d_get_child(rest, i), 1)->user;
+			list = create_application(t, str_colon, list);
+		}
+		list = create_application(first, str_colon, list);
+	}
+	return list;
 }
 
 void parse_cmd_declaration(char *id, TERM *t) {

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "dparse.h"
+
 // Add __attribute__((packed)) if compiler supports it
 // #if defined(__GNUC__) || defined(__clang__)
 // #define ATTR_PACKED __attribute__((packed))
@@ -52,11 +54,14 @@ typedef struct term_tag {
 
 int parse_string(char *source);
 
+// used in grammar.g
 TERM *create_variable(char *name);
 TERM *create_number(char *s);
 TERM *create_alias(char *name);
 TERM *create_abstraction(TERM *var, TERM *right);
 TERM *create_application(TERM *left, char *oper_name, TERM *right);
+TERM *create_list(TERM *first, D_ParseNode *rest);
+TERM *create_bracket(TERM *t);
 
 void parse_cmd_declaration(char *id, TERM *t);
 void parse_cmd_term(TERM *t);
