@@ -73,42 +73,52 @@ static void get_assoc_preced(TERM *t, int *preced, ASS_TYPE *assoc) {
 	}
 }
 
-static TERM *fix_application_grouping(TERM* op) {
-	TERM *s2 = op->rterm;
-	if(s2->type != TM_APPL || s2->closed)
+// applications in lambda-calculus are left-associative "a b c = ((a b) c)"
+// so grammar.g parses applications/operators in a left-associative way,
+// and without any knowledge of precedece. Here we check whether
+// (a OP' b) OP c should be changed to a OP' (b OP c) due to
+// the precedence and/or associativity of OP/OP'.
+//
+// TODO: dparser supports user-defined scanners which allow to provide the precedence/associativity
+//       of operators at runtime, to directly produce a correct parse. I gave it a quick try
+//       but couldn't make it to work.
+
+static TERM *fix_precedence(TERM* op) {
+	TERM *left = op->lterm;
+	if(left->type != TM_APPL || left->closed)	// "closed" means it is protected by parenthesis
 		return op;
 
 	// get associativity and precedence
-	int op_preced, s2_preced;
-	ASS_TYPE op_assoc, s2_assoc;
+	int op_preced, left_preced;
+	ASS_TYPE op_assoc, left_assoc;
 	get_assoc_preced(op, &op_preced, &op_assoc);
-	get_assoc_preced(s2, &s2_preced, &s2_assoc);
+	get_assoc_preced(left, &left_preced, &left_assoc);
 
-	// If s2 is an application, then op might need to "go inside" the application.
-	// Eg. if op = * and s2 = (a + b) then instead of s1 * (a + b) we need to
-	// get (s1 * a) + b, that is * should go inside +.
+	// If left is an application, then op might need to "go inside" the application.
+	// Eg. if op = * and left = (a + b) then instead of (a + b) * right we need to
+	// get a + (b * right), that is * should go inside +.
 	// This happens in the following 2 cases:
-	// 	- op has lower precedence than s2
-	// 	- they have the same precedence and op is _not_ right-associative, hence it
-	// 	  _cannot_ have s2 on its right. In this case:
-	// 		* if s2 is left-associative (so it can have op on its left) then op goes inside
+	// 	- op has lower precedence than left
+	// 	- they have the same precedence and op is _not_ left-associative, hence it
+	// 	  _cannot_ have 'left' on its left. In this case:
+	// 		* if left is right-associative (so it can have op on its right) then op goes inside
 	// 		* otherwise there is an ambiguity and a warning is printed
 
 	char breakOp = 0;
-	if(op_preced <= s2_preced) {
-		if(op_preced < s2_preced || (op_assoc != ASS_RIGHT && s2_assoc == ASS_LEFT))
+	if(op_preced <= left_preced) {
+		if(op_preced < left_preced || (op_assoc != ASS_LEFT && left_assoc == ASS_RIGHT))
 			breakOp = 1;
-		else if(op_assoc != ASS_RIGHT)
+		else if(op_assoc != ASS_LEFT)
 			fprintf(stderr, "Warning: Precedence ambiguity between operators '%s' and '%s'. Use brackets.\n",
-				(op->name ? op->name : "APPL"), (s2->name ? s2->name : "APPL"));
+				(op->name ? op->name : "APPL"), (left->name ? left->name : "APPL"));
 	}
 
 	if(!breakOp)
 		return op;
 
-	op->rterm = s2->lterm;
-	s2->lterm = fix_application_grouping(op);
-	return s2;
+	op->lterm = left->rterm;
+	left->rterm = fix_precedence(op);
+	return left;
 }
 
 TERM *create_application(TERM *left, char *oper_name, TERM *right) {
@@ -119,7 +129,7 @@ TERM *create_application(TERM *left, char *oper_name, TERM *right) {
 	t->rterm = right;
 	t->closed = 0;
 
-	t = fix_application_grouping(t);
+	t = fix_precedence(t);
 
 	return t;
 }

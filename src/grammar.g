@@ -36,9 +36,11 @@ term
     | number						{ $$ = create_number($0); }
 	| alias							{ $$ = create_alias($0); }
 	| '(' term ')'					{ $$ = $1; ((TERM*)$$)->closed = 1; }
-	| term operator? term $right 1	{ char *op = $#1 ? ${child 1,0}->user : NULL;
-									  $$ = create_application($0, op, $2); }
-	| lambda variable '.' term		{ $$ = create_abstraction(create_variable($1), $3); };
+	| lambda variable '.' term		{ $$ = create_abstraction(create_variable($1), $3); }
+
+	// applications are left-associative, so we parse as such (see fix_precedence in parser.c)
+	| term operator? term $left 1	{ char *op = $#1 ? ${child 1,0}->user : NULL;
+									  $$ = create_application($0, op, $2); };
 
 lambda: '\\' | 'λ';
 
