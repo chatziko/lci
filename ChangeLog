@@ -1,179 +1,31 @@
-2008-02-14  chatziko
+LCI - Real men use only pure calculus
 
-	* [r37] AUTHORS, Makefile.am, NEWS, README, configure.ac,
-	  doc/lcidoc.tex, doc/lcidoc_gr.tex, src/decllist.c,
-	  src/decllist.h, src/grammar.c, src/grammar.h, src/main.c,
-	  src/parser.c, src/parser.h, src/run.c, src/run.h, src/termproc.c,
-	  src/termproc.h:
-	  - Changed year in copyright notices
-	  - Changed email in some places
-	  - Put trac url in README
+1.0 (release candidate)
+	- Replace custom parser with dparser (much easier to extend).
+	- Use sting interning, gives 2x speedup (thanks to Stefanos Baziotis).
+	- Support [a,b,c] list notation (syntactic sugar for a:b:c:Nil).
+	- Migrate from autotools to cmake.
+	- Use same syntax in files and REPL (eg aliases can be defined in the REPL).
+	- Print \x.x as I (looks good since 1 reduces to I).
+	- Various polishing, cleanup and performance enhancements.
 
-2006-09-21  hatz
+0.6 (14 Feb 2008):
+	This is a bugfix release which corrects a bug (#1546641) in alpha-conversion. The bug
+	was affecting the power operator (**) giving a wrong result in some cases.
 
-	* [r36] ChangeLog:
-	  ChangeLog update.
+0.5 (13 Mar 2006):
+	First 'official' release of lci, the code was there for some time but
+	I wanted to add an autotooled build system and some cool extra features.
 
-	* [r35] configure.ac:
-	  Changed version to 0.6
+	So we now use autotools to build, type ./configure && make && make install
+	and you're done. Tested in linux, win32 (cygwin) and OSX, it compiles like a charm :)
 
-	* [r34] NEWS:
-	  Added NEWS about the 0.6 release.
+	There is also support for readline now so if you have it installed when
+	compiling you'll be able to edit the lines that you type, have history, etc.
 
-2006-09-19  hatz
+	Finally some impressive optimizations have been done in this version.
+	Queens 5 takes just 2 seconds instead of 50 and we can even solve Queens 6
+	in 40 seconds which was unsolvable before.
 
-	* [r33] src/termproc.c:
-	  bugfix: when alpha-converting a term, mark newly created
-	  variables as non-closed (the bug was triggered in powers, eg
-	  2**3, giving incorrect results)
-
-2006-03-13  hatz
-
-	* [r31] ChangeLog:
-	  Added ChangeLog
-
-	* [r30] NEWS:
-	  Added NEWS file with info about the 0.5 release.
-
-	* [r29] ., .cvsignore, doc, doc/.cvsignore, src, src/.cvsignore:
-	  Added .cvsignore in all directories.
-
-	* [r28] TODO:
-	  Marked autotools and readline goals as done.
-
-	* [r27] README:
-	  - updated installation paragraph
-	  - fixed some typos
-
-	* [r26] AUTHORS:
-	  Added AUTHORS file
-
-	* [r25] Makefile, Makefile.am, configure.ac, doc/Makefile,
-	  doc/Makefile.am, reconf, src/Makefile, src/Makefile.am:
-	  Use autotools build system
-	  - added configure.ac
-	  - added Makefile.am files in every directory
-	  - added reconf script to run autoconf/automake/etc
-	  - removed old Makefiles
-
-	* [r24] doc/lcidoc_gr.tex:
-	  fixed typos
-
-	* [r23] doc/lcidoc.tex:
-	  - Explain the directories where .lcirc file is searched
-	  - minor corrections
-
-	* [r22] src/termproc.c, src/termproc.h:
-	  - use autotools
-	  - use a memory pool for fast term creation
-	  * termFree(): stores the term in the pool instead of really
-	  free() it
-	  * termNew(): returns a term from the pool, uses malloc() only
-	  if pool is empty
-	  * termGC(): free()s all terms in the pool
-	  * use termNew/termFree everywhere instead of malloc/free
-	  - termSubst()
-	  * Added a mustClone argument. If 0 then the term N is not cloned
-	  but used directly in the substitution. M[x=N] can be performed
-	  without
-	  cloning if x appears at most once in M.
-	  * return 1 if x was actually substituted with N in M
-	  0 if no occurance of x was found.
-	  - big optimization using closed flag
-	  * TERM struct contains a 'closed' field
-	  * termSetClosedFlag(), termFreeVars(): update the closed flag of
-	  all subterms of the given term. Called before executing a term.
-	  * termSubst(), termConv(): closed flags are kept updated during
-	  conversions with minimum complexity cost (constant time).
-	  It is not always possible to detect that a term became closed
-	  without
-	  cost, so a term marked as non-closed could in fact be closed. But
-	  the
-	  opposite should hold, terms marked as closed MUST be closed.
-	  * termSubst(), termIsFreeVar(): closed flags are used to avoid
-	  examining
-	  closed terms (which have no free variables and no substitution
-	  is possible)
-	  - with the above optimizations we solve Queens 5 in 2 seconds
-	  instead of 50
-	  and Queens 6 in 40 seconds which before was unsolvable in
-	  reasonable time.
-
-	* [r21] src/kazlib, src/kazlib/list.c, src/kazlib/list.h:
-	  Added linked list implementation from kazlib
-	  http://users.footprints.net/~kaz/kazlib.html
-
-	* [r20] src/decllist.c, src/decllist.h:
-	  - use autotools
-	  - removeCycle(): call termSetClosedFlag() on newly created terms
-	  - use termNew() instead of malloc() to create new terms
-
-	* [r19] src/grammar.c:
-	  - use autotools
-	  - call termSetClosedFlag() on alias definitions. produce an error
-	  if the term is not closed.
-	  - use termNew() instead of malloc() to create new terms
-
-	* [r18] src/grammar.h:
-	  - use autotools
-	  - reduced sizeof(TERM) by
-	  * using __atribute__((packed)) to make enums in TERM stucture use
-	  just one byte
-	  * reordering the structure's fields so that bigger fields are on
-	  top, allowing the compiler to align the data without leaving
-	  holes
-
-	* [r17] src/parser.c, src/parser.h:
-	  - use autotools
-	  - bugfix: when accessing charNo array, convert index to unsigned
-	  char. The signed value was negative for the greek lambda
-	  character (\xEB) leading to writing outside the array which gave
-	  a bus error in OSX.
-
-	* [r16] src/run.c, src/run.h:
-	  - use autotools
-	  - use readline for single character input in trace mode
-	  (fallback to IOCTL or standard C lib if readline not available)
-	  - execTerm(): return 1 if Quit was given
-	  - execSystemCmd(): return -2 if Quit was given
-
-	* [r15] src/main.c:
-	  - use autotools
-	  - use readline for line input
-	  - use readline for history (save session to ~/.lci_history)
-	  - read datadir/lci/.lcirc and $home/.lcirc in addition to
-	  ./.lcirc
-
-2004-01-27  hatz
-
-	* [r14] src/Makefile:
-	  Added -fno-strict-aliasing flag to avoid some warnings.
-
-	* [r13] src/main.c:
-	  Replaced the 'dangerous' gets by fgets.
-
-2004-01-26  hatz
-
-	* [r11] doc/lcidoc.tex:
-	  Updated documentation for the change of the way terms are
-	  printed.
-
-	* [r10] src/run.c, src/run.h, src/termproc.c:
-	  Changed the way lambda terms are printed: replaced greek lambda
-	  with "."
-	  because it is not available in most character sets. It can be
-	  enabled
-	  with the greeklambda option. Removed haskell option.
-
-2003-06-24  hatz
-
-	* [r4] ., COPYING, Makefile, README, TODO, doc, doc/Makefile,
-	  doc/lcidoc.tex, doc/lcidoc_gr.tex, src, src/.lcirc, src/Makefile,
-	  src/decllist.c, src/decllist.h, src/grammar.c, src/grammar.h,
-	  src/main.c, src/parser.c, src/parser.h, src/queens.lci,
-	  src/run.c, src/run.h, src/termproc.c, src/termproc.h:
-	  This commit was generated by cvs2svn to compensate for changes in
-	  r3,
-	  which included commits to RCS files with non-trunk default
-	  branches.
+	Enjoy!
 
