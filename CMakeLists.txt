@@ -29,15 +29,8 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c
 file(GLOB SOURCES src/*.c src/**/*.c)
 add_executable(lci ${SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c)
 
-target_link_libraries(lci dparse replxx stdc++)
+target_link_libraries(lci dparse replxx stdc++)					# stdc++ needed by replxx
 target_include_directories(lci PUBLIC src src/k08 dparser)
-
-# search for sys/ioctl.h
-check_include_file(sys/ioctl.h IOCTL_FOUND)
-
-if (IOCTL_FOUND)
-	add_compile_definitions(HAS_IOCTL)
-endif()
 
 # copy some files to the build dir for easier debugging (configure_file has the advantage of
 # creating a dependency, modifying the source file will update the target).

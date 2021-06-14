@@ -9,10 +9,13 @@
 #include <time.h>
 #include <signal.h>
 
-#ifdef HAS_IOCTL
-#include <unistd.h>
+#if __has_include(<conio.h>)
+#include <conio.h>
+#elif __has_include(<sys/ioctl.h>)
 #include <sys/ioctl.h>
-#include <termio.h>
+	#if __has_include(<termio.h>)
+	#include <termio.h>
+	#endif
 #endif
 
 #include "dparse.h"
@@ -30,6 +33,32 @@ int quit_called = 0;
 #ifndef NDEBUG
 extern int freeNo;
 #endif
+
+// read a single character (without buffering)
+static int read_single_char() {
+	#if __has_include(<conio.h>)				// available on windows
+	return _getch();
+
+	#elif __has_include(<sys/ioctl.h>)
+	// change tio settings to make getchar return immediately after the
+	// first character (without pressing enter). We keep the old
+	// settings to restore later.
+	struct termio tio, oldtio;
+	ioctl(0, TCGETA, &tio);						// read settings
+	oldtio = tio;								// save settings
+	tio.c_lflag &= ~(ICANON | ECHO);			// change settings
+	tio.c_cc[VMIN] = 1;
+	tio.c_cc[VTIME] = 0;
+	ioctl(0, TCSETA, &tio);						// set new settings
+
+	int res = getchar();
+	ioctl(0, TCSETA, &oldtio);					// restore terminal settings
+	return res;
+
+	#else
+	return getchar();
+	#endif
+}
 
 void execTerm(TERM *t) {
 	int redno = -1, res = 1,
@@ -58,26 +87,11 @@ void execTerm(TERM *t) {
 			redno++;
 
 			if(trace) {
-#ifdef HAS_IOCTL
-				// change tio settings to make getchar return immediately after the
-				// first character (without pressing enter). We keep the old
-				// settings to restore later.
-				struct termio tio, oldtio;
-				ioctl(0, TCGETA, &tio);						// read settings
-				oldtio = tio;									// save settings
-				tio.c_lflag &= ~(ICANON | ECHO);			// change settings
-				tio.c_cc[VMIN] = 1;
-				tio.c_cc[VTIME] = 0;
-				ioctl(0, TCSETA, &tio);						// set new settings
-#endif
-
 				termPrint(t, 1);
 				printf("  ?> ");
 				fflush(stdout);
 				do {
-// #else
-					switch(c = getchar()) {
-// #endif
+					switch(c = read_single_char()) {
 					 case 'c':
 						 printf("continue\n");
 						 trace = 0;
@@ -95,12 +109,8 @@ void execTerm(TERM *t) {
 					}
 				} while(c == '?');
 
-#if defined(HAS_IOCTL)
-				// restore terminal settings
-				ioctl(0, TCSETA, &oldtio);
-#endif
-
-				if(c == 'a') break;
+				if(c == 'a')
+					break;
 
 			} else if(showExec) {
 				termPrint(t, 1);
