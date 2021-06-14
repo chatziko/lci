@@ -9,9 +9,7 @@
 #include <time.h>
 #include <signal.h>
 
-#ifdef HAS_READLINE
-#include <readline/readline.h>
-#elif defined(HAS_IOCTL)
+#ifdef HAS_IOCTL
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <termio.h>
@@ -60,11 +58,7 @@ void execTerm(TERM *t) {
 			redno++;
 
 			if(trace) {
-#ifdef HAS_READLINE
-				// calling rl_prep_terminal allows to read a single character
-				// from stdin (without waiting for <return>)
-				rl_prep_terminal(1);
-#elif defined(HAS_IOCTL)
+#ifdef HAS_IOCTL
 				// change tio settings to make getchar return immediately after the
 				// first character (without pressing enter). We keep the old
 				// settings to restore later.
@@ -81,11 +75,9 @@ void execTerm(TERM *t) {
 				printf("  ?> ");
 				fflush(stdout);
 				do {
-#ifdef HAS_READLINE
-					switch(c = rl_read_key()) {
-#else
+// #else
 					switch(c = getchar()) {
-#endif
+// #endif
 					 case 'c':
 						 printf("continue\n");
 						 trace = 0;
@@ -103,10 +95,8 @@ void execTerm(TERM *t) {
 					}
 				} while(c == '?');
 
+#if defined(HAS_IOCTL)
 				// restore terminal settings
-#ifdef HAS_READLINE
-				rl_deprep_terminal();
-#elif defined(HAS_IOCTL)
 				ioctl(0, TCSETA, &oldtio);
 #endif
 

@@ -5,10 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef HAS_READLINE
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif
+#include <replxx.h>
 
 #include "parser.h"
 #include "run.h"
@@ -18,30 +15,21 @@
 
 
 int main() {
-	char *home = getenv("HOME"),
-		 *lcirc = ".lcirc",
-		 *path;
-
-#ifdef HAS_READLINE
-	char *buffer = NULL;
+	char *home = getenv("HOME");
+	char *lcirc = ".lcirc";
 	char *lci_history = "/.lci_history";
 
-	// disable file auto-complete
 	// TODO: implement our own auto-complete
-	rl_bind_key ('\t', rl_insert);
+	Replxx *replxx = replxx_init();
 
 	// load history from ~/.lci_history
 	if(home) {
-		path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
+		char *path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
 		strcpy(path, home);
 		strcat(path, lci_history);
-		read_history(path);
+		replxx_history_load(replxx, path);
 		free(path);
 	}
-#else
-	char buffer[300];
-	char *s;
-#endif
 
 	printf("lci - A lambda calculus interpreter\n");
 	printf("Type a term, Help for info or Quit to exit.\n\n");
@@ -51,7 +39,7 @@ int main() {
 
 #ifdef DATADIR
 	// DATADIR/lci/.lcirc
-	path = (char*)malloc(sizeof(char) * (strlen(DATADIR) + strlen(lcirc) + 6));
+	char *path = (char*)malloc(sizeof(char) * (strlen(DATADIR) + strlen(lcirc) + 6));
 	strcpy(path, DATADIR);
 	strcat(path, "/lci/");
 	strcat(path, lcirc);
@@ -62,7 +50,7 @@ int main() {
 
 	// ~/.lcirc
 	if(home) {
-		path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lcirc) + 2));
+		char *path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lcirc) + 2));
 		strcpy(path, home);
 		strcat(path, "/");
 		strcat(path, lcirc);
@@ -81,54 +69,31 @@ int main() {
 	// read and execute commands
 	while(!quit_called) {
 		// read command
-#ifdef HAS_READLINE
-		free(buffer);
-		buffer = readline("lci> ");
-		if(!buffer) break;	// if eof exit
-#else
-		printf("lci> ");
-		fflush(stdout);
-		if(!fgets(buffer, sizeof(buffer), stdin))
-			break;	// if eof exit
+		char* line = (char*)replxx_input(replxx, "lci> ");
+		if(!line) break;	// if eof exit
 
-		// remove trailing '\n' (if exists)
-		for(s = buffer; *s != '\0' && *s != '\n'; s++)
-			;
-		*s = '\0';
-#endif
 		// if empty read again.
-		if(!*buffer) continue;
+		if(!*line) continue;
 
-#ifdef HAS_READLINE
-		// add line to readline history
-		add_history(buffer);
-#endif
+		replxx_history_add(replxx, line);
 
-		parse_string(buffer);
-		// if(parse((void*)&t, TK_TERM) == PAR_OK) {
-			// if(execTerm(t) != 0)
-				// break;
-		// } 
-			// else
-			// printf("Aborted due to syntax errors\n\n");
+		parse_string(line);
 	}
 
-#ifdef HAS_READLINE
 	// save history to ~/.lci_history
 	if(home) {
-		path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
+		char *path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
 		strcpy(path, home);
 		strcat(path, lci_history);
 
-		write_history(path);
-// #if HAVE_HISTORY_TRUNCATE_FILE
-		history_truncate_file(path, MAX_HISTORY_ENTRIES);
-// #endif
+		replxx_set_max_history_size(replxx, MAX_HISTORY_ENTRIES);
+		replxx_history_save(replxx, path);
+
 		free(path);
 	}
-#endif
 
 	// cleanup
+	replxx_end(replxx);
 	str_intern_cleanup();
 
 	return 0;
