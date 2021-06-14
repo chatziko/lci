@@ -21,10 +21,6 @@ cd build && make
 sudo make install
 ```    
 
-It is recommended to install the **readline** library (and development files)
-before compiling. On ubuntu/debian install the ```libreadline-dev``` package.
-Check the output of ```cmake``` to see if you have it.
-
 #### Using Homebrew on OSX
 
 Install [Homebrew](http://brew.sh) and run:

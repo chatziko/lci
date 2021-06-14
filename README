@@ -63,8 +63,7 @@ This will install lci executable in /usr/local/bin and .lcirc, queens.lci in
 -DCMAKE_INSTALL_PREFIX=<dir> to cmake.
 
 LCI has no hard dependencies (except from a descent C99 compiler, gcc is
-recommended) but it is recommended to install readline before compiling
-for better input handling, history, etc.
+recommended).
 
 ----------------------------------------------------------------------------------
 

@@ -5,6 +5,7 @@ LCI - Real men use only pure calculus
 	- Use sting interning, gives 2x speedup (thanks to Stefanos Baziotis).
 	- Support [a,b,c] list notation (syntactic sugar for a:b:c:Nil).
 	- Migrate from autotools to cmake.
+	- Replace readline by replxx (no external dependencies, windows support).
 	- Use same syntax in files and REPL (eg aliases can be defined in the REPL).
 	- Print \x.x as I (looks good since 1 reduces to I).
 	- Various polishing, cleanup and performance enhancements.
