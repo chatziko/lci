@@ -1,3 +1,6 @@
 [submodule "dparser"]
 	path = dparser
 	url = https://github.com/jplevyak/dparser.git
+[submodule "replxx"]
+	path = replxx
+	url = https://github.com/AmokHuginnsson/replxx.git
