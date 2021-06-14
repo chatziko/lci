@@ -32,6 +32,11 @@ add_executable(lci ${SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c)
 target_link_libraries(lci dparse replxx stdc++)					# stdc++ needed by replxx
 target_include_directories(lci PUBLIC src src/k08 dparser)
 
+# if present, lci tries to read global .lcirc from DATADIR
+if(CMAKE_INSTALL_PREFIX)
+	target_compile_definitions(lci PUBLIC DATADIR="${CMAKE_INSTALL_PREFIX}/share")
+endif()
+
 # copy some files to the build dir for easier debugging (configure_file has the advantage of
 # creating a dependency, modifying the source file will update the target).
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/.lcirc     ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
