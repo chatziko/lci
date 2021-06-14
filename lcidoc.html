@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html >
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="generator" content="hevea 2.32">
+<style type="text/css">
+.li-itemize{margin:1ex 0ex;}
+.li-enumerate{margin:1ex 0ex;}
+.dd-description{margin:0ex 0ex 1ex 4ex;}
+.dt-description{margin:0ex;}
+.toc{list-style:none;}
+.footnotetext{margin:0ex; padding:0ex;}
+div.footnotetext P{margin:0px; text-indent:1em;}
+.thefootnotes{text-align:left;margin:0ex;}
+.dt-thefootnotes{margin:0em;}
+.dd-thefootnotes{margin:0em 0em 0em 2em;}
+.footnoterule{margin:1em auto 1em 0px;width:50%;}
+.caption{padding-left:2ex; padding-right:2ex; margin-left:auto; margin-right:auto}
+.title{margin:2ex auto;text-align:center}
+.titlemain{margin:1ex 2ex 2ex 1ex;}
+.titlerest{margin:0ex 2ex;}
+.center{text-align:center;margin-left:auto;margin-right:auto;}
+.flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
+.flushright{text-align:right;margin-left:auto;margin-right:0ex;}
+div table{margin-left:inherit;margin-right:inherit;margin-bottom:2px;margin-top:2px}
+td table{margin:auto;}
+table{border-collapse:collapse;}
+td{padding:0;}
+.cellpadding0 tr td{padding:0;}
+.cellpadding1 tr td{padding:1px;}
+pre{text-align:left;margin-left:0ex;margin-right:auto;}
+blockquote{margin-left:4ex;margin-right:4ex;text-align:left;}
+td p{margin:0px;}
+.boxed{border:1px solid black}
+.textboxed{border:1px solid black}
+.vbar{border:none;width:2px;background-color:black;}
+.hbar{border:none;height:2px;width:100%;background-color:black;}
+.hfill{border:none;height:1px;width:200%;background-color:black;}
+.vdisplay{border-collapse:separate;border-spacing:2px;width:auto; empty-cells:show; border:2px solid red;}
+.vdcell{white-space:nowrap;padding:0px; border:2px solid green;}
+.display{border-collapse:separate;border-spacing:2px;width:auto; border:none;}
+.dcell{white-space:nowrap;padding:0px; border:none;}
+.dcenter{margin:0ex auto;}
+.vdcenter{border:solid #FF8000 2px; margin:0ex auto;}
+.minipage{text-align:left; margin-left:0em; margin-right:auto;}
+.marginpar{border:solid thin black; width:20%; text-align:left;}
+.marginparleft{float:left; margin-left:0ex; margin-right:1ex;}
+.marginparright{float:right; margin-left:1ex; margin-right:0ex;}
+.theorem{text-align:left;margin:1ex auto 1ex 0ex;}
+.part{margin:2ex auto;text-align:center}
+</style>
+<title>
+	lci Manual
+
+</title>
+</head>
+<body >
+<!--HEVEA command line is: /usr/bin/hevea /home/vagabond/projects/c/lci/git/doc/lcidoc.tex -->
+<!--CUT STYLE article--><!--CUT DEF section 1 --><table class="title"><tr><td style="padding:1ex"><h1 class="titlemain">
+	<span style="font-family:monospace">lci</span> Manual
+</h1><h3 class="titlerest">
+	Kostas Chatzikokolakis
+</h3></td></tr>
+</table><p>This manual describes the use of <span style="font-family:monospace">lci</span>, which is an advanced
+interpreter for the &#X3BB;-calculus. This program was first developed by Kostas
+Chatzikokolakis as an assignment for the &#X201C;Theory of Programming Languages&#X201D; course
+in the Department of Informatics of University of Athens. Later it became an
+open source project licenced under GPL, in order to be used and improved by
+the open source community. It&#X2019;s main purpose is to compute the normal form of
+pure &#X3BB;-calculus terms. Moreover it supports various extensions which are, however,
+implemented through the pure calculus.</p><!--TOC section id="sec1" Contents-->
+<h2 id="sec1" class="section">Contents</h2><!--SEC END -->
+<!--TOC section id="sec2" Syntax-->
+<h2 id="sec2" class="section">1&#XA0;&#XA0;Syntax</h2><!--SEC END --><p>
+<span style="font-family:monospace">lci</span> supports the syntax of &#X3BB;-calculus enriched with <em>integers</em>, <em>identifiers</em>
+and <em>operators</em>. The supported language is described by the following grammar:</p><div class="center">
+	<table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" >		Term	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >var </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		</td><td style="text-align:center;white-space:nowrap" >|</td><td style="text-align:left;white-space:nowrap" >( Term Oper Term ) </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		</td><td style="text-align:center;white-space:nowrap" >|</td><td style="text-align:left;white-space:nowrap" >( &#X3BB; var . Term ) </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		</td><td style="text-align:center;white-space:nowrap" >|</td><td style="text-align:left;white-space:nowrap" >num </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		</td><td style="text-align:center;white-space:nowrap" >|</td><td style="text-align:left;white-space:nowrap" >id </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		Oper</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >op </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		</td><td style="text-align:center;white-space:nowrap" >|</td><td style="text-align:left;white-space:nowrap" >&#X3B5;
+	</td></tr>
+</table>
+</div><p>The symbol &#X3BB; can be written as &#X201C;\&#X201D; or as the greek character
+&#X201C;&#X3BB;&#X201D; (using a greek character set). Also &#X201C;<code>-&gt;</code>&#X201D; can be used instead
+of a dot. <span style="font-weight:bold">var</span> and <span style="font-weight:bold">id</span> are arbitary strings of latin characters
+(uppercase or lowercase), numbers and underscores. However <span style="font-weight:bold">var</span> must start
+with a lowercase or underscore, while <span style="font-weight:bold">id</span> must start with an
+uppercase . It is also possible for any character to be used in an <span style="font-weight:bold">id</span>
+if enclosed in single quotes. <span style="font-weight:bold">num</span> is a string of numbers and <span style="font-weight:bold">op</span>
+is a string that contains the following characters
+</p><div class="center">
+<code>~ ! @ $ % ^ &amp; * / + - = &lt; &gt; | . , : ; </code>
+</div><p>
+except from the reserved operators <code>-&gt; . = ; ?</code>. Finally parentheses can
+be avoided according to the following rules
+</p><ul class="itemize"><li class="li-itemize">
+	Outmost parentheses can be avoided
+	</li><li class="li-itemize">Application is left-associative
+	</li><li class="li-itemize">The scope of an abstraction extends as far to the right as possible
+	</li><li class="li-itemize">Terms that contain operators are parsed according to the precedence and
+	associativity of these operators (see section <a href="#sec_oper">6</a>).
+</li></ul>
+<!--TOC section id="sec3" Basic function-->
+<h2 id="sec3" class="section">2&#XA0;&#XA0;Basic function</h2><!--SEC END --><p>
+<span style="font-family:monospace">lci</span> is an interactive program. When executed it displays the <code>lci&gt;</code> prompt
+and waits for user input. The most simple usage is to enter a &#X3BB;-term and
+press return. The program performs all &#X3B2; and &#X3B7; reductions and generates
+the term&#X2019;s normal form. The result is printed in a &#X201C;readable&#X201D; way, that is
+only the necessary parentheses are displayed, church numerals are displayed as
+integers and lists using the standard Prolog notation. However the way terms
+are displayed can be modified, for example the following command
+</p><div class="center">
+	<code>Set showpar on</code>
+</div><p>
+causes all parentheses to be displayed.</p><p>Terms are reduced using the <em>normal order evaluation strategy</em>, that is
+the leftmost &#X3B2; or &#X3B7; reduction is performed first. This strategy
+guarantees that term&#X2019;s normal form will be computed in finite time, if it
+exists. However if a term has no normal form then execution will not terminate.
+After the execution the program displays the number of reductions that were
+performed and the CPU usage time.</p>
+<!--TOC section id="sec4" Integers-->
+<h2 id="sec4" class="section">3&#XA0;&#XA0;Integers</h2><!--SEC END --><p>
+<span style="font-family:monospace">lci</span> supports integers by encoding them as <em>church numerals</em> during
+parsing. Integer <span style="font-style:italic">n</span> will be converted to
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><span style="font-style:italic">c</span><sub><span style="font-style:italic">n</span></sub>&#XA0;&#X2261;&#XA0;&#X3BB;&#XA0;<span style="font-style:italic">f</span>.&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">f</span><sup><span style="font-style:italic">n</span></sup>(<span style="font-style:italic">x</span>)&#XA0;</td></tr>
+</table><p>
+So, actually, it is just a syntactic sugar. All operations are implemented in
+pure &#X3BB;-calculus and can be used through identifiers and operators. Although the
+use of calculus for ordinary operations is sleek, it has has a serious performace
+drawback. The complexity of an operation is far from constant, for example
+the power-of operator (<code>**</code>) requires an exponential number of reductions.
+Moreover, due to stack limitaions, the greatest suported integer is 9999.</p>
+<!--TOC section id="sec5" Identifiers-->
+<h2 id="sec5" class="section">4&#XA0;&#XA0;Identifiers</h2><!--SEC END --><p>
+Identifiers are used to represent big &#X3BB;-terms by defining <em>aliases</em>.
+For example term &#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span> can be assigned to alias <span style="font-style:italic">I</span> so that the term
+<span style="font-style:italic">I</span> <span style="font-style:italic">y</span> is equivalent to (&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>) <span style="font-style:italic">y</span>. Aliases must be defined in a file
+that is read by the program. The syntax of this file is described by the following
+grammar.
+</p><div class="center">
+	
+	<table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" >		CmdList</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >Cmd ; CmdList </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		</td><td style="text-align:center;white-space:nowrap" >|</td><td style="text-align:left;white-space:nowrap" >&#X3B5; </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		Cmd</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >id = Term </td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >		</td><td style="text-align:center;white-space:nowrap" >|</td><td style="text-align:left;white-space:nowrap" >? Term
+	</td></tr>
+</table>
+	
+</div><p>
+Command <span style="font-family:monospace">id = Term</span> assings Term to identifier <span style="font-family:monospace">id</span> while command
+<span style="font-family:monospace">? Term</span> causes the evaluation of <span style="font-family:monospace">Term</span> just as if it was entered interactively.
+File processing is made using the following command
+</p><div class="center">
+	<code>Consult 'file'</code>
+</div><p>
+Morever, when being started, <span style="font-family:monospace">lci</span> searches for a file named <span style="font-family:monospace">.lcirc</span> in the
+following places
+</p><pre class="verbatim"> $PREFIX/share/lci/.lcirc  (eg. /usr/local/share/lci/.lcirc)
+ $HOME/.lcirc
+ ./.lcirc
+</pre><p>
+in that order. All files found are executed, if none is found then a warning
+is printed. This file contains definitions for many basic
+functions and operators (integer operations, for expample) and is similar
+to Haskell&#X2019;s <span style="font-family:monospace">prelude.hs</span>.</p><p>Identifiers are replaced by the corresponding terms during evaluation and <em>not</em>
+during parsing. Thus the order of the definitions is not significant. If an alias
+is not defined an error message is displayed during evaluation. If no alias
+contains itself (directly or indirectly) then aliases are just a syntactic sugar,
+for if we replace all of them we get valid &#X3BB;-terms. However <span style="font-family:monospace">lci</span> supports
+curcular references of aliases as a way to implement <em>recursion</em>. This
+idea is described in the following section.</p>
+<!--TOC section id="sec6" Recursion-->
+<h2 id="sec6" class="section">5&#XA0;&#XA0;Recursion</h2><!--SEC END --><p>
+Recursion is an essential programming tool provided by all serious programming
+languages. <span style="font-family:monospace">lci</span> supports two methods of implementing recursion: using
+<em>infinite temrs</em> or using <em>fixed point combinators</em>.</p>
+<!--TOC subsection id="sec7" Recursion using infinite terms-->
+<h3 id="sec7" class="subsection">5.1&#XA0;&#XA0;Recursion using infinite terms</h3><!--SEC END --><p>
+<a id="par_recinf"></a>
+If we allow an alias to contain itself then we can write terms like
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><span style="font-style:italic">M</span>&#XA0;=&#XA0;&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">M</span>&#XA0;<span style="font-style:italic">y</span>&#XA0;</td></tr>
+</table><p>
+Replacing <span style="font-style:italic">M</span> according to this definition we get the term &#X3BB; <span style="font-style:italic">x</span>.(&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">M</span> <span style="font-style:italic">x</span>) <span style="font-style:italic">x</span>
+and if we keep on replacing we get the term
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell">&#X3BB;&#XA0;<span style="font-style:italic">x</span>.(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.(...)&#XA0;<span style="font-style:italic">y</span>)&#XA0;<span style="font-style:italic">y</span>)&#XA0;<span style="font-style:italic">y</span>&#XA0;</td></tr>
+</table><p>
+Thus <span style="font-style:italic">M</span> can be considered as a term of infinite length. Of course this is not
+a valid &#X3BB;-term, however it can be useful.</p><p>Now consider an arbitary closed &#X3BB;-term <span style="font-style:italic">M</span>, that is <span style="font-style:italic">FV</span>(<span style="font-style:italic">M</span>) = &#X2205;. We
+can easily infer the following
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell">	</td><td class="dcell"><table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:left;white-space:nowrap" >		<span style="font-style:italic">M</span>[<span style="font-style:italic">x</span>:=<span style="font-style:italic">N</span>]</td><td style="text-align:center;white-space:nowrap" >&#X2261;</td><td style="text-align:left;white-space:nowrap" ><span style="font-style:italic">M</span>&#XA0;</td></tr>
+<tr><td style="text-align:left;white-space:nowrap" >		(&#X3BB;&#XA0;<span style="font-style:italic">y</span>.<span style="font-style:italic">N</span>)[<span style="font-style:italic">x</span>:=<span style="font-style:italic">M</span>]</td><td style="text-align:center;white-space:nowrap" >&#X2261;</td><td style="text-align:left;white-space:nowrap" >&#X3BB;&#XA0;<span style="font-style:italic">y</span>.<span style="font-style:italic">N</span>[<span style="font-style:italic">x</span>:=<span style="font-style:italic">M</span>]&#XA0;</td></tr>
+<tr><td style="text-align:left;white-space:nowrap" >		&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">M</span>&#XA0;<span style="font-style:italic">x</span></td><td style="text-align:center;white-space:nowrap" >&#X2192;<sub>&#X3B7;</sub></td><td style="text-align:left;white-space:nowrap" ><span style="font-style:italic">M</span>
+	</td></tr>
+</table></td></tr>
+</table><p>
+Thus variable substitution as well as &#X3B7;-reduction can be performed without
+knowing the definition of M, that is without the need to replace it. So during
+the evaluation of a term, <span style="font-style:italic">M</span> must be replaced only if we reach one of the
+following terms:
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell">
+
+
+&#XA0;&#XA0;&#XA0;&#XA0;&#XA0;
+
+</td><td class="dcell"><table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#XA0;<span style="font-style:italic">M</span>&#XA0;<span style="font-style:italic">N</span>&#XA0;</td><td style="text-align:left;white-space:nowrap" >&nbsp;</td><td style="text-align:right;white-space:nowrap" >&#XA0;&#XA0;&#XA0;&#XA0;(1)</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#XA0;<span style="font-style:italic">M</span>
+</td><td style="text-align:left;white-space:nowrap" >&nbsp;</td><td style="text-align:right;white-space:nowrap" >&#XA0;&#XA0;&#XA0;&#XA0;(2)</td></tr>
+</table></td></tr>
+</table><p>If the first case <span style="font-style:italic">M</span> may contain an abstraction and in the second any redex.
+If we replace an alias only when necessary, we can finish the evaluation without
+performing all the replacements. For example the abstraction &#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">y</span> does
+not use its argument, so the following reduction
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell">(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">y</span>)&#XA0;<span style="font-style:italic">M</span>&#XA0;&#X2192;<sub>&#X3B2;</sub><span style="font-style:italic">y</span>&#XA0;</td></tr>
+</table><p>
+eliminates <span style="font-style:italic">M</span> without computing it.</p><p><span style="font-family:monospace">lci</span> handles identifiers using this techique. That is it replaces an identifier
+with it&#X2019;s corresponding term only when necessary and only once at a time. So even
+if a term is recursive, it is possible to find a normal form if recursion is
+interrupted by some condition. <span style="font-family:monospace">.lcirc</span> contains many recursive definitions,
+mainly concerning list manipulation functions.</p><p>This technique is not compatible with the pure calculus, as it uses invalid
+&#X3BB;-terms. However the following must be noted: suppose that in term
+<span style="font-style:italic">M</span> = &#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">M</span> <span style="font-style:italic">x</span> we need to replace <span style="font-style:italic">M</span> only twice until we reach it&#X2019;s normal
+form. This means that in term  &#X3BB; <span style="font-style:italic">x</span>.(&#X3BB; <span style="font-style:italic">x</span>.(&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">M</span> <span style="font-style:italic">y</span>) <span style="font-style:italic">y</span>) <span style="font-style:italic">y</span> 
+no replacement will be performed. <span style="font-style:italic">M</span>. So we can substitute <span style="font-style:italic">M</span> with an arbitary
+valid &#X3BB;-term <span style="font-style:italic">N</span> and we get
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><span style="font-style:italic">M</span>&#X2032;&#XA0;=&#XA0;&#X3BB;&#XA0;<span style="font-style:italic">x</span>.(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">N</span>&#XA0;<span style="font-style:italic">y</span>)&#XA0;<span style="font-style:italic">y</span>)&#XA0;<span style="font-style:italic">y</span>&#XA0;</td></tr>
+</table><p>
+<span style="font-style:italic">M</span>&#X2032; behaves exactly like <span style="font-style:italic">M</span> but it is a valid term. Of course in a different
+situation more replacements could be needed, producing a different <span style="font-style:italic">M</span>&#X2032;. So <span style="font-style:italic">M</span>
+could be considered as a &#X201C;term generator&#X201D; that produces an appropriate <span style="font-style:italic">M</span>&#X2032;
+each time.</p>
+<!--TOC subsection id="sec8" Recursion using a fixed point combinator-->
+<h3 id="sec8" class="subsection">5.2&#XA0;&#XA0;Recursion using a fixed point combinator</h3><!--SEC END --><p>
+<a id="par_recfp"></a>
+Recursion can be implemented in pure &#X3BB;-calculus in a very sleek way, using a
+fixed point combinator. A such combinator <span style="font-style:italic">Y</span> is a closed &#X3BB;-term that
+satisfies the following relation
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><span style="font-style:italic">Y</span>&#XA0;<span style="font-style:italic">f</span>&#XA0;&#X2192;&#XA0;<span style="font-style:italic">f</span>&#XA0;(<span style="font-style:italic">Y</span>&#XA0;<span style="font-style:italic">f</span>)&#XA0;</td></tr>
+</table><p>
+for any term <span style="font-style:italic">f</span>. Now let <span style="font-style:italic">f</span> be a term that satisfies <span style="font-style:italic">f</span>=<span style="font-style:italic">E</span>, where <span style="font-style:italic">E</span> is
+an expression that containts <span style="font-style:italic">f</span>. We convert <span style="font-style:italic">f</span> to a variable forming the
+non-recursive term <span style="font-style:italic">F</span> = &#X3BB; <span style="font-style:italic">f</span>.<span style="font-style:italic">E</span>. It is easy to see that the function we seek
+is a fixed point of F, that is <span style="font-style:italic">Y</span> <span style="font-style:italic">F</span>.</p><p>Things get a little bit more complicated if we have the following set of mutually
+recursive terms
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" >	<span style="font-style:italic">f</span><sub>1</sub></td><td style="text-align:center;white-space:nowrap" >=</td><td style="text-align:left;white-space:nowrap" ><span style="font-style:italic">E</span><sub>1</sub>&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X22EE;&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	<span style="font-style:italic">f</span><sub><span style="font-style:italic">n</span></sub></td><td style="text-align:center;white-space:nowrap" >=</td><td style="text-align:left;white-space:nowrap" ><span style="font-style:italic">E</span><sub><span style="font-style:italic">n</span></sub>
+</td></tr>
+</table></td></tr>
+</table><p>
+where any <span style="font-style:italic">f</span><sub><span style="font-style:italic">i</span></sub> can be contained in any <span style="font-style:italic">E</span><sub><span style="font-style:italic">j</span></sub>. Now, before applying <span style="font-style:italic">Y</span>, we must
+join all terms in one. This can be done using the functions TUPLE <span style="font-style:italic">n</span> and INDEX <span style="font-style:italic">k</span>.
+The former packages <span style="font-style:italic">n</span> terms into a <span style="font-style:italic">n</span>-tuple, the latter returns the <span style="font-style:italic">k</span>-th
+element of a tuple. Both of them can be implemented in pure &#X3BB;-calculus. So we build
+the following recursive term
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><span style="font-style:italic">f</span>&#XA0;=&#XA0;TUPLE &#XA0;<span style="font-style:italic">n</span>&#XA0;<span style="font-style:italic">f</span><sub><span style="font-style:italic">i</span></sub>&#XA0;&#XA0;&#X2026;&#XA0;<span style="font-style:italic">f</span><sub><span style="font-style:italic">n</span></sub>&#XA0;</td></tr>
+</table><p>
+and replace any occurences of terms <span style="font-style:italic">f</span><sub><span style="font-style:italic">i</span></sub> using INDEX <span style="font-style:italic">k</span>
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><span style="font-style:italic">f</span><sub><span style="font-style:italic">i</span></sub>&#XA0;&#X2192;&#XA0;INDEX&#XA0;<span style="font-style:italic">i</span>&#XA0;<span style="font-style:italic">f</span>&#XA0;</td></tr>
+</table><p>
+Finally <span style="font-style:italic">f</span> is defined using a fixed point combinator
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><span style="font-style:italic">f</span>&#XA0;=&#XA0;<span style="font-style:italic">Y</span>&#XA0;(&#X3BB;&#XA0;<span style="font-style:italic">f</span>.TUPLE &#XA0;<span style="font-style:italic">n</span>&#XA0;<span style="font-style:italic">f</span><sub><span style="font-style:italic">i</span></sub>&#XA0;&#XA0;&#X2026;&#XA0;<span style="font-style:italic">f</span><sub><span style="font-style:italic">n</span></sub>&#XA0;)&#XA0;</td></tr>
+</table><p>We have already mentioned that <span style="font-family:monospace">lci</span> allows an alias to contain itself. The
+default way of handling such aliases was described in paragraph <a href="#par_recinf">5.1</a>.
+Moreover <span style="font-family:monospace">lci</span> provides the command <span style="font-family:monospace">FixedPoint</span> which removes circular references
+from aliases using a fixed point combinator. Initially this command creates a
+graph in which each vertex corresponds to an alias. Two vertexes <span style="font-style:italic">S</span>,<span style="font-style:italic">T</span> are connected
+with a directed arc if alias <span style="font-style:italic">S</span> contains <span style="font-style:italic">T</span> in it&#X2019;s definition. A circle in
+this graph denote a set of mutually recursive terms. <span style="font-family:monospace">FixedPoint</span> detects such
+circles and, in case they contain more than one arc, it packages the corresponding
+terms using functions TUPLE and INDEX. Then it removes recursion using the combinator
+<span style="font-style:italic">Y</span> which must be defined in <span style="font-family:monospace">.lcirc</span>. The modified definition of recursive
+aliases can be displayed using the <span style="font-family:monospace">ShowAlias</span> command.</p>
+<!--TOC section id="sec9" Operators-->
+<h2 id="sec9" class="section">6&#XA0;&#XA0;Operators</h2><!--SEC END --><p>
+<a id="sec_oper"></a>
+Operators is another tool that is provided by almost all programming languages.
+<span style="font-family:monospace">lci</span> supports operators as a special kind of function that takes two arguments
+and syntactically appears between them. Using an operator requires two steps.
+The first is it&#X2019;s <em>declaration</em> together with it&#X2019;s <em>precedece</em> and
+<em>associativity</em>, in a way similar to Prolog. This can be done with the command
+</p><div class="center">
+	<span style="font-family:monospace">DefOp &#X2019;operator&#X2019; preced assoc</span>
+</div><p>
+Quotes are necessary so that operator&#X2019;s name is recognized as an identifier. Precedence
+is an integer between 0 and 255 and is used during parsing when no parentheses
+are present. Associativity takes one of the following values:
+</p><div class="center">
+	<table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:center;white-space:nowrap" >		<span style="font-family:monospace">yfx</span></td><td style="text-align:left;white-space:nowrap" >Left-associative operator </td></tr>
+<tr><td style="text-align:center;white-space:nowrap" >		<span style="font-family:monospace">xfy</span></td><td style="text-align:left;white-space:nowrap" >Right-associative operator </td></tr>
+<tr><td style="text-align:center;white-space:nowrap" >		<span style="font-family:monospace">xfx</span></td><td style="text-align:left;white-space:nowrap" >Non-associative operator
+	</td></tr>
+</table>
+</div><p>Character <span style="font-family:monospace">x</span> corresponds to a term with lower precedence than the operator,
+while <span style="font-family:monospace">y</span> to one with higher or equal. Thus expression <span style="font-family:monospace">a+b+c*d</span>
+will be recognized as <span style="font-family:monospace">(a+b)+(c*d)</span>, for operator <span style="font-family:monospace">*</span> has lower precedence
+<sup><a id="text1" href="#note1">1</a></sup>
+than <span style="font-family:monospace">+</span> and <span style="font-family:monospace">+</span> is left-associative. Terms that are not the result of
+an operator, or are enclosed in parentheses, are considered to have precedence 0.
+Moreover application is considered as a left-associative operator with precedence
+100. So if an operator <span style="font-family:monospace">$</span> is declared with precedence 110 then the
+expression <span style="font-family:monospace">a b$c</span> will be recognized as <span style="font-family:monospace">(a b)$c</span>.</p><p>The second step is operator&#X2019;s <em>definition</em> which is performed by defining an
+alias with the same name:
+</p><div class="center">
+	<span style="font-family:monospace">&#X2019;operator&#X2019; = ...</span>
+</div><p>
+Operator definitions must be placed in a file (as all alias definitions) and quotes
+are required. During parsing, <span style="font-family:monospace">lci</span> replaces operators with identifiers, thas is
+expression <span style="font-family:monospace">a+b</span> will be transformed to <span style="font-family:monospace">&#X2019;+&#X2019; a b</span>. Now <span style="font-family:monospace">+</span> is an
+identifier, not an operator, and will be replaced with the corresponding term
+during term&#X2019;s evaluation.</p><p>In <span style="font-family:monospace">.lcirc</span> many common operators are declared and defined, mainly concerning
+integers and list manipulation. These include the right-associative
+operator <span style="font-family:monospace">:</span> to write lists as <span style="font-family:monospace">a:b:c:Nil</span>, operator <span style="font-family:monospace">++</span> to append
+lists, operator &#X201C;<span style="font-family:monospace">,</span>&#X201D; to build ordered pairs <span style="font-family:monospace">(a,b)</span>, integer operations,
+integer comparisons etc.</p>
+<!--TOC section id="sec10" Evaluation strategies-->
+<h2 id="sec10" class="section">7&#XA0;&#XA0;Evaluation strategies</h2><!--SEC END --><p>
+An evaluation strategy determines the choice of a redex when there are more than
+one in a term. <span style="font-family:monospace">lci</span> uses the <em>normal order</em> strategy, which selects term&#X2019;s
+leftmost redex. The main advantage of this strategy is that it always leads to
+term&#X2019;s normal form, if it exists. However it has a serious drawback which is the
+multiple computation of terms. For example in the following series of reductions
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&nbsp;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">f</span>.<span style="font-style:italic">f</span>(<span style="font-style:italic">f</span>&#XA0;<span style="font-style:italic">y</span>))((&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>))&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)((&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)<span style="font-style:italic">y</span>)&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)((&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)<span style="font-style:italic">y</span>)&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)<span style="font-style:italic">y</span>&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)<span style="font-style:italic">y</span>&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" ><span style="font-style:italic">y</span>
+</td></tr>
+</table></td></tr>
+</table><p>
+the term (&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>) was computed twice. An alternative strategy
+is <em>call-by-value</em>, in which all arguments are computed before applied to a function.
+This method can avoid multiple computation.
+</p><table class="display dcenter"><tr style="vertical-align:middle"><td class="dcell"><table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&nbsp;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">f</span>.<span style="font-style:italic">f</span>(<span style="font-style:italic">f</span>&#XA0;<span style="font-style:italic">y</span>))((&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>))&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">f</span>.<span style="font-style:italic">f</span>(<span style="font-style:italic">f</span>&#XA0;<span style="font-style:italic">y</span>))(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)((&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)<span style="font-style:italic">y</span>)&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" >(&#X3BB;&#XA0;<span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)<span style="font-style:italic">y</span>&#XA0;</td></tr>
+<tr><td style="text-align:right;white-space:nowrap" >	</td><td style="text-align:center;white-space:nowrap" >&#X2192;</td><td style="text-align:left;white-space:nowrap" ><span style="font-style:italic">y</span>
+</td></tr>
+</table></td></tr>
+</table><p>
+This strategy, however, does not guarantee that normal form will be found. There
+are also some other strategies like <em>call-by-need</em> that is used in some functional
+languages like Haskell.</p><p><span style="font-family:monospace">lci</span> does not implement any such technique, but there has been an effort to
+overcome this problem using a special operator &#X223C;. This operator does not
+behave like ordinary operators. The expression <span style="font-style:italic">M</span>&#X223C; <span style="font-style:italic">N</span> denotes the application
+of <span style="font-style:italic">M</span> to <span style="font-style:italic">N</span> which, however, uses call-by-value. So, if <span style="font-style:italic">M</span>&#X223C; <span style="font-style:italic">N</span> is the leftmost
+redex then all reductions of <span style="font-style:italic">N</span> are performed before the application. Thus the
+term (&#X3BB; <span style="font-style:italic">f</span>.<span style="font-style:italic">f</span>(<span style="font-style:italic">f</span> <span style="font-style:italic">y</span>))&#X223C;((&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)(&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span>)) will be reduced according
+to the second of the previous ways. Operator &#X223C; has the same precedence and
+associativity as the application operator, so it can be easily combined with it.</p><p>This operator, however, should be used with caution since the normal form of
+(&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">y</span>)&#X223C; ((&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span> <span style="font-style:italic">x</span>)(&#X3BB; <span style="font-style:italic">x</span>.<span style="font-style:italic">x</span> <span style="font-style:italic">x</span>)) will never be found, yet
+it exists. In file <span style="font-family:monospace">queens.lci</span> there is an implementation of the well-known
+<span style="font-style:italic">n</span>-queens problem, using experimentally this operator. Without the use of the
+operator the program is impossible to terminate, even for 3 queens where the
+combinations that must be examined are very few. This is due to the fact that
+terms are extremely complex and cause a lot of recomputation. Using the operator
+&#X223C; and testing in an Athlon 1800, all solutions for the 3 queens where found in
+0.3 seconds, for 4 queens in 4.4 and for 5 in 190. For 6 queens after many hours of
+testing the program did not terminate. This is not strange, though, since Haskell
+(with the same implementation and using lazy-evaluation and constant time arithmetic)
+needs 1799705 reductions for the 8 queens and extremely much time for <span style="font-style:italic">n</span>&gt;12.</p>
+<!--TOC section id="sec11" Tracing-->
+<h2 id="sec11" class="section">8&#XA0;&#XA0;Tracing</h2><!--SEC END --><p>
+<span style="font-family:monospace">lci</span> supports evaluation tracing. This function is enabled using the following
+command
+</p><div class="center">
+	<span style="font-family:monospace">Set trace on</span>
+</div><p>
+or pressing <span style="font-family:monospace">Ctrl-C</span> during the evaluation of a term. When tracing is enabled,
+the current term is displayed after each reduction and the program waits for user
+input. Available commands are <span style="font-family:monospace">step</span>, <span style="font-family:monospace">continue</span> and <span style="font-family:monospace">abort</span>. The
+first one performs the next reduction, the second continues the reductions without
+tracing and the last one stops the evaluation. An alternative function is to display
+all intermediate terms without interrupting the evaluation. This can be enabled
+using the following command
+</p><div class="center">
+	<span style="font-family:monospace">Set showexec on</span>
+</div>
+<!--TOC section id="sec12" System commands-->
+<h2 id="sec12" class="section">9&#XA0;&#XA0;System commands</h2><!--SEC END --><p>
+In previous paragraphs we have already mentioned some commands that are supported by
+<span style="font-family:monospace">lci</span>. These commands are functions that may have arguments. If such a function is
+the leftmost in a term, then, instead of evaluating the term, a system command
+is executed. All system commands are described in table <a href="#tab_syscmd">1</a>.</p><blockquote class="table"><div class="center"><div class="center"><hr style="width:80%;height:2"></div>
+		<table border=1  style="border-spacing:0;" class="cellpadding1"><tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-weight:bold">Command</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" ><span style="font-weight:bold">Function</span> </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">FixedPoint</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Removes circular references from aliases using a
+	 		fixed point combinator <span style="font-style:italic">Y</span></td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">DefOp op prec ass</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Declares an operator with the given precedence and
+			associativity. </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">ShowAlias [name]</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Displays the definition of the given alias, or a lists
+			of all aliases. </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">Print term</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Displays a term. Useful to check parsing. </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">Consult file</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Reads and processes the given file. </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">Set option on/off</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Changes one of the following parameters. </td></tr>
+<tr><td style="text-align:right;border:solid 1px;white-space:nowrap"  colspan=2>
+			<table border=1  style="border-spacing:0;" class="cellpadding1"><tr><td style="text-align:left;border:solid 1px;white-space:nowrap" >				<span style="font-family:monospace">trace</span></td><td style="text-align:left;border:solid 1px;white-space:nowrap" >Evaluation tracing </td></tr>
+<tr><td style="text-align:left;border:solid 1px;white-space:nowrap" >				<span style="font-family:monospace">showexec</span></td><td style="text-align:left;border:solid 1px;white-space:nowrap" >Display all intermediate terms </td></tr>
+<tr><td style="text-align:left;border:solid 1px;white-space:nowrap" >				<span style="font-family:monospace">showpar</span></td><td style="text-align:left;border:solid 1px;white-space:nowrap" >Display all term&#X2019;s parentheses </td></tr>
+<tr><td style="text-align:left;border:solid 1px;white-space:nowrap" >				<span style="font-family:monospace">greeklambda</span></td><td style="text-align:left;border:solid 1px;white-space:nowrap" >Display &#X201C;&#X3BB;&#X201D; instead of &#X201C;\&#X201D; </td></tr>
+<tr><td style="text-align:left;border:solid 1px;white-space:nowrap" >				<span style="font-family:monospace">readable</span></td><td style="text-align:left;border:solid 1px;white-space:nowrap" >Readable display of integers and lists </td></tr>
+<tr><td style="text-align:left;border:solid 1px;white-space:nowrap" >			</td></tr>
+</table>
+		 </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">Help</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Displays a help message. </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >		<span style="font-family:monospace">Quit</span></td><td style="vertical-align:top;text-align:left;border:solid 1px;" >Terminates the program. </td></tr>
+<tr><td style="vertical-align:top;text-align:left;border:solid 1px;white-space:nowrap" >	</td></tr>
+</table><p>	</p><div class="caption"><table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="vertical-align:top;text-align:left;" >Table 1: System commands</td></tr>
+</table></div><p>
+	<a id="tab_syscmd"></a>
+</p><div class="center"><hr style="width:80%;height:2"></div></div></blockquote>
+<!--TOC section id="sec13" Examples-->
+<h2 id="sec13" class="section">10&#XA0;&#XA0;Examples</h2><!--SEC END --><p>
+In this section there are some expamples of using the program.</p><pre class="verbatim">lci&gt; 3+5*2
+13
+
+lci&gt; Sum 1..10
+55
+
+lci&gt; Take 10 (Nats 5)
+[5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+lci&gt; Map (Add 3) 1..5
+[4, 5, 6, 7, 8]
+
+lci&gt; Map (\n.n**2) 1..5
+[\y.y, 4, 9, 16, 25]
+
+lci&gt; Filter (Leq 6) 3:6:10:11:Nil
+[6, 10, 11]
+
+lci&gt; Length 1..10 ++ 4:5:Nil
+12
+
+lci&gt; (Member 3 1..10) &amp;&amp; (Length 3:4:5:Nil) &gt;= 3
+\x.\y.x
+</pre><p>Note that term &#X3BB; <span style="font-style:italic">y</span>.<span style="font-style:italic">y</span> is the normal form of number 1. In file <span style="font-family:monospace">queens.lci</span>
+there is an implementation of <span style="font-style:italic">n</span>-queens problem.</p><pre class="verbatim">lci&gt; Consult 'queens.lci'
+Successfully consulted queens.lci
+lci&gt; Queens 4
+[[2, 4, \y.y, 3], [3, \y.y, 4, 2]]
+</pre><p>All of the above functions can be also evaluated using the <span style="font-family:monospace">FixedPoint</span> command,
+which removes circular references using the fixed point combinator <span style="font-style:italic">Y</span>. Using
+<span style="font-family:monospace">ShowAlias</span> you can see an alias definition after the modification.</p><pre class="verbatim">&gt; FixedPoint
+&gt; ShowAlias Sum
+Sum = Y \_me.\l.If (IsNil l) 0 (+ (Head l) (_me (Tail l)))
+</pre><!--BEGIN NOTES document-->
+<hr class="footnoterule"><dl class="thefootnotes"><dt class="dt-thefootnotes">
+<a id="note1" href="#text1">1</a></dt><dd class="dd-thefootnotes"><div class="footnotetext"><span style="font-family:monospace">lci</span> behaves similarly to Prolog, that is lower precedence operators
+	are applied first.</div></dd></dl>
+<!--END NOTES-->
+<!--CUT END -->
+<!--HTMLFOOT-->
+<!--ENDHTML-->
+<!--FOOTER-->
+<hr style="height:2"><blockquote class="quote"><em>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</em><a href="http://hevea.inria.fr/index.html"><em>H</em><em><span style="font-size:small"><sup>E</sup></span></em><em>V</em><em><span style="font-size:small"><sup>E</sup></span></em><em>A</em></a><em>.</em></blockquote></body>
+</html>
