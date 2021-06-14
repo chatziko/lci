@@ -15,42 +15,39 @@
 
 
 int main() {
-	char *home = getenv("HOME");
-	char *lcirc = ".lcirc";
-	char *lci_history = "/.lci_history";
-
-	// TODO: implement our own auto-complete
-	Replxx *replxx = replxx_init();
-
-	// load history from ~/.lci_history
-	if(home) {
-		char *path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
-		strcpy(path, home);
-		strcat(path, lci_history);
-		replxx_history_load(replxx, path);
-		free(path);
-	}
-
 	printf("lci - A lambda calculus interpreter\n");
 	printf("Type a term, Help for info or Quit to exit.\n\n");
 
+	// load history from ~/lci_history (if HOME is available) or "./lci_history"
+	char *home = getenv("HOME");
+	char *history_dir = home ? home : ".";
+	char *history_file = "/.lci_history";
+	char *history_path = malloc(strlen(home) + strlen(history_file) + 1);
+
+	strcpy(history_path, history_dir);
+	strcat(history_path, history_file);
+
+	Replxx *replxx = replxx_init();				// TODO: implement our own auto-complete
+	replxx_history_load(replxx, history_path);
+
 	// consult .lcirc files in various places
+	char *lcirc = ".lcirc";
 	int found = 0;
 
-#ifdef DATADIR
+	#ifdef DATADIR
 	// DATADIR/lci/.lcirc
-	char *path = (char*)malloc(sizeof(char) * (strlen(DATADIR) + strlen(lcirc) + 6));
+	char *path = malloc(strlen(DATADIR) + strlen(lcirc) + 6);
 	strcpy(path, DATADIR);
 	strcat(path, "/lci/");
 	strcat(path, lcirc);
 	if(consultFile(path) == 0)
 	   found = 1;
 	free(path);
-#endif
+	#endif
 
 	// ~/.lcirc
 	if(home) {
-		char *path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lcirc) + 2));
+		char *path = malloc(strlen(home) + strlen(lcirc) + 2);
 		strcpy(path, home);
 		strcat(path, "/");
 		strcat(path, lcirc);
@@ -81,16 +78,9 @@ int main() {
 	}
 
 	// save history to ~/.lci_history
-	if(home) {
-		char *path = (char*)malloc(sizeof(char) * (strlen(home) + strlen(lci_history) + 1));
-		strcpy(path, home);
-		strcat(path, lci_history);
-
-		replxx_set_max_history_size(replxx, MAX_HISTORY_ENTRIES);
-		replxx_history_save(replxx, path);
-
-		free(path);
-	}
+	replxx_set_max_history_size(replxx, MAX_HISTORY_ENTRIES);
+	replxx_history_save(replxx, history_path);
+	free(history_path);
 
 	// cleanup
 	replxx_end(replxx);
