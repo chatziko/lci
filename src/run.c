@@ -13,8 +13,15 @@
 #include <conio.h>
 #elif __has_include(<sys/ioctl.h>)
 #include <sys/ioctl.h>
-	#if __has_include(<termio.h>)
+	#if __has_include(<termio.h>)		// linux
 	#include <termio.h>
+	typedef struct termio TERMIO;
+
+	#elif __has_include(<termios.h>)	// OSX
+	#include <termios.h>
+	typedef struct termios TERMIO;
+	#define TCGETA TIOCGETA
+	#define TCSETA TIOCSETA
 	#endif
 #endif
 
@@ -43,7 +50,7 @@ static int read_single_char() {
 	// change tio settings to make getchar return immediately after the
 	// first character (without pressing enter). We keep the old
 	// settings to restore later.
-	struct termio tio, oldtio;
+	TERMIO tio, oldtio;
 	ioctl(0, TCGETA, &tio);						// read settings
 	oldtio = tio;								// save settings
 	tio.c_lflag &= ~(ICANON | ECHO);			// change settings
