@@ -5,14 +5,28 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-latest]
-        # os: [ubuntu-20.04, macos-latest, windows-latest]
+        os: [ubuntu-20.04, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - run: |
-          cmake -B build
-          cd build && make test
+      - name: run cmake
+        if: matrix.os == 'windows-latest'
+        run: cmake -B build -G "MinGW Makefiles"
 
+      - name: run cmake
+        if: matrix.os != 'windows-latest'
+        run: cmake -B build
+
+      - name: build and run tests
+        run: |
+          cd build
+          cmake --build .
+          ctest --output-on-failure
+
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-${{ matrix.os }}
+          path: build
