@@ -46,6 +46,15 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/queens.lci ${CMAKE_CURRENT_BINARY
 install(TARGETS lci RUNTIME)
 install(FILES src/.lcirc src/queens.lci DESTINATION share/lci)
 
+# prepare binary release
+add_custom_target(release_bin
+	DEPENDS lci
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} VERBATIM
+	COMMAND ${CMAKE_COMMAND} -E make_directory release_bin
+	COMMAND ${CMAKE_COMMAND} -E copy .lcirc queens.lci $<TARGET_FILE:lci> release_bin/
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/COPYING release_bin/
+)
+
 # simple tests
 enable_testing()
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")

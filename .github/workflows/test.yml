@@ -24,9 +24,10 @@ jobs:
           cd build
           cmake --build .
           ctest --output-on-failure
+          cmake --build . -t release_bin
 
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          name: build-${{ matrix.os }}
-          path: build
+          name: release-${{ matrix.os }}
+          path: build/release_bin
