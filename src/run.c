@@ -357,7 +357,7 @@ int execSystemCmd(TERM *t) {
 //   -2  syntax error
 
 int consultFile(char *fname) {
-	FILE *f = fopen(fname, "r");
+	FILE *f = fopen(fname, "rb");		// need binary to make fseek/ftell work on windows
 	if(f == NULL)
 		return -1;
 

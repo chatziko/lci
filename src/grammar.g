@@ -54,4 +54,4 @@ variable: "[a-z_][a-zA-Z0-9_]*"			{ $$ = str($n); };
 number: "[0-9]+"						{ $$ = str($n); };
 operator: "[+\-=!@$%^&*/\\:<>.,|~?]+"	[ $$ = str($n); if(is_reserved_oper($$)) ${reject}; ];
 
-whitespace: "([ \t\n]|#[^\n]*)*";		// '# comment' (until the end the line) is treated as whitespace
+whitespace: "([ \t\r\n]|#[^\r\n]*)*";	// '# comment' (until the end the line) is treated as whitespace
