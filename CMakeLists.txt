@@ -29,8 +29,8 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c
 file(GLOB SOURCES src/*.c src/**/*.c)
 add_executable(lci ${SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c)
 
-target_link_libraries(lci dparse replxx stdc++)					# stdc++ needed by replxx
 target_include_directories(lci PUBLIC src src/k08 dparser)
+target_link_libraries(lci dparse replxx $<IF:$<BOOL:${WIN32}>,-static,> stdc++)		# stdc++ needed by replxx, static link on windows to avoid dependencies
 
 # if present, lci tries to read global .lcirc from DATADIR
 if(CMAKE_INSTALL_PREFIX)
