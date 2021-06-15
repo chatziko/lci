@@ -47,12 +47,14 @@ based on the pure lambda-calculus. Its features include:
 
 - Aliases of lambda terms (that is named functions).
 - Integers coded as church numerals, with the usual arithmetic operations.
-- Recursion. LCI can also automatically convert recursive terms to
+- Recursion. Self-references of aliases are expanded during execution. 
+  LCI can also automatically convert recursive terms to
   non-recursive ones using a fixed point combinator.
 - User-defined operators. The user can declare a new
   operator with a certain precedence and associativity and define it in lambda
   calculus. Many common operators (eg. integer, logic and list operations) are
   pre-defined in `.lcirc` and are available by default.
+- List syntax. `[a,b,c]` is parsed as `a:b:c:Nil` (`:` and `Nil` are defined in `.lcirc`).
 - Multiple evaluation strategies. Call-by-name and call-by-value can
   coexist in the same program.
 - Human-readable display of terms: for example church numerals are
