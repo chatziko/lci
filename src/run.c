@@ -107,6 +107,7 @@ void execTerm(TERM *t) {
 						 printf("step\n");
 						 break;
 					 case 'a':
+					 case EOF:
 						 printf("abort\n");
 						 break;
 					 default:
@@ -116,7 +117,7 @@ void execTerm(TERM *t) {
 					}
 				} while(c == '?');
 
-				if(c == 'a')
+				if(c == 'a' || c == EOF)
 					break;
 
 			} else if(showExec) {
