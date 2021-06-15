@@ -22,7 +22,7 @@ int main() {
 	char *home = getenv("HOME");
 	char *history_dir = home ? home : ".";
 	char *history_file = "/.lci_history";
-	char *history_path = malloc(strlen(home) + strlen(history_file) + 1);
+	char *history_path = malloc(strlen(history_dir) + strlen(history_file) + 1);
 
 	strcpy(history_path, history_dir);
 	strcat(history_path, history_file);
