@@ -15,7 +15,6 @@ TERM *termClone(TERM *t);
 
 int termConv(TERM *t);
 
-TERM *termChurchNum(int n);
 int termNumber(TERM *t);
 
 int termRemoveAliases(TERM *t, char *id);

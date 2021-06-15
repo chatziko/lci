@@ -18,7 +18,6 @@
 #include "str_intern.h"
 
 
-static TERM *termPower(TERM *f, TERM *a, int pow);
 static int termIsIdentity(TERM *t);
 static int termIsList(TERM *t);
 static void termPrintList(TERM *t);
@@ -415,68 +414,37 @@ int termConv(TERM *t) {
 	}
 }
 
-// termPower
-//
-// Returns term f^pow(a) = a if pow == 0, f( f^{pow-1}(a) ) otherwise
-
-static TERM *termPower(TERM *f, TERM *a, int pow) {
-	TERM *newTerm;
-
-	if(pow == 0)
-		newTerm = termClone(a);
-	else {
-		newTerm = termNew();
-		newTerm->type = TM_APPL;
-		newTerm->name = NULL;
-		newTerm->lterm = termClone(f);
-		newTerm->rterm = termPower(f, a, pow-1);
-	}
-
-	return newTerm;
-}
-
-// termChurchNum
-//
-// Creates and returns the church numeral corresponding to number n: \f.\x.f^n(x)
-
-TERM *termChurchNum(int n) {
-	// get interned strings on first call
-	static char* str_f = NULL;
-	static char* str_x = NULL;
-	if(str_f == NULL) {
-		str_f = str_intern("f");
-		str_x = str_intern("x");
-	}
-
-	TERM *l1 = termNew(),
-		  *l2 = termNew(),
-		  *f  = termNew(),
-		  *x  = termNew();
-
-	f->type = TM_VAR;
-	f->name = str_f;
-
-	x->type = TM_VAR;
-	x->name = str_x;
-
-	l1->type = TM_ABSTR;
-	l1->name = NULL;
-	l1->lterm = f;
-	l1->rterm = l2;
-
-	l2->type = TM_ABSTR;
-	l2->name = NULL;
-	l2->lterm = x;
-	l2->rterm = termPower(f, x, n);
-
-	return l1;
-}
-
 // termNumber
 //
-// If term t is a church numeral then return its corresponding number, otherwise -1
+// If term t is a numeral then return its corresponding number, otherwise -1.
+// Supported:
+// - Church:       \f.\x.f^<N>(x)
+// - Scott:        <N+1> = \s.\z.s <N>
+// - Unprocessed:  (Succ (Succ ... (Succ 0)))
 
 int termNumber(TERM *t) {
+	// Unprocessed: Succ(...(Succ(0))
+	//
+	if(t->type == TM_ALIAS && t->name == str_intern("0"))
+		return 0;
+	else if(t->type == TM_APPL && t->lterm->type == TM_ALIAS && t->lterm->name == str_intern("Succ"))
+		return 1 + termNumber(t->rterm);
+
+	// Scott numerals (with inversed argument order):
+	//    0     = \s.\z.z			(same as church-0, so no need to treat separately)
+	//    <N+1> = \s.\z.s <N>
+	//
+	if(t->type == TM_ABSTR && t->rterm->type == TM_ABSTR) {
+		TERM *body = t->rterm->rterm;
+
+		if(body->type == TM_APPL && body->lterm->type == TM_VAR && body->lterm->name == t->lterm->name) {
+			int n = termNumber(body->rterm);
+			if(n != -1)
+				return n + 1;
+		}
+	}
+
+	// church numerals
 	TERM *f, *x, *cur;
 	int n = 0;
 
