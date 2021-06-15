@@ -4,14 +4,14 @@ project(lci C)
 
 # ignore if latex is not installed
 find_program(LATEX "latex")
-IF(NOT LATEX)
+if(NOT LATEX)
 	return()
-ENDIF()
+endif()
 
-INCLUDE(../cmake/UseLATEX.cmake)
+include(UseLATEX.cmake)
 
-ADD_LATEX_DOCUMENT(lcidoc.tex)
-ADD_LATEX_DOCUMENT(lcidoc_gr.tex)
+add_latex_document(lcidoc.tex)
+add_latex_document(lcidoc_gr.tex)
 
 # don't build the doc when running just "make"
 set_target_properties(lcidoc PROPERTIES EXCLUDE_FROM_ALL TRUE)
