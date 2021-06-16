@@ -2,6 +2,9 @@
 
 Real men use only pure calculus
 
+- v? (in progress)
+  - Add auto-completion of aliases and system commands.
+
 - v1.0 (15 Jun 2021)
 
   First major release, 18 years in the making :smile: 

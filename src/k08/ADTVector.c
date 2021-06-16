@@ -167,3 +167,39 @@ VectorNode vector_find_node(Vector vec, Pointer value, CompareFunc compare) {
 
 	return VECTOR_EOF;				// δεν υπάρχει
 }
+
+
+static void swap(VectorNode a, VectorNode b) {
+	Pointer temp = a->value;
+	a->value = b->value;
+	b->value = temp;
+}
+
+static int partition (Vector vec, CompareFunc compare, int low, int high) {
+	// select random pivot, set to last position
+    swap(&vec->array[high], &vec->array[low + rand()%(high - low + 1)]);
+    Pointer pivot = vec->array[high].value;
+    int i = (low - 1);
+ 
+    for (int j = low; j <= high; j++) {
+        if (compare(vec->array[j].value, pivot) < 0) {
+            i++;
+            swap(&vec->array[i], &vec->array[j]);
+        }
+    }
+    swap(&vec->array[i + 1], &vec->array[high]);
+    return i + 1;
+}
+ 
+static void quick_sort(Vector vec, CompareFunc compare, int low, int high) {
+    if (low < high) {
+        int pi = partition(vec, compare, low, high);
+ 
+        quick_sort(vec, compare, low, pi - 1);
+        quick_sort(vec, compare, pi + 1, high);
+    }
+}
+
+void vector_sort(Vector vec, CompareFunc compare) {
+	quick_sort(vec, compare, 0, vec->size-1);
+}

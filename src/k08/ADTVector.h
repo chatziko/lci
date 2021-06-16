@@ -64,6 +64,8 @@ DestroyFunc vector_set_destroy_value(Vector vec, DestroyFunc destroy_value);
 
 void vector_destroy(Vector vec);
 
+void vector_sort(Vector vec, CompareFunc compare);
+
 
 // Διάσχιση του vector ////////////////////////////////////////////////////////////
 //

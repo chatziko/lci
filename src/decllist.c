@@ -401,4 +401,12 @@ void addOper(char *id, int preced, ASS_TYPE assoc) {
 	op->assoc = assoc;
 }
 
+Vector decl_get_ids() {
+	Vector res = vector_create(0, NULL);
 
+	for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
+		char *id = map_node_key(declarations, node);
+		vector_insert_last(res, id);
+	}
+	return res;
+}

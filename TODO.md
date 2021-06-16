@@ -12,8 +12,6 @@ This is a roughly made TODO list based on some ideas to improve the program.
 
 - Syntax highlighting of terms.
 
-- Auto-completion.
-
 - Add more debugging features (eg. breakpoints).
 	
 - Add some support for data types.
@@ -21,6 +19,8 @@ This is a roughly made TODO list based on some ideas to improve the program.
 - Add input/output capabilities (maybe LCI could be used for scripting ?).
 
 ### DONE
+
+- Auto-completion.
 
 - Replace the custom parser with the more advanced one using lex/yacc to
   implement some "syntactic conveniences".
