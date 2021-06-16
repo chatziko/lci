@@ -20,6 +20,14 @@ static void completion_hook(char const* context, replxx_completions* lc, int* co
 static void hint_hook(char const* context, replxx_hints* lc, int* contextLen, ReplxxColor* c, void* ud);
 static void completion_or_hint(char const* context, replxx_completions* lc_compl, replxx_hints* lc_hints);
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+
+EM_JS(void, wait_for_input, (), {
+	Asyncify.handleAsync(Module.waitForInput);
+});
+#endif
+
 int main() {
 	printf("lci - A lambda calculus interpreter\n");
 	printf("Type a term, Help for info or Quit to exit.\n\n");
@@ -75,6 +83,12 @@ int main() {
 
 	// read and execute commands
 	while(!quit_called) {
+		#ifdef __EMSCRIPTEN__
+		// when running in emscripten, we cannot really do blocking input. So we do an async call (via asyncify), until
+		// we know that the input is ready, and the js code (lci-init.js) will provide the stdin input to replxx_input.
+		wait_for_input();
+		#endif
+
 		// read command
 		char* line = (char*)replxx_input(replxx, "lci> ");
 		if(!line) break;	// if eof exit

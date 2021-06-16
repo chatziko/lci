@@ -11,7 +11,7 @@
 
 #if __has_include(<conio.h>)
 #include <conio.h>
-#elif __has_include(<sys/ioctl.h>)
+#elif __has_include(<sys/ioctl.h>) && !defined(__EMSCRIPTEN__)
 #include <sys/ioctl.h>
 	#if __has_include(<termio.h>)		// linux
 	#include <termio.h>
@@ -23,6 +23,10 @@
 	#define TCGETA TIOCGETA
 	#define TCSETA TIOCSETA
 	#endif
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #endif
 
 #include "dparse.h"
@@ -46,7 +50,7 @@ static int read_single_char() {
 	#if __has_include(<conio.h>)				// available on windows
 	return _getch();
 
-	#elif __has_include(<sys/ioctl.h>)
+	#elif __has_include(<sys/ioctl.h>) && !defined(__EMSCRIPTEN__)
 	// change tio settings to make getchar return immediately after the
 	// first character (without pressing enter). We keep the old
 	// settings to restore later.
@@ -73,6 +77,10 @@ void execTerm(TERM *t) {
 	long stime = clock();
 	char c;
 
+	#ifdef __EMSCRIPTEN__
+	double last_sleep = emscripten_get_now();
+	#endif
+
 	trace = getOption(OPT_TRACE);
 
 	// remove operators before executing
@@ -92,6 +100,14 @@ void execTerm(TERM *t) {
 		// perform all reductions
 		do {
 			redno++;
+
+			#ifdef __EMSCRIPTEN__
+			// occasionally sleep to allow the browser to be responsive
+			if(redno % 100 == 0 && (emscripten_get_now() - last_sleep) > 400) {
+				emscripten_sleep(1);
+				last_sleep = emscripten_get_now();
+			}
+			#endif
 
 			if(trace) {
 				termPrint(t, 1);
@@ -124,6 +140,7 @@ void execTerm(TERM *t) {
 				termPrint(t, 1);
 				printf("\n");
 			}
+
 		} while((res = termConv(t)) == 1);
 
 		// if execution is finished, print result

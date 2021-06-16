@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en-us">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>LCI - Lambda Calculus Interpreter</title>
+        <style>
+            html, body {
+                height: 100%;
+                background-color: black;
+                padding: 0px;
+                margin: 0px;
+            }
+
+            .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+            textarea.emscripten { font-family: monospace; width: 80%; }
+            div.emscripten { text-align: center; }
+            div.emscripten_border { border: 1px solid black; }
+            /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+            canvas.emscripten { border: 0px none; background-color: black; }
+
+            .spinner {
+                height: 50px;
+                width: 50px;
+                margin: 0px auto;
+                -webkit-animation: rotation .8s linear infinite;
+                -moz-animation: rotation .8s linear infinite;
+                -o-animation: rotation .8s linear infinite;
+                animation: rotation 0.8s linear infinite;
+                border-left: 10px solid rgb(0,150,240);
+                border-right: 10px solid rgb(0,150,240);
+                border-bottom: 10px solid rgb(0,150,240);
+                border-top: 10px solid rgb(100,0,200);
+                border-radius: 100%;
+                background-color: rgb(200,100,250);
+            }
+            @-webkit-keyframes rotation {
+                from {-webkit-transform: rotate(0deg);}
+                to {-webkit-transform: rotate(360deg);}
+            }
+            @-moz-keyframes rotation {
+                from {-moz-transform: rotate(0deg);}
+                to {-moz-transform: rotate(360deg);}
+            }
+            @-o-keyframes rotation {
+                from {-o-transform: rotate(0deg);}
+                to {-o-transform: rotate(360deg);}
+            }
+            @keyframes rotation {
+                from {transform: rotate(0deg);}
+                to {transform: rotate(360deg);}
+            }
+
+            #terminal {
+                width: 100%;
+                height: 100%;
+            }
+
+            .xterm {
+                padding: 10px;
+            }
+        </style>
+        <link rel="stylesheet" href="xterm.js/xterm.css" />
+    </head>
+    <body>
+        <figure style="overflow:visible;" id="spinner"><div class="spinner"></div><center style="margin-top:0.5em"><strong>emscripten</strong></center></figure>
+        <div class="emscripten" id="status">Downloading...</div>
+        <div class="emscripten">
+            <progress value="0" max="100" id="progress" hidden=1></progress>  
+        </div>
+
+        <div id="terminal"></div>
+
+        <script src="xterm.js/xterm.js"></script>
+        <script src="xterm.js/local-echo.js"></script>
+        <script src="xterm.js/xterm-addon-fit.js"></script>
+
+        <script src="lci-init.js"></script>
+        <script src="lci.js"></script>
+    </body>
+</html>

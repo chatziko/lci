@@ -16,10 +16,11 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")	# common flags
 
 # generate parser
+# NOTE: under emscripten, make_dparser.js is generated, so we need to have dparser/make_dparser from a previous run.
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c
 	DEPENDS make_dparser src/grammar.g
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} VERBATIM
-	COMMAND $<TARGET_FILE:make_dparser> ${CMAKE_CURRENT_SOURCE_DIR}/src/grammar.g -o ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c
+	COMMAND dparser/make_dparser ${CMAKE_CURRENT_SOURCE_DIR}/src/grammar.g -o ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c
 )
 
 # lci executable
@@ -32,6 +33,17 @@ target_link_libraries(lci dparse replxx $<IF:$<BOOL:${WIN32}>,-static,> stdc++)	
 # if present, lci tries to read global .lcirc from DATADIR
 if(CMAKE_INSTALL_PREFIX)
 	target_compile_definitions(lci PUBLIC DATADIR="${CMAKE_INSTALL_PREFIX}/share")
+endif()
+
+# emcscripten: set extra options and copy all html/* files to the build dir
+if(EMSCRIPTEN)
+	# Note: SHELL: is needed otherwise cmake merges "-s foo -s bar" into "-s foo bar" !!
+	target_link_options(lci PUBLIC "SHELL:-s ASYNCIFY" "SHELL:-s ASYNCIFY_IMPORTS=[wait_for_input]" --preload-file=.lcirc --preload-file=queens.lci)
+
+	file(GLOB_RECURSE HTML_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/html LIST_DIRECTORIES false html/*)
+	foreach(FILE ${HTML_SOURCES})
+		configure_file(html/${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${FILE} COPYONLY)
+	endforeach()
 endif()
 
 # copy some files to the build dir for easier debugging (configure_file has the advantage of
