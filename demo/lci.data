@@ -1,0 +1,341 @@
+
+# .lcirc
+# 
+# Initialization file for lci program.
+# This file declares basic functions and operators.
+
+
+# Operator declaration. Must be in the form
+#		DefOp 'oper' precedence associativity
+
+DefOp '~'	100 yfx;		# Enforces call-by-value (used internally)
+
+DefOp '&&'	80 yfx;			# Logical and
+DefOp '||'	80 yfx;			# Logical or
+
+DefOp '<'	70 xfx;			# Less than
+DefOp '<='	70 xfx;			# Less or equal
+DefOp '>'	70 xfx;			# Greater than
+DefOp '>='	70 xfx;			# Greater or equal
+DefOp '=='	70 xfx;			# Equal
+DefOp '!='	70 xfx;			# Not equal
+
+DefOp '++'	60 xfy;			# Append lists
+DefOp ':'	60 xfy;			# Construct list (Head:Tail)
+
+DefOp ','	55 xfx;			# Construct ordered pair (a,b)
+DefOp '..'	55 xfx;			# n..m = [n,n+1,...,m]
+
+DefOp '+'	50 yfx;			# Add
+DefOp '-'	50 yfx;			# Monus
+
+DefOp '*'	40 yfx;			# Multiply
+DefOp '/'	40 yfx;			# Integer division
+
+DefOp '**'	35 yfx;			# Exponential
+
+# Operator definition.
+
+'&&'	= And;
+'||'	= Or;
+'=='	= Equal;
+'!='	= \a.\b.Not (a == b);
+'>='	= Geq;
+'<='	= Leq;
+'>'		= \a.\b.Not (a <= b);
+'<'		= \a.\b.Not (a >= b);
+'+'		= Add;
+'-'		= Monus;
+'*'		= Mult;
+'/'		= Div;
+'**'	= Exp;
+':'		= Cons;
+'++'	= Append;
+','		= Pair;
+'..'	= Range;
+
+
+# --- Basic functions -------------------------------------------------
+
+I = \x.x;
+
+# --- Fixed point combinators -----------------------------------------
+
+Y = \f.(\x.f(x x))(\x.f(x x));
+Theta = (\x.\y.y (x x y))(\x.\y.y (x x y));
+
+# --- Logical functions -----------------------------------------------
+
+True	= \x.\y.x;
+False	= \x.\y.y;
+Not = \z.z False True;
+And = \x.\y.(x (y True False) False);
+Or = \x.\y.(x True (y True False));
+If = I;						# \z.\x.\y.z x y which is equivalent to I
+
+# --- Numerals --------------------------------------------------------
+#
+# LCI supports multiple user-defined encodings of numerals.
+# An encoding is created by defining the following aliases:
+#   '0'       The encoding of 0
+#   Succ      Function mapping <N> to <N+1>
+#   Pred      Function mapping <N+1> to <N> and 0 to 0
+#   IsZero    Function mapping 0 to True and <N+1> to False.
+#
+# Note that numeric literals, eg "3", are just syntactic sugar for
+# Succ(...(Succ(0))).
+#
+# --- Encoding-agnostic arithmetic operations -------------------------
+# 
+# The basic arithmetic operatios are defined in an encoding-agnostic
+# way, by using '0' / Succ / Pred / IsZero.
+# They can also be redefined later in a encoding-specific way if a
+# simple/faster implementation is possible for that encoding.
+
+Add = \n.\m.(IsZero n) m (Succ (Add (Pred n) m));
+Monus = \n.\m.(IsZero m) n (Pred (Monus n (Pred m)));
+Mult = \n.\m.(IsZero n) 0 (Add m (Mult (Pred n) m));
+Div = \n.\m.If (n < m) 0 (1 + (n-m)/m);
+Exp = \n.\m.(IsZero m) 1 (Mult n (Exp n (Pred m)));
+
+Equal = \a.\b.(IsZero a-b) && (IsZero b-a);
+Leq = \a.\b.IsZero (Monus a b);
+Geq = \a.\b.IsZero (Monus b a);
+
+# --- Church-encoding of numerals -------------------------------------
+
+'0' = \f.\x.x;
+Succ = \n.\f.\x.n f(f x);
+Pred = \x.\y.\z.x(\p.\q.q(p y))(\y.z)(\x.x);
+IsZero = \n.n (\x.False) True;
+
+Add = \n.\m.\f.\x.n f(m f x);
+Monus = \a.\b.b Pred a;
+Mult = \n.\m.\f.n(m f);
+Exp = \n.\m.m n;
+
+# --- Scott-encoding of numerals --------------------------------------
+#
+# Note: often Scott encoding is presented as
+#    0 = \z.\s.z   Succ = \n.\z.\s.s n
+# But this has the annoying side-effect that 0 is the same as True,
+# so we just inverse the two arguments (so Scott-0 == Church-0).
+
+# '0' = \s.\z.z;
+# Succ = \n.\s.\z.s n;
+# Pred = \n.n I 0;
+# IsZero = \n.n (\x.False) True;
+
+# Add = \n.n
+# 	(\pred.\m.Add pred (\s.\z.s m))		# \s.\z.s m is Succ m
+# 	(\m.m);
+# Monus = \n.n
+# 	(\n_pred.\m.m
+# 		(\m_pred.Monus n_pred m_pred)
+# 		n)
+# 	(\m.0);
+# Mult = \n.n (\pred.\m.Add m (Mult pred m)) (\m.0);
+# Exp = \n.\m.m (\pred.Mult n (Exp n pred)) 1;
+# Equal = \n.n
+# 	(\n_pred.\m.m
+# 		(\m_pred.Equal n_pred m_pred)	# n,m != 0
+# 		False)							# n != 0, m == 0
+# 	IsZero;								# n == 0, so check if m == 0
+
+# --- Pairs -----------------------------------------------------------
+
+Pair = \x.\y.\z.z x y;
+Fst = \z.z True;
+Snd = \z.z False;
+
+# --- List construction -----------------------------------------------
+
+Cons = \x.\y.\s.s x y;
+Nil = \x.True;
+IsNil = \p.p \x.\y.False;
+Head = \p.p True;
+Tail = \p.p False;
+
+# --- Infinite recursion ----------------------------------------------
+
+Loop = Loop;
+Nats = \n.n:(Nats (Succ n));
+
+# --- Ackermann function ----------------------------------------------
+
+#using definition
+Ack = \m.\n.
+	If (IsZero m)
+		n+1
+		(If (IsZero n)
+			(Ack m-1 1)
+			(Ack m-1 ~(Ack m n-1))
+		);
+
+#using primitive recursion on high order function
+Ack2 = \p.(p (\a.\q.(a (q a 1))) Succ);
+
+# --- Mutually recursive functions ------------------------------------
+
+Series = \n.
+	If (IsZero n)
+		0
+		(G n);
+
+G = \n.
+	n + (Series n-1);
+
+
+# --- Basic list functions --------------------------------------------
+
+ListEqual = \l1.\l2.
+	If (IsNil l1)
+		(IsNil l2)
+		(Head l1)==(Head l2) && (ListEqual (Tail l1) (Tail l2));
+
+Length = \l.
+	If (IsNil l)
+		0
+		(Succ (Length (Tail l)));
+
+Member = \x.\l.
+	If (IsNil l)
+		False
+		(If x == (Head l)
+			True
+			(Member x (Tail l)));
+
+Append = \l1.\l2.
+	If (IsNil l1)
+		l2
+		(Head l1):(Append (Tail l1) l2);
+
+Reverse = \l.
+	If (IsNil l)
+		Nil
+		(Reverse (Tail l)) ++ (Head l):Nil;
+
+Zip = \l1.\l2.
+	If (IsNil l1) || (IsNil l2)
+		Nil
+		((Head l1),(Head l2)):(Zip (Tail l1) (Tail l2));
+
+Combine = \l1.\l2.
+	If (IsNil l1)
+		Nil
+		(Map (Pair (Head l1)) l2) ++ (Combine (Tail l1) l2);
+
+Sum = \l.
+	If (IsNil l)
+		0
+		(Head l) + (Sum (Tail l));
+
+Take = \n.\l.
+	If (IsZero n)
+		Nil
+		(Head l):(Take (Pred n) (Tail l));
+
+Range = \n.\m.
+	If (n > m)
+		[]
+		n:(Range (Succ n) m);
+
+# --- High order functions --------------------------------------------
+
+Map = \f.\l.
+	If (IsNil l)
+		Nil
+		(f (Head l)):(Map f (Tail l));
+
+Filter = \f.\l.
+	If (IsNil l)
+		Nil
+		(If (f (Head l))
+			(Head l):(Filter f (Tail l))
+			(Filter f (Tail l)));
+
+All = \f.\l.
+	If (IsNil l)
+		True
+		(f (Head l)) && (All f (Tail l));
+
+
+
+# queens.lci
+#
+# Implementation of n-queens problem.
+# Experimental use of ~ operator to use call-by-value.
+#
+# Usage: queens <no>
+# Gives all solutions (in reasonable time) for up to 5 queens.
+
+
+Queens = \qno.
+	Qu qno ~ 1..qno;
+
+
+# Qu is the main function
+# m is the number of queens and qlist a list of values
+# Qu calls Qu m-1 and combines the result with the values
+# for the m queen. Then it filters the result to keep only
+# those combinations that are safe.
+
+Qu = \m.\qlist.
+	If (IsZero m)
+		Nil:Nil
+		(Map
+			(\p.Append ~ (Fst p) ~ (Snd p):Nil)
+			~ (Filter
+				(\p.Safe ~ (Fst p) ~ (Snd p) m)
+				~ (Combine
+					~ (Qu ~ (Pred m) qlist)
+					qlist
+				)
+			)
+		);
+
+
+# Safe: checks if value n of queen m is compatible with
+# the values of other queens stored in list p
+
+Safe = \p.\n.\m.
+	All Not
+		(Map
+		 	(\p.Check ~ (Fst p) ~ (Snd p) m n)
+			~ (Zip (Nats 1) p)
+		);
+
+
+# Check: returns true if queen i (value j) threatens queen m (value n)
+
+Check = \i.\j.\m.\n.
+	j   == n		||
+	i+j == m+n	||
+	i+n == m+j;
+
+
+
+# --- redefine basic funtions using ~ operator
+
+Map = \f.\l.
+	If (IsNil l)
+		Nil
+		(Cons (f ~ (Head l)) (Map f ~ (Tail l)));
+
+Filter = \f.\l.
+	If (IsNil l)
+		Nil
+		(If ~ (f ~ (Head l))
+			(Cons ~ (Head l) ~ (Filter f (Tail l)))
+			(Filter f (Tail l)));
+
+Combine = \l1.\l2.
+	If (IsNil l1)
+		Nil
+		(Append ~ (Map (Pair (Head l1)) l2) ~ (Combine (Tail l1) l2));
+
+All = \f.\l.
+	If (IsNil l)
+		True
+		(And (f ~ (Head l)) (All f ~ (Tail l)));
+

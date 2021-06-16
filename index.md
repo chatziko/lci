@@ -3,6 +3,11 @@ LCI is an interpreter for the lambda calculus. It supports many advanced
 strategies, all based on the pure calculus. It is free software licenced under
 the [GNU General Public Licence](http://www.gnu.org/licenses/gpl.html) (GPL).
 
+## Try it online
+
+LCI can run in a browser via [WebAssembly](https://webassembly.org/).
+Try the [demo](https://www.chatzi.org/lci/demo/lci.html)!
+
 ## Install
 
 #### From source
