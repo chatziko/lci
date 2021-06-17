@@ -25,15 +25,15 @@ based on the pure lambda-calculus. Its features include:
 - __User-defined operators__. The user can declare a new
   operator with a certain precedence and associativity and define it in lambda
   calculus. Many common operators (eg. integer, logic and list operations) are
-  pre-defined in `.lcirc` and are available by default.
-- __List syntax__. `[a,b,c]` is parsed as `a:b:c:Nil` (`:` and `Nil` are defined in `.lcirc`).
+  pre-defined in [`.lcirc`](src/.lcirc) and are available by default.
+- __List syntax__. `[a,b,c]` is parsed as `a:b:c:Nil` (`:` and `Nil` are defined in [`.lcirc`](src/.lcirc)).
 - __Multiple evaluation strategies__. Call-by-name and call-by-value can
   coexist in the same program.
 - __Human-readable display__ of terms: for example church numerals are
   displayed as numbers and lists using the `[a,b,c]` notation.
 - __Tracing__ of execution.
 - File interpretation as well as interactive usage.
-- A __library__ of pre-defined functions (`.lcirc`).
+- A __library__ of pre-defined functions ([`.lcirc`](src/.lcirc)).
 
 All features are implemented in the pure lambda calculus.
 To demonstrate them, there is an implementation of the N-Queens problem
