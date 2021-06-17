@@ -29,17 +29,20 @@ file(GLOB SOURCES src/*.c src/**/*.c)
 add_executable(lci ${SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/grammar.g.d_parser.c)
 
 target_include_directories(lci PUBLIC src src/k08 dparser)
-target_link_libraries(lci dparse replxx $<IF:$<BOOL:${WIN32}>,-static,> stdc++)		# stdc++ needed by replxx, static link on windows to avoid dependencies
-
-# if present, lci tries to read global .lcirc from DATADIR
-if(CMAKE_INSTALL_PREFIX)
-	target_compile_definitions(lci PUBLIC DATADIR="${CMAKE_INSTALL_PREFIX}/share")
-endif()
+target_link_libraries(lci dparse)
 
 # set emcscriptenoptions and copy all html/* files to the build dir
 if(EMSCRIPTEN)
 	# Note: SHELL: is needed otherwise cmake merges "-s foo -s bar" into "-s foo bar" !!
 	target_link_options(lci PUBLIC "SHELL:-s ALLOW_MEMORY_GROWTH" "SHELL:-s ASYNCIFY" "SHELL:-s ASYNCIFY_IMPORTS=[js_read_line,js_read_char,js_read_ctrl_c]" --preload-file=.lcirc --preload-file=queens.lci)
+else()
+	# no emscripten, we need replxx. stdc++ is needed by replxx (static link on windows to avoid dependencies).
+	target_link_libraries(lci replxx $<IF:$<BOOL:${WIN32}>,-static,> stdc++)
+endif()
+
+# if present, lci tries to read global .lcirc from DATADIR
+if(CMAKE_INSTALL_PREFIX)
+	target_compile_definitions(lci PUBLIC DATADIR="${CMAKE_INSTALL_PREFIX}/share")
 endif()
 
 # copy some files to the build dir for easier debugging (configure_file has the advantage of

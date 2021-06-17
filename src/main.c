@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include <replxx.h>
-
 #include "parser.h"
 #include "run.h"
 #include "decllist.h"
@@ -15,25 +13,28 @@
 
 #define MAX_HISTORY_ENTRIES 100
 
-
-static void completion_hook(char const* context, replxx_completions* lc, int* contextLen, void* ud);
-static void hint_hook(char const* context, replxx_hints* lc, int* contextLen, ReplxxColor* c, void* ud);
-static void completion_or_hint(char const* context, replxx_completions* lc_compl, replxx_hints* lc_hints);
-
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 
 EM_JS(char*, js_read_line, (), {
 	return Asyncify.handleAsync(Module.readLine);
 });
+#else
+#include <replxx.h>
+
+static void completion_hook(char const* context, replxx_completions* lc, int* contextLen, void* ud);
+static void hint_hook(char const* context, replxx_hints* lc, int* contextLen, ReplxxColor* c, void* ud);
+static void completion_or_hint(char const* context, replxx_completions* lc_compl, replxx_hints* lc_hints);
 #endif
 
 int main() {
+	char *home = getenv("HOME");
+
 	printf("lci - A lambda calculus interpreter\n");
 	printf("Type a term, Help for info or Quit to exit.\n\n");
 
+	#ifndef __EMSCRIPTEN__
 	// load history from ~/lci_history (if HOME is available) or "./lci_history"
-	char *home = getenv("HOME");
 	char *history_dir = home ? home : ".";
 	char *history_file = "/.lci_history";
 	char *history_path = malloc(strlen(history_dir) + strlen(history_file) + 1);
@@ -47,6 +48,7 @@ int main() {
 
 	replxx_set_completion_callback( replxx, completion_hook, NULL);
 	replxx_set_hint_callback( replxx, hint_hook, NULL );
+	#endif
 
 	// consult .lcirc files in various places
 	char *lcirc = ".lcirc";
@@ -95,18 +97,22 @@ int main() {
 		// if empty read again.
 		if(!*line) continue;
 
+		#ifndef __EMSCRIPTEN__
 		replxx_history_add(replxx, line);
+		#endif
 
 		parse_string(line);
 	}
 
+	#ifndef __EMSCRIPTEN__
 	// save history to ~/.lci_history
 	replxx_set_max_history_size(replxx, MAX_HISTORY_ENTRIES);
 	replxx_history_save(replxx, history_path);
+	replxx_end(replxx);
 	free(history_path);
+	#endif
 
 	// cleanup
-	replxx_end(replxx);
 	str_intern_cleanup();
 
 	return 0;
@@ -114,6 +120,7 @@ int main() {
 
 
 
+#ifndef __EMSCRIPTEN__
 // --- Completion and hints -------------------------------------------------------------------
 
 static void completion_hook(char const* context, replxx_completions* lc, int* contextLen, void* ud) {
@@ -170,3 +177,4 @@ static void completion_or_hint(char const* context, replxx_completions* lc_compl
 
 	vector_destroy(candidates);
 }
+#endif // __EMSCRIPTEN__
