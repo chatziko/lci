@@ -47,6 +47,9 @@ extern int freeNo;
 EM_JS(int, js_read_char, (), {
 	return Asyncify.handleAsync(Module.readChar);
 });
+EM_JS(int, js_read_ctrl_c, (), {
+	return Asyncify.handleAsync(Module.readCtrlC);
+});
 #endif
 
 // read a single character (without buffering)
@@ -85,7 +88,7 @@ void execTerm(TERM *t) {
 	char c;
 
 	#ifdef __EMSCRIPTEN__
-	double last_sleep = emscripten_get_now();
+	double last_ctrl_c = emscripten_get_now();
 	#endif
 
 	trace = getOption(OPT_TRACE);
@@ -109,10 +112,12 @@ void execTerm(TERM *t) {
 			redno++;
 
 			#ifdef __EMSCRIPTEN__
-			// occasionally sleep to allow the browser to be responsive
-			if(redno % 100 == 0 && (emscripten_get_now() - last_sleep) > 400) {
-				emscripten_sleep(1);
-				last_sleep = emscripten_get_now();
+			// occasionally do an async call to find out whether Ctrl-C was pressed.
+			// This also gives back control to the browser to allow for responsiveness.
+			if(redno % 100 == 0 && (emscripten_get_now() - last_ctrl_c) > 400) {
+				if(js_read_ctrl_c())
+					trace = 1;
+				last_ctrl_c = emscripten_get_now();
 			}
 			#endif
 

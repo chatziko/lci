@@ -16,6 +16,11 @@ term.open(document.getElementById('terminal'));
 term.focus();
 fitAddon.fit();
 
+term.onData((data) => {
+	if(data.charCodeAt(0) == 3)	// 3 = Ctrl-C
+		Module._ctrlCPressed = true;
+});
+
 var Module = {
 	// Called asynchronously (via asyncify) from lci to get a line of input.
 	readLine: async function() {
@@ -36,6 +41,16 @@ var Module = {
 				resolve(data.charCodeAt(0));
 			});
 		});
+	},
+
+	_ctrlCPressed: false,
+	readCtrlC: async function() {
+		// Give the browser some responsiveness, and allow Ctrl-C to be registered.
+		await new Promise(resolve => setTimeout(resolve, 10));
+
+		var res = Module._ctrlCPressed;
+		Module._ctrlCPressed = false;
+		return res;
 	},
 
 	stdout: function(output) {
