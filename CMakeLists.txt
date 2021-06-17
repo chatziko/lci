@@ -38,7 +38,7 @@ endif()
 # emcscripten: set extra options and copy all html/* files to the build dir
 if(EMSCRIPTEN)
 	# Note: SHELL: is needed otherwise cmake merges "-s foo -s bar" into "-s foo bar" !!
-	target_link_options(lci PUBLIC "SHELL:-s ASYNCIFY" "SHELL:-s ASYNCIFY_IMPORTS=[wait_for_input]" --preload-file=.lcirc --preload-file=queens.lci)
+	target_link_options(lci PUBLIC "SHELL:-s ASYNCIFY" "SHELL:-s ASYNCIFY_IMPORTS=[js_read_line]" --preload-file=.lcirc --preload-file=queens.lci)
 
 	file(GLOB_RECURSE HTML_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/html LIST_DIRECTORIES false html/*)
 	foreach(FILE ${HTML_SOURCES})

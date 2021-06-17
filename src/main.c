@@ -23,8 +23,8 @@ static void completion_or_hint(char const* context, replxx_completions* lc_compl
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 
-EM_JS(void, wait_for_input, (), {
-	Asyncify.handleAsync(Module.waitForInput);
+EM_JS(char*, js_read_line, (), {
+	return Asyncify.handleAsync(Module.readLine);
 });
 #endif
 
@@ -83,14 +83,13 @@ int main() {
 
 	// read and execute commands
 	while(!quit_called) {
-		#ifdef __EMSCRIPTEN__
-		// when running in emscripten, we cannot really do blocking input. So we do an async call (via asyncify), until
-		// we know that the input is ready, and the js code (lci-init.js) will provide the stdin input to replxx_input.
-		wait_for_input();
-		#endif
-
 		// read command
+		#ifdef __EMSCRIPTEN__
+		// in the browser we cannot do blocking input, so we get the line using an async call (via asyncify)
+		char* line = js_read_line();
+		#else
 		char* line = (char*)replxx_input(replxx, "lci> ");
+		#endif
 		if(!line) break;	// if eof exit
 
 		// if empty read again.

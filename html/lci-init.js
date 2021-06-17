@@ -2,13 +2,8 @@ var statusElement = document.getElementById('status');
 var progressElement = document.getElementById('progress');
 var spinnerElement = document.getElementById('spinner');
 
-// When lci reads from stdin, emscripten calls Module.stdin, which however needs to be synchronous!
-// Workaround: lci does an async call to Module.waitForInput (before trying to read from stdin), which finishes when
-// a full line of input is read from xterm.js. The line is stored in termInput, and Module.stdin can feed it
-// to lci synchronously when lci tries to read from stdin.
-//
-// Note that replxx in lci detects that it has no tty and does no output at all (no "lci >" prompt and no
-// echo of characters). So we do the prompt/echo locally via the xterm-local-echo plugin.
+// Proper blocking input is not possible in emscripten. So we do the input locally via the
+// xterm-local-echo plugin, and feed it to lci via the Module.readLine function.
 
 var term = new Terminal();
 var localEcho = new LocalEchoController();
@@ -20,29 +15,15 @@ term.loadAddon(fitAddon);
 term.open(document.getElementById('terminal'));
 fitAddon.fit();
 
-var termInput = "";
-
 var Module = {
-	// This waits until we have a line of input to give to lci.
-	waitForInput: async function() {
-		termInput = await localEcho.read("lci> ");
-		termInput += "\n";
-	},
+	// Called asynchronously (via asyncify) from lci to get a line of input.
+	readLine: async function() {
+		var line = await localEcho.read("lci> ");
 
-	stdin: function() {
-		if(termInput == "") {
-			// console.log("returning null");
-			return null;	// EOF
-		}
-
-		var res = termInput.charCodeAt(0);
-		if(res == 13)
-			res = 10;
-
-		termInput = termInput.slice(1);
-
-		// console.log("returning ", res);
-		return res;
+		var lengthBytes = lengthBytesUTF8(line) + 1;
+		var stringOnWasmHeap = _malloc(lengthBytes);
+		stringToUTF8(line, stringOnWasmHeap, lengthBytes);
+		return stringOnWasmHeap;
 	},
 
 	stdout: function(output) {
