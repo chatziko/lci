@@ -5,6 +5,7 @@ project(lci C)
 add_subdirectory(dparser EXCLUDE_FROM_ALL)
 add_subdirectory(replxx EXCLUDE_FROM_ALL)
 add_subdirectory(doc)
+add_subdirectory(html)
 
 # default type is Release, change with cmake -DCMAKE_BUILD_TYPE=
 if(NOT CMAKE_BUILD_TYPE)
@@ -35,15 +36,10 @@ if(CMAKE_INSTALL_PREFIX)
 	target_compile_definitions(lci PUBLIC DATADIR="${CMAKE_INSTALL_PREFIX}/share")
 endif()
 
-# emcscripten: set extra options and copy all html/* files to the build dir
+# set emcscriptenoptions and copy all html/* files to the build dir
 if(EMSCRIPTEN)
 	# Note: SHELL: is needed otherwise cmake merges "-s foo -s bar" into "-s foo bar" !!
 	target_link_options(lci PUBLIC "SHELL:-s ASYNCIFY" "SHELL:-s ASYNCIFY_IMPORTS=[js_read_line]" --preload-file=.lcirc --preload-file=queens.lci)
-
-	file(GLOB_RECURSE HTML_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/html LIST_DIRECTORIES false html/*)
-	foreach(FILE ${HTML_SOURCES})
-		configure_file(html/${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${FILE} COPYONLY)
-	endforeach()
 endif()
 
 # copy some files to the build dir for easier debugging (configure_file has the advantage of
