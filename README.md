@@ -12,6 +12,33 @@ the [GNU General Public Licence](http://www.gnu.org/licenses/gpl.html) (GPL).
 LCI can run in a browser via [WebAssembly](https://webassembly.org/).
 Try the [demo](https://www.chatzi.org/lci/demo/lci.html)!
 
+## Features
+
+LCI can be considered a small (but powerfull) functional progamming language
+based on the pure lambda-calculus. Its features include:
+
+- __Aliases__ of lambda terms (that is named functions).
+- __Integers__ coded as church numerals, with the usual arithmetic operations.
+- __Recursion__. Self-references of aliases are expanded during execution. 
+  LCI can also automatically convert recursive terms to
+  non-recursive ones using a fixed point combinator.
+- __User-defined operators__. The user can declare a new
+  operator with a certain precedence and associativity and define it in lambda
+  calculus. Many common operators (eg. integer, logic and list operations) are
+  pre-defined in `.lcirc` and are available by default.
+- __List syntax__. `[a,b,c]` is parsed as `a:b:c:Nil` (`:` and `Nil` are defined in `.lcirc`).
+- __Multiple evaluation strategies__. Call-by-name and call-by-value can
+  coexist in the same program.
+- __Human-readable display__ of terms: for example church numerals are
+  displayed as numbers and lists using the `[a,b,c]` notation.
+- __Tracing__ of execution.
+- File interpretation as well as interactive usage.
+- A __library__ of pre-defined functions (`.lcirc`).
+
+All features are implemented in the pure lambda calculus.
+To demonstrate them, there is an implementation of the N-Queens problem
+(`queens.lci`) in a way that reminds of Haskell syntax.
+
 ## Install
 
 #### From source
@@ -44,33 +71,20 @@ Windows binaries are
 [available here](https://github.com/chatziko/lci/releases/).
 Simply extract and run the `lci` executable.
 
+#### Building for WebAssembly
 
-## Features
+The browser version can be built with [emscripten](https://emscripten.org/).
+You first need to build `make_dparser` with a normal build, then build
+again with `emcmake`. The build is created under `build/html/dist`.
+```
+mkdir build && cd build
+cmake ..
+make make_dparser
 
-LCI can be considered a small (but powerfull) functional progamming language
-based on the pure lambda-calculus. Its features include:
-
-- Aliases of lambda terms (that is named functions).
-- Integers coded as church numerals, with the usual arithmetic operations.
-- Recursion. Self-references of aliases are expanded during execution. 
-  LCI can also automatically convert recursive terms to
-  non-recursive ones using a fixed point combinator.
-- User-defined operators. The user can declare a new
-  operator with a certain precedence and associativity and define it in lambda
-  calculus. Many common operators (eg. integer, logic and list operations) are
-  pre-defined in `.lcirc` and are available by default.
-- List syntax. `[a,b,c]` is parsed as `a:b:c:Nil` (`:` and `Nil` are defined in `.lcirc`).
-- Multiple evaluation strategies. Call-by-name and call-by-value can
-  coexist in the same program.
-- Human-readable display of terms: for example church numerals are
-  displayed as numbers and lists using the `[a,b,c]` notation.
-- Tracing of execution.
-- File interpretation as well as interactive usage.
-- Comes with a "library" of pre-defined functions (`.lcirc`).
-
-All features are implemented in the pure lambda calculus.
-To demonstrate them, there is an implementation of the N-Queens problem
-(`queens.lci`) in a way that reminds of Haskell syntax.
+rm CMakeCache.txt
+emcmake cmake ..
+emmake make
+```
 
 #### Contribution
 
