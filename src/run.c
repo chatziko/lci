@@ -9,10 +9,12 @@
 #include <time.h>
 #include <signal.h>
 
-#if __has_include(<conio.h>)
-#include <conio.h>
-#elif __has_include(<sys/ioctl.h>) && !defined(__EMSCRIPTEN__)
-#include <sys/ioctl.h>
+#ifdef __EMSCRIPTEN__
+	#include <emscripten.h>
+#elif __has_include(<conio.h>)
+	#include <conio.h>
+#elif __has_include(<sys/ioctl.h>)
+	#include <sys/ioctl.h>
 	#if __has_include(<termio.h>)		// linux
 	#include <termio.h>
 	typedef struct termio TERMIO;
@@ -23,10 +25,6 @@
 	#define TCGETA TIOCGETA
 	#define TCSETA TIOCSETA
 	#endif
-#endif
-
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
 #endif
 
 #include "dparse.h"
@@ -45,12 +43,21 @@ int quit_called = 0;
 extern int freeNo;
 #endif
 
+#ifdef __EMSCRIPTEN__
+EM_JS(int, js_read_char, (), {
+	return Asyncify.handleAsync(Module.readChar);
+});
+#endif
+
 // read a single character (without buffering)
 static int read_single_char() {
-	#if __has_include(<conio.h>)				// available on windows
+	#ifdef __EMSCRIPTEN__
+	return js_read_char();
+
+	#elif __has_include(<conio.h>)				// available on windows
 	return _getch();
 
-	#elif __has_include(<sys/ioctl.h>) && !defined(__EMSCRIPTEN__)
+	#elif __has_include(<sys/ioctl.h>)
 	// change tio settings to make getchar return immediately after the
 	// first character (without pressing enter). We keep the old
 	// settings to restore later.

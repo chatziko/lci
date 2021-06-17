@@ -13,6 +13,7 @@ term.loadAddon(localEcho);
 term.loadAddon(fitAddon);
 
 term.open(document.getElementById('terminal'));
+term.focus();
 fitAddon.fit();
 
 var Module = {
@@ -24,6 +25,17 @@ var Module = {
 		var stringOnWasmHeap = _malloc(lengthBytes);
 		stringToUTF8(line, stringOnWasmHeap, lengthBytes);
 		return stringOnWasmHeap;
+	},
+
+	// Called asynchronously (via asyncify) from lci to get a line of input.
+	readChar: async function() {
+		// localEcho.readChar() is buggy, so we do it manually
+		return new Promise(resolve => {
+			var disp = term.onData(data => {
+				disp.dispose();
+				resolve(data.charCodeAt(0));
+			});
+		});
 	},
 
 	stdout: function(output) {
