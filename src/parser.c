@@ -173,8 +173,10 @@ TERM *create_list(TERM *first, D_ParseNode *rest) {
 		char *str_colon = str_intern(":");
 		for(int i = d_get_number_of_children(rest) - 1; i >= 0; i--) {
 			TERM *t = d_get_child(d_get_child(rest, i), 1)->user;
+			t->closed = 1;			// ensure that operators inside t have higher precedence than ":"
 			list = create_application(t, str_colon, list);
 		}
+		first->closed = 1;			// ensure that operators inside first have higher precedence than ":"
 		list = create_application(first, str_colon, list);
 	}
 	return list;
