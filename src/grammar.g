@@ -16,6 +16,7 @@
 
 	int is_reserved_oper(char *oper) {
 		return strcmp(oper, "=" ) == 0 ||
+			   strcmp(oper, "~=") == 0 ||
 			   strcmp(oper, "\\") == 0 ||
 			   strcmp(oper, "," ) == 0 ||
 			   strcmp(oper, "." ) == 0;
@@ -29,24 +30,26 @@
 program: command ( ';' command )* ';'?;
 
 command
-	: alias '=' term 				{ parse_cmd_declaration($0, $2); }
-    | '?'? term						{ parse_cmd_term($1); };
+	: alias '=' term 					{ parse_cmd_declaration($0, $2); }
+    | '?'? term							{ parse_cmd_term($1); };
 
 term
-	: variable						{ $$ = create_variable($0); }
-    | number						{ $$ = create_number($0); }
-	| alias							{ $$ = create_alias($0); }
-	| '(' term ')'					{ $$ = create_bracket($1); }
-	| lambda variable '.' term		{ $$ = create_abstraction(create_variable($1), $3); }
-	| '[' ']'					 	{ $$ = create_list(NULL, NULL); }
-	| '[' term ( ',' term )* ']'	{ $$ = create_list($1, &$n2); }
-	| '(' term ',' term ')'			{ $$ = create_bracket(create_application($1, str($n2), $3)); }
+	: variable							{ $$ = create_variable($0); }
+    | number							{ $$ = create_number($0); }
+	| alias								{ $$ = create_alias($0); }
+	| '(' term ')'						{ $$ = create_bracket($1); }
+	| lambda variable '.' term			{ $$ = create_abstraction(create_variable($1), $3); }
+	| '[' ']'					 		{ $$ = create_list(NULL, NULL); }
+	| '[' term ( ',' term )* ']'		{ $$ = create_list($1, &$n2); }
+	| '(' term ',' term ')'				{ $$ = create_bracket(create_application($1, str($n2), $3)); }
+	| 'let' variable eq term 'in' term	{ $$ = create_let(create_variable($1), str($n2), $3, $5); }
 
 	// applications are left-associative, so we parse as such (see fix_precedence in parser.c)
-	| term operator? term $left 1	{ char *op = $#1 ? ${child 1,0}->user : NULL;
-									  $$ = create_application($0, op, $2); };
+	| term operator? term $left 1		{ char *op = $#1 ? ${child 1,0}->user : NULL;
+										  $$ = create_application($0, op, $2); };
 
 lambda: '\\' | 'λ';
+eq: '=' | '~=';
 
 alias: "[A-Z][a-zA-Z0-9_]*"				{ $$ = str($n); }
      | "'" "[^']+" "'"					{ $$ = str($n1); };

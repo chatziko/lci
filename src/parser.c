@@ -157,6 +157,14 @@ TERM* create_bracket(TERM *t) {
 	return t;
 }
 
+TERM *create_let(TERM *var, char *eq, TERM *value, TERM *t) {
+	return create_application(
+		create_abstraction(var, t),
+		(eq == str_intern("~=") ? str_intern("~") : NULL),
+		value
+	);
+}
+
 // Syntactic sugar for Term1:(Term2:(...:(Term<n>:Nil)))
 TERM *create_list(TERM *first, D_ParseNode *rest) {
 	TERM *list = create_alias(str_intern("Nil"));

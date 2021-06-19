@@ -250,9 +250,11 @@ Map = \f.\l.
 Filter = \f.\l.
 	If (IsNil l)
 		Nil
-		(If (f (Head l))
-			(Head l):(Filter f (Tail l))
-			(Filter f (Tail l)));
+		let head = Head l in
+		let filt_tail = Filter f (Tail l) in
+		If (f head)
+			head:filt_tail
+			filt_tail;
 
 All = \f.\l.
 	If (IsNil l)
