@@ -9,7 +9,8 @@
 
 
 Queens = \qno.
-	Qu qno ~ 1..qno;
+	let qlist ~= 1..qno in
+	Qu qno qlist;
 
 
 # Qu is the main function
@@ -20,17 +21,12 @@ Queens = \qno.
 
 Qu = \m.\qlist.
 	If (IsZero m)
-		Nil:Nil
-		(Map
-			(\p.Append ~ (Fst p) ~ (Snd p):Nil)
-			~ (Filter
-				(\p.Safe ~ (Fst p) ~ (Snd p) m)
-				~ (Combine
-					~ (Qu ~ (Pred m) qlist)
-					qlist
-				)
-			)
-		);
+		[[]]
+		let n ~= m - 1 in
+		let sub_sol ~= Qu n qlist in
+		let comb ~= Combine sub_sol qlist in		# create (sol, value) combinations
+		let filtered ~= Filter (\p.Safe ~ (Fst p) ~ (Snd p) m) comb in
+		Map (\p.Append ~ (Fst p) ~ [Snd p]) filtered;
 
 
 # Safe: checks if value n of queen m is compatible with
