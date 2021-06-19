@@ -193,27 +193,16 @@ ListEqual = \l1.\l2.
 		(IsNil l2)
 		(Head l1)==(Head l2) && (ListEqual (Tail l1) (Tail l2));
 
-Length = \l.
-	If (IsNil l)
-		0
-		(Succ (Length (Tail l)));
+Length = FoldR (\n.\z.Succ z) 0;
 
-Member = \x.\l.
-	If (IsNil l)
-		False
-		(If x == (Head l)
-			True
-			(Member x (Tail l)));
+Member = \x.Any (Equal x);
 
 Append = \l1.\l2.
 	If (IsNil l1)
 		l2
 		(Head l1):(Append (Tail l1) l2);
 
-Reverse = \l.
-	If (IsNil l)
-		Nil
-		(Reverse (Tail l)) ++ (Head l):Nil;
+Reverse = FoldL (\z.\n.n:z) [];
 
 Zip = \l1.\l2.
 	If (IsNil l1) || (IsNil l2)
@@ -225,40 +214,42 @@ Combine = \l1.\l2.
 		Nil
 		(Map (Pair (Head l1)) l2) ++ (Combine (Tail l1) l2);
 
-Sum = \l.
-	If (IsNil l)
-		0
-		(Head l) + (Sum (Tail l));
+Sum = FoldL Add 0;		# Sum of finite lists, via FoldL
 
 Take = \n.\l.
 	If (IsZero n)
 		Nil
 		(Head l):(Take (Pred n) (Tail l));
 
-Range = \n.\m.
-	If (n > m)
-		[]
-		n:(Range (Succ n) m);
+Range = \n.\m.Take (Succ (m-n)) (Nats n);
 
 # --- High order functions --------------------------------------------
 
-Map = \f.\l.
-	If (IsNil l)
-		Nil
-		(f (Head l)):(Map f (Tail l));
+Compose = \f.\g.\x.f (g x);
 
-Filter = \f.\l.
+FoldL = \f.\z.\l.
 	If (IsNil l)
-		Nil
-		let head = Head l in
-		let filt_tail = Filter f (Tail l) in
-		If (f head)
-			head:filt_tail
-			filt_tail;
+		z
+		(FoldL f (f z (Head l)) (Tail l));
 
-All = \f.\l.
+FoldLS = \f.\z.\l.		# strict variant
 	If (IsNil l)
-		True
-		(f (Head l)) && (All f (Tail l));
+		z
+		let new_z ~= f z (Head l) in
+		(FoldL f new_z (Tail l));
+
+FoldR = \f.\z.\l.
+	If (IsNil l)
+		z
+		(f (Head l) (FoldR f z (Tail l)));
+
+Map = \f.FoldR (Compose Cons f) [];
+
+Filter = \f.FoldR
+	(\n.\l.(f n) n:l l)
+	[];
+
+All = \f.FoldR (Compose And f) True;
+Any = \f.FoldR (Compose Or f) False;
 
 
