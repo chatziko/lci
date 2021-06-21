@@ -5,6 +5,7 @@ Real men use only pure calculus
 - v? (in progress)
   - Add webassembly/emscripten support for running lci in a browser.
   - Add auto-completion of aliases and system commands.
+  - Add 'let x = N in M' syntax, syntactic sugar for (\x.M) N.
 
 - v1.0 (15 Jun 2021)
 
