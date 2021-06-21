@@ -6,8 +6,19 @@ var spinnerElement = document.getElementById('spinner');
 // xterm-local-echo plugin, and feed it to lci via the Module.readLine function.
 
 var term = new Terminal();
-var localEcho = new LocalEchoController();
+var localEcho = new LocalEchoController(null, {
+    historySize: 1000,		// the history mechanism is not working well, so we pass 1000 here, but only keep 100 entries in localStorage
+});
 var fitAddon = new FitAddon.FitAddon();
+
+// load saved history
+try {
+	var hist = localStorage.getItem("history");
+	localEcho.history.entries = hist ? JSON.parse(hist) : [];
+} catch(e) {
+	localEcho.history.entries = [];
+}
+localEcho.history.cursor = localEcho.history.entries.length;
 
 term.loadAddon(localEcho);
 term.loadAddon(fitAddon);
@@ -25,6 +36,9 @@ var Module = {
 	// Called asynchronously (via asyncify) from lci to get a line of input.
 	readLine: async function() {
 		var line = await localEcho.read("lci> ");
+
+		// save last 100 entries of history in localStorage
+		localStorage.setItem("history", JSON.stringify(localEcho.history.entries.slice(-100)));
 
 		var lengthBytes = lengthBytesUTF8(line) + 1;
 		var stringOnWasmHeap = _malloc(lengthBytes);
