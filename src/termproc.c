@@ -98,12 +98,18 @@ void termFree(TERM *t) {
 	// if NULL do nothing
 	if(!t) return;
 
+	if(termPool == NULL)
+		termPool = vector_create(0, NULL);
+
 	// put the term in the pool, but dont recurse to subterms, they
 	// will be freed when the term is used (this seems to be faster).
 	vector_insert_last(termPool, t);
 }
 
 void termGC() {
+	if(termPool == NULL)
+		return;
+
 	while(vector_size(termPool) > 0)
 		free(termNew());
 

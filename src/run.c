@@ -407,15 +407,19 @@ int consultFile(char *fname) {
 	int read = fread(source, 1, length, f);
 	fclose(f);
 	
-	if(read != length)
+	if(read != length) {
+		free(source);
 		return -1;
+	}
 
 	// parse (see dparser/sample_parser.c)
 	if(!parse_string(source)) {
 		fprintf(stderr, "Errors found in %s.\n", fname);
+		free(source);
 		return -2;
 	}
 
+	free(source);
 	return 0;
 }
 

@@ -10,6 +10,7 @@
 #include "run.h"
 #include "decllist.h"
 #include "str_intern.h"
+#include "termproc.h"
 
 #define MAX_HISTORY_ENTRIES 100
 
@@ -113,6 +114,8 @@ int main() {
 	#endif
 
 	// cleanup
+	decl_cleanup();
+	termGC();
 	str_intern_cleanup();
 
 	return 0;

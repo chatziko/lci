@@ -13,6 +13,9 @@ int parse_string(char *source) {
 	D_Parser *parser = new_D_Parser(&parser_tables_gram, sizeof(D_ParseNode_User));
 	// parser->save_parse_tree = 1;
 
+	// This is important, so that final actions are run only when the actual parse tree is constructed, and not during "tentative" parses.
+	parser->commit_actions_interval = INT_MAX;
+
 	// not sure how these are used
     // parser->loc.pathname = "gaga";
     // parser->loc.line = 1;

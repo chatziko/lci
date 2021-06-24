@@ -25,3 +25,4 @@ OPER *getOper(char *id);
 void addOper(char *id, int preced, ASS_TYPE assoc);
 
 Vector decl_get_ids();
+void decl_cleanup();

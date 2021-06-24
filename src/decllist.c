@@ -57,7 +57,7 @@ void termAddDecl(char *id, TERM *term) {
 
 	if(declarations == NULL) {
 		// strings are interned, so we can just compare them as pointers
-		declarations = map_create(compare_pointers, NULL, NULL);
+		declarations = map_create(compare_pointers, NULL, (DestroyFunc)termFree);
 		map_set_hash_function(declarations, hash_pointer);
 	}
 
@@ -409,4 +409,16 @@ Vector decl_get_ids() {
 		vector_insert_last(res, id);
 	}
 	return res;
+}
+
+void decl_cleanup() {
+	if(declarations != NULL) {
+		map_destroy(declarations);
+		declarations = NULL;
+	}
+
+	if(operators != NULL) {
+		map_destroy(operators);
+		operators = NULL;
+	}
 }
