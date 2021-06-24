@@ -236,7 +236,7 @@ FoldLS = \f.\z.\l.		# strict variant
 	If (IsNil l)
 		z
 		let new_z ~= f z (Head l) in
-		(FoldL f new_z (Tail l));
+		(FoldLS f new_z (Tail l));
 
 FoldR = \f.\z.\l.
 	If (IsNil l)
