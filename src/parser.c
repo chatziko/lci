@@ -190,7 +190,7 @@ void parse_cmd_declaration(char *id, TERM *t) {
 	termSetClosedFlag(t);
 
 	if(t->closed)
-		termAddDecl(id, t);
+		termAddDecl(id, t, true);
 	else
 		fprintf(stderr, "Error: alias %s is not a closed term and won't be registered\n", id);
 }

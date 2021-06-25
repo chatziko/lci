@@ -51,15 +51,18 @@ static int compare_pointers(Pointer a, Pointer b) {
 // Adds the term to the declaration list with the given (interned) id.
 // If a term with this id already exists it is replaced.
 
-void termAddDecl(char *id, TERM *term) {
+void termAddDecl(char *id, TERM *term, bool freeOld) {
 	// declared term must be closed
 	assert(term->closed);
 
 	if(declarations == NULL) {
 		// strings are interned, so we can just compare them as pointers
-		declarations = map_create(compare_pointers, NULL, (DestroyFunc)termFree);
+		declarations = map_create(compare_pointers, NULL, NULL);
 		map_set_hash_function(declarations, hash_pointer);
 	}
+
+	// set termFree as destroy function if we want to free old terms
+	map_set_destroy_value(declarations, freeOld ? (DestroyFunc)termFree : NULL);
 
 	// if a declaration with this id exists, it will be replaced
 	map_insert(declarations, id, term);
@@ -264,7 +267,7 @@ static void removeCycle(GraphCycle cycle) {
 		t = create_abstraction(create_variable(str_intern("y")), body);
 
 		termSetClosedFlag(t);				// mark sub-terms as closed
-		termAddDecl(newId, t);
+		termAddDecl(newId, t, true);
 
 		// replace aliases with their corresponding terms
 		termRemoveAliases(t, NULL);
@@ -277,7 +280,7 @@ static void removeCycle(GraphCycle cycle) {
 
 			TERM *tmpTerm = getIndexTerm(cycle.size, i, newId);
 			termSetClosedFlag(tmpTerm);
-			termAddDecl(tmpId, tmpTerm);
+			termAddDecl(tmpId, tmpTerm, true);		// free the old terms, we got clones from termRemoveAliases
 
 			// replace this specific alias with its definition in the whole program
 			for(MapNode node = map_first(declarations); node != MAP_EOF; node = map_next(declarations, node)) {
@@ -314,9 +317,8 @@ static void removeCycle(GraphCycle cycle) {
 	tmpTerm->lterm->name = str_intern("_me");
 
 	// Change declaration
-	// Note: can't use termAddDecl because it frees the old term (used in the new one)
 	termSetClosedFlag(newTerm);
-	termAddDecl(newId, newTerm);
+	termAddDecl(newId, newTerm, false);						// don't free the old term
 }
 
 // getIndexTerm
@@ -413,6 +415,7 @@ Vector decl_get_ids() {
 
 void decl_cleanup() {
 	if(declarations != NULL) {
+		map_set_destroy_value(declarations, (DestroyFunc)termFree);		// we want to free
 		map_destroy(declarations);
 		declarations = NULL;
 	}

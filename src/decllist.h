@@ -14,7 +14,7 @@ typedef struct tag_oper{
 } OPER;
 
 
-void termAddDecl(char *id, TERM *term);
+void termAddDecl(char *id, TERM *term, bool freeOld);
 TERM *termFromDecl(char *id);
 
 int findAndRemoveCycle();
