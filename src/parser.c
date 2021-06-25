@@ -47,6 +47,7 @@ TERM *create_variable(char *name) {
 	TERM *t = termNew();
 	t->type = TM_VAR;
 	t->name = name;
+	t->closed = 0;
 	return t;
 }
 
@@ -54,6 +55,7 @@ TERM *create_alias(char *name) {
 	TERM *t = termNew();
 	t->type = TM_ALIAS;
 	t->name = name;
+	t->closed = 0;
 	return t;
 }
 
@@ -62,6 +64,7 @@ TERM *create_abstraction(TERM *var, TERM *right) {
 	t->type = TM_ABSTR;
 	t->lterm = var;
 	t->rterm = right;
+	t->closed = 0;
 	return t;
 }
 
