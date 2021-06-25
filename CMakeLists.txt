@@ -82,6 +82,14 @@ set_tests_properties(fixed_point PROPERTIES
 	PASS_REGULAR_EXPRESSION "cycles removed.*\\[3, 4, \\[\\], 5\\]"
 )
 
+# valgrind test
+find_program(VALGRIND valgrind)
+if(VALGRIND)
+	add_test(valgrind
+		sh -c "printf \"FixedPoint; Append [3,4,[]] [5]\\n\" | valgrind --error-exitcode=1 --leak-check=full --show-leak-kinds=all ./lci"
+	)
+endif()
+
 # Print all variables
 if(VERBOSE)
 	get_cmake_property(_variableNames VARIABLES)
