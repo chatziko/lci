@@ -72,6 +72,7 @@ Not = \z.z False True;
 And = \x.\y.(x (y True False) False);
 Or = \x.\y.(x True (y True False));
 If = I;						# \z.\x.\y.z x y which is equivalent to I
+BoolEqual = \x.\y.(x True (y True False));
 
 # --- Numerals --------------------------------------------------------
 #
@@ -191,7 +192,7 @@ G = \n.
 ListEqual = \l1.\l2.
 	If (IsNil l1)
 		(IsNil l2)
-		(Head l1)==(Head l2) && (ListEqual (Tail l1) (Tail l2));
+		(Not (IsNil l2)) && (Head l1)==(Head l2) && (ListEqual (Tail l1) (Tail l2));
 
 Length = FoldR (\n.\z.Succ z) 0;
 
