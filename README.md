@@ -18,7 +18,10 @@ LCI can be considered a small (but powerfull) functional progamming language
 based on the pure lambda-calculus. Its features include:
 
 - __Aliases__ of lambda terms (that is named functions).
-- __Integers__ coded as church numerals, with the usual arithmetic operations.
+- __Integers__
+  - An arbitrary encoding can be used by defining `0, Succ, Pred, IsZero`.
+  - Church encoding is used by default in `.lcirc`.
+  - Scott encoding is also available (uncomment to use it)
 - __Recursion__. Self-references of aliases are expanded during execution. 
   LCI can also automatically convert recursive terms to
   non-recursive ones using a fixed point combinator.
