@@ -3,10 +3,12 @@ LCI is an interpreter for the lambda calculus. It supports many advanced
 strategies, all based on the pure calculus. It is free software licenced under
 the [GNU General Public Licence](http://www.gnu.org/licenses/gpl.html) (GPL).
 
-## Try it online
+## Try it
 
-LCI can run in a browser via [WebAssembly](https://webassembly.org/).
-Try the [demo](https://www.chatzi.org/lci/demo/lci.html)!
+LCI is a command line program, but it can also run in a browser via [WebAssembly](https://webassembly.org/).
+Try it below or open the [fullpage demo](https://www.chatzi.org/lci/demo/lci.html).
+
+<iframe src="https://www.chatzi.org/lci/demo/lci.html" style="width: 100%; height: 350px; border: 0px"></iframe>
 
 ## Features
 
@@ -47,7 +49,7 @@ To install extract the archive, cd to that directory and run:
 cmake -B build
 cd build && make
 sudo make install
-```    
+```
 
 This will install the `lci` executable in `/usr/local/bin` and `.lcirc, queens.lci` in
 `/usr/local/share/lci`. You can install then in a different location by passing
