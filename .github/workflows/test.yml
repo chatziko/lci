@@ -35,3 +35,4 @@ jobs:
         with:
           name: release-${{ matrix.os }}
           path: build/release_bin
+          include-hidden-files: true  # for .lcirc
