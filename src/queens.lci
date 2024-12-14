@@ -2,7 +2,7 @@
 # queens.lci
 #
 # Implementation of n-queens problem.
-# Experimental use of ~ operator to use call-by-value.
+# Experimental use of ~ operator (and let x ~= M in ...) to use call-by-value.
 #
 # Usage: queens <no>
 # Gives all solutions (in reasonable time) for up to 5 queens.
