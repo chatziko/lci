@@ -28,11 +28,8 @@ static void hint_hook(char const* context, replxx_hints* lc, int* contextLen, Re
 static void completion_or_hint(char const* context, replxx_completions* lc_compl, replxx_hints* lc_hints);
 #endif
 
-int main() {
+int main(int argc, char *argv[]) {
 	char *home = getenv("HOME");
-
-	printf("lci - A lambda calculus interpreter\n");
-	printf("Type a term, Help for info or Quit to exit.\n\n");
 
 	#ifndef __EMSCRIPTEN__
 	// load history from ~/lci_history (if HOME is available) or "./lci_history"
@@ -83,6 +80,19 @@ int main() {
 
 	if(!found)
 	   fprintf(stderr, "warning: no .lcirc file was found\n");
+
+	if(argc == 1) {
+		printf("lci - A lambda calculus interpreter\n");
+		printf("Type a term, Help for info or Quit to exit.\n\n");
+
+	} else if(argc == 2) {
+		if(consultFile(argv[1]) != 0)
+			fprintf(stderr, "error: cannot load %s\n", argv[1]);
+		quit_called = 1;
+
+	} else {
+		fprintf(stderr, "syntax: lci [file]\n");
+	}
 
 	// read and execute commands
 	while(!quit_called) {
