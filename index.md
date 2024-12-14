@@ -9,6 +9,7 @@ LCI is a command line program, but it can also run in a browser via [WebAssembly
 Try it below or open the [fullpage demo](https://www.chatzi.org/lci/demo/lci.html).
 
 <iframe src="https://www.chatzi.org/lci/demo/lci.html" style="width: 100%; height: 350px; border: 0px"></iframe>
+<br/>
 
 ## Features
 

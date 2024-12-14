@@ -3,6 +3,10 @@
 
 @import "{{ site.theme }}";
 
-#downloads {
-	width: 120px;
+body {
+	font-size: 16px;
+}
+
+nav ul {
+	font-size: 16px;
 }
