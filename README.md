@@ -27,6 +27,7 @@ based on the pure lambda-calculus. Its features include:
   calculus. Many common operators (eg. integer, logic and list operations) are
   pre-defined in [`.lcirc`](src/.lcirc) and are available by default.
 - __List syntax__. `[a,b,c]` is parsed as `a:b:c:Nil` (`:` and `Nil` are defined in [`.lcirc`](src/.lcirc)).
+- __Let syntax__. `let x = M in N` is parsed as `(\x.N) M`.
 - __Multiple evaluation strategies__. Call-by-name and call-by-value can
   coexist in the same program.
 - __Human-readable display__ of terms: for example church numerals are
