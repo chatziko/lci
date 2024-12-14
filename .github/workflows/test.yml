@@ -5,14 +5,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
 
       - name: install valgrind
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == 'ubuntu-latest'
         run: sudo apt install valgrind
 
       - name: run cmake
@@ -36,3 +36,25 @@ jobs:
           name: release-${{ matrix.os }}
           path: build/release_bin
           include-hidden-files: true  # for .lcirc
+
+
+      ######### WASM ##########
+
+      - uses: mymindstorm/setup-emsdk@v14
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: build wasm
+        if: matrix.os == 'ubuntu-latest'
+        # Note: we need to have build lci with a normal compiler first!
+        run: |
+          cd build
+          rm CMakeCache.txt
+          cmake -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake  ..
+          cmake --build .
+
+      - name: Upload wasm
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-wasm
+          path: build/html/dist
