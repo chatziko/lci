@@ -134,7 +134,9 @@ TERM *termNew() {
 		return t;
 
 	} else {
-		return malloc(sizeof(TERM));
+		TERM* res = malloc(sizeof(TERM));
+		assert(res);
+		return res;
 	}
 }
 
