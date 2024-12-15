@@ -63,6 +63,13 @@ add_custom_target(release_bin
 	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/COPYING release_bin/
 )
 
+# prepare source release
+add_custom_target(release_src
+	DEPENDS lci
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} VERBATIM
+	COMMAND bash -c "git ls-files --recurse-submodules | tar -ca --transform 's/^/lci\\//' -f ${CMAKE_CURRENT_BINARY_DIR}/lci-$(git describe --tags).tar.gz -T-"
+)
+
 # simple tests
 enable_testing()
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
