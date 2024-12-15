@@ -172,7 +172,7 @@ void execTerm(TERM *t) {
 		break;
 
 	 case -1:
-		fprintf(stderr, "Error: Missformed sytem command. Type Help for info.\n");
+		fprintf(stderr, "Error: Missformed system command. Type Help for info.\n");
 		break;
 
 	 case -2:
