@@ -2,10 +2,15 @@
 
 Real men use only pure calculus
 
-- v? (in progress)
-  - Add webassembly/emscripten support for running lci in a browser.
-  - Add auto-completion of aliases and system commands.
-  - Add 'let x = N in M' syntax, syntactic sugar for (\x.M) N.
+- v1.1 (14 Dec 2024)
+
+  - WASM support for [running LCI in a browser](https://www.chatzi.org/lci/demo/lci.html)
+  - Support multiple encodings of numerals (Church, Scott, etc)
+  - Add `let` syntax, eg `let x = 1 in x + x`
+  - Add auto-completion of aliases and system commands
+  - Rewrite several functions in `.lcirc` using folds
+  - Consult file from the command line with `lci <file>`
+  - Several small fixes
 
 - v1.0 (15 Jun 2021)
 
