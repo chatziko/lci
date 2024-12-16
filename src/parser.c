@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "dparse.h"
 #include "termproc.h"

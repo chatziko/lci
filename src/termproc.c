@@ -8,7 +8,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "kazlib/list.h"
 #include "ADTVector.h"
 
 #include "termproc.h"
