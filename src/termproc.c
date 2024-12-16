@@ -125,6 +125,10 @@ static TERM *termPop() {
 	return t;
 }
 
+static int termStackSize() {
+	return termStack ? vector_size(termStack) : 0;
+}
+
 void termFree(TERM *t) {
 	// if NULL do nothing
 	if(!t) return;
@@ -835,14 +839,14 @@ void termSetClosedFlag(TERM *t) {
 	// that will be visited in the future (eg a right branch while we visit the left). The active terms
 	// are distinguished by a NULL marker right after them.
 	//
+	int init_size = termStackSize();
 	termPush(t);
 
-	for(int todo = 1; todo > 0; todo--) {
+	while(termStackSize() > init_size) {
 		t = termHead();
 		if(t) {
 			// entering the term, add NULL marker to mark as active
 			termPush(NULL);
-			todo++;		// need one more loop to remove
 		} else {
 			// reached NULL marker, we are returning, remove marker and term
 			termPop();
@@ -878,13 +882,11 @@ void termSetClosedFlag(TERM *t) {
 
 			case(TM_ABSTR):
 				termPush(t->rterm);
-				todo++;
 				break;
 
 			case(TM_APPL):
 				termPush(t->rterm);
 				termPush(t->lterm);
-				todo += 2;
 				break;
 		}
 	}
