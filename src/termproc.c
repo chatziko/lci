@@ -25,7 +25,6 @@ static void termPrintList(TERM *t);
 static int termIsFreeVar(TERM *t, char *name);
 static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone);
 static int termAliasSubst(TERM *t);
-static list_t* termFreeVars(TERM *t);
 static char *getVariable(TERM *t1, TERM *t2);
 
 
@@ -101,19 +100,26 @@ void termPrint(TERM *t, int isMostRight) {
 
 // NOTE: stack is shared between functions that can be nested!
 static void termPush(TERM *t) {
-	assert(t);
 	if(termStack == NULL)
 		termStack = vector_create(0, NULL);
 
 	vector_insert_last(termStack, t);
 }
 
+static TERM *termHead() {
+	assert(termStack);
+
+	int size = vector_size(termStack);
+	assert(size > 0);
+
+	return vector_get_at(termStack, size-1);
+}
+
 static TERM *termPop() {
 	assert(termStack);
 
 	int size = vector_size(termStack);
-	if(size == 0)
-		return NULL;
+	assert(size > 0);
 
 	TERM *t = vector_get_at(termStack, size-1);
 	vector_remove_last(termStack);
@@ -826,48 +832,63 @@ void termRemoveOper(TERM *t) {
 }
 
 void termSetClosedFlag(TERM *t) {
-	list_t *fvars = termFreeVars(t);
-	list_destroy_nodes(fvars);
-	list_destroy(fvars);
-}
+	// Note: in the stack we keep both the "active" terms currently being visited, and the "pending" terms
+	// that will be visited in the future (eg a right branch while we visit the left). The active terms
+	// are distinguished by a NULL marker right after them.
+	//
+	termPush(t);
 
-static int compare_pointers(const void *key1, const void *key2) {
-    return key1 - key2;
-}
+	for(int todo = 1; todo > 0; todo--) {
+		t = termHead();
+		if(t) {
+			// entering the term, add NULL marker to mark as active
+			termPush(NULL);
+			todo++;		// need one more loop to remove
+		} else {
+			// reached NULL marker, we are returning, remove marker and term
+			termPop();
+			termPop();
+			continue;
+		}
 
-static list_t* termFreeVars(TERM *t) {
-	list_t *vars = NULL, *rvars;
-	lnode_t *node;
+		// entering term t, terms are closed until we show otherwise
+		t->closed = 1;
 
-	switch(t->type) {
-	 case(TM_VAR):
-		vars = list_create(LISTCOUNT_T_MAX);
-		list_append(vars, lnode_create(t->name));
-		break;
+		switch(t->type) {
+			case(TM_VAR):
+				t->closed = 0;
 
-	 case(TM_ALIAS):
-		vars = list_create(LISTCOUNT_T_MAX);
-		break;
+				// mark all active terms in the stack as not closed, from the most
+				// nested going outwards. Stop if we find an abstraction with the same name.
+				//
+				for(int i = vector_size(termStack)-1; i >= 0; i--) {
+					if(vector_get_at(termStack, i))
+						continue;	// no active marker, this is a pending term
 
-	 case(TM_ABSTR):
-		vars = termFreeVars(t->rterm);
-		while((node = list_find(vars, t->lterm->name, compare_pointers)) != NULL)
-			lnode_destroy(list_delete(vars, node));
-		break;
+					TERM *s = vector_get_at(termStack, --i);
+					if(s->type == TM_ABSTR && s->lterm->name == t->name)
+						break;
+					else
+						s->closed = 0;
+				}
+				break;
 
-	 case(TM_APPL):
-		vars = termFreeVars(t->lterm);
-		rvars = termFreeVars(t->rterm);
-		list_transfer(vars, rvars, list_first(rvars));
-		list_destroy(rvars);
-		break;
-	
-	 default:
-		assert(0 /* invalid t-> type */);
+			case(TM_ALIAS):
+				t->closed = 1;
+				break;
+
+			case(TM_ABSTR):
+				termPush(t->rterm);
+				todo++;
+				break;
+
+			case(TM_APPL):
+				termPush(t->rterm);
+				termPush(t->lterm);
+				todo += 2;
+				break;
+		}
 	}
-
-	t->closed = list_isempty(vars);
-	return vars;
 }
 
 // Finds a variable not contained in lists l1 and l2, by trying all strings in
