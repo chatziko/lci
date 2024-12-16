@@ -30,6 +30,7 @@ static char *getVariable(TERM *t1, TERM *t2);
 
 
 static Vector termPool = NULL;
+static Vector termStack = NULL;
 
 
 // termPrint
@@ -98,6 +99,27 @@ void termPrint(TERM *t, int isMostRight) {
 //
 // Free a TERM's memory
 
+// NOTE: stack is shared between functions that can be nested!
+static void termPush(TERM *t) {
+	assert(t);
+	if(termStack == NULL)
+		termStack = vector_create(0, NULL);
+
+	vector_insert_last(termStack, t);
+}
+
+static TERM *termPop() {
+	assert(termStack);
+
+	int size = vector_size(termStack);
+	if(size == 0)
+		return NULL;
+
+	TERM *t = vector_get_at(termStack, size-1);
+	vector_remove_last(termStack);
+	return t;
+}
+
 void termFree(TERM *t) {
 	// if NULL do nothing
 	if(!t) return;
@@ -111,14 +133,18 @@ void termFree(TERM *t) {
 }
 
 void termGC() {
-	if(termPool == NULL)
-		return;
+	if(termPool != NULL) {
+		while(vector_size(termPool) > 0)
+			free(termNew());
 
-	while(vector_size(termPool) > 0)
-		free(termNew());
+		vector_destroy(termPool);
+		termPool = NULL;
+	}
 
-	vector_destroy(termPool);
-	termPool = NULL;
+	if(termStack != NULL) {
+		vector_destroy(termStack);
+		termStack = NULL;
+	}
 }
 
 TERM *termNew() {
@@ -596,29 +622,36 @@ static int termAliasSubst(TERM *t) {
 // If id != NULL the only this specific alias is substituted.
 
 int termRemoveAliases(TERM *t, char *id) {
+	termPush(t);
+	int undefined = 0;
 
-	switch(t->type) {
-	 case(TM_VAR):
-		 return 0;
+	for(int todo = 1; todo > 0; todo--) {
+		t = termPop();
+		assert(t);
 
-	 case(TM_ABSTR):
-		 return termRemoveAliases(t->rterm, id);
+		switch(t->type) {
+			case(TM_ABSTR):
+				termPush(t->rterm);
+				todo++;
+				break;
 
-	 case(TM_APPL):
-		 return termRemoveAliases(t->lterm, id) ||
-				  termRemoveAliases(t->rterm, id);
+			case(TM_APPL):
+				termPush(t->lterm);
+				termPush(t->rterm);
+				todo += 2;
+				break;
 
-	 case(TM_ALIAS):
-		return !id || id == t->name
-			? termAliasSubst(t)
-			: 0;
-
-		//Antikatastash mono enos epipedoy
-		//return termRemoveAliases(t);
-
-	 default:				//we never reach here
-		return 0;
+			case(TM_ALIAS):
+				if(!id || id == t->name)
+					termAliasSubst(t);
+				else
+					undefined = 1;
+				
+			default:
+		}
 	}
+
+	return undefined;
 }
 
 // termAlias2Var
