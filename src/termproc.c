@@ -402,104 +402,135 @@ int termConv(TERM *t) {
 	if(str_tilde == NULL)
 		str_tilde = str_intern("~");
 
-	TERM *L, *M, *N, *x;
-	int res, found;
-	char closed;
-
 	// verify that the closed bit has been set and is not garbage
 	assert(t->closed == 0 || t->closed == 1);
 
-	switch(t->type) {
-	 case TM_VAR:
-		return 0;
+	int result = 0;
 
-	 case TM_ABSTR:
-		// Check for eta-conversion
-		// \x.M x -> M  if x not free in M
-		L = t->rterm;			// M x
-		M = L->lterm;
-		N = L->rterm;
-		x = t->lterm;
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t)
+			t = termPop();
 
-		if(L->type == TM_APPL &&
-			N->type == TM_VAR &&
-			N->name == x->name &&
-			!termIsFreeVar(M, x->name)) {
-
-			// eta-conversion
-			*t = *M;
-
-			// free terms. By freeing L we also free M,N, but we
-			// should _not_ free M's subterms (they are copied in t)
-			M->lterm = M->rterm = NULL;
-			termFree(L);
-			termFree(x);
-
-			return 1;
+		if(result) {
+			t = NULL;
+			continue;
 		}
 
-		return termConv(t->rterm);
+		switch(t->type) {
+			case TM_VAR:
+				t = NULL;
+				break;
 
-	 case TM_APPL:
-		// If the left-most term is an alias it needs to be substituted cause it might contain
-		// an abstraction. while is needed cause we might still have an alias afterwards.
-		while(t->lterm->type == TM_ALIAS)
-			if(termAliasSubst(t->lterm) != 0)
-				return -1;
+			case TM_ABSTR:
+				// Check for eta-conversion
+				// \x.M x -> M  if x not free in M
+				TERM *L = t->rterm;			// M x
+				TERM *M = L->lterm;
+				TERM *N = L->rterm;
+				TERM *x = t->lterm;
 
-		// If no abstraction exist on the left-hand side then a beta-reduction is not possible,
-		// so we continue the search in the tree.
-		if(t->lterm->type != TM_ABSTR) {
-			res = termConv(t->lterm);
-			return res != 0
-				? res
-				: termConv(t->rterm);
+				if(L->type == TM_APPL &&
+					N->type == TM_VAR &&
+					N->name == x->name &&
+					!termIsFreeVar(M, x->name)) {
+
+					// eta-conversion
+					*t = *M;
+
+					// free terms. By freeing L we also free M,N, but we
+					// should _not_ free M's subterms (they are copied in t)
+					M->lterm = M->rterm = NULL;
+					termFree(L);
+					termFree(x);
+
+					result = 1;
+					t = NULL;
+					break;
+				}
+
+				t = t->rterm;
+				todo++;
+				break;
+
+			case TM_APPL:
+				// If the left-most term is an alias it needs to be substituted cause it might contain
+				// an abstraction. while is needed cause we might still have an alias afterwards.
+				while(t->lterm->type == TM_ALIAS)
+					if(termAliasSubst(t->lterm) != 0) {
+						result = -1;
+						t = NULL;
+						break;
+					}
+
+				// If no abstraction exist on the left-hand side then a beta-reduction is not possible,
+				// so we continue the search in the tree.
+				if(t->lterm->type != TM_ABSTR) {
+					// push rterm for later
+					termPush(t->rterm);
+
+					// search the lterm first
+					t = t->lterm;
+					todo += 2;
+					break;
+				}
+
+				// If the application has beed defined with ~,
+				// we perform the reductions in the right subtree first (call-by-value)
+				//
+				// TODO: recursion still exists here, although it should be limited
+				int res;
+				if(t->name == str_tilde && (res = termConv(t->rterm)) != 0) {
+					result = res;
+					t = NULL;
+					break;
+				}
+
+				L = t->lterm;		// L = \x.M
+				x = L->lterm;
+				M = L->rterm;
+				N = t->rterm;
+
+				// beta-reduction: \x.M N -> M[x:=N]
+				char closed = t->closed;
+				int found = termSubst(x, M, N, 0);
+				*t = *M;
+
+				// if t was closed, it remains closed (bete-conversion does not introduce free variables)
+				// however the inverse can happen, a non-closed t can become closed if M becomes
+				// closed itself (for example if x does not appear in M then any possible free variables of N
+				// will disapear after the beta-conversion)
+				t->closed = M->closed || closed;
+
+				// free terms. freeing L will also free x,M, but in case of M we
+				// should not free its subterms (which have been copied to t)
+				M->lterm = M->rterm = NULL;
+				termFree(L);
+
+				if(found)							// if N was substituted in M, we should
+					N->lterm = N->rterm = NULL;		// not free its subterms
+				termFree(N);
+
+				result = 1;
+				t = NULL;
+				break;
+
+			case TM_ALIAS:
+				// to check for reductions we need to substitute the alias with the corresponding term
+				if(termAliasSubst(t) != 0) {
+					result = -1;
+					t = NULL;
+				} else {
+					// leave t as is to search for reductions in the new term
+					todo++;
+				}
+				break;
+
+			default:										// we never reach here!
+				assert(0);
 		}
-
-		// If the application has beed defined with ~,
-		// we perform the reductions in the right subtree first (call-by-value)
-		if(t->name == str_tilde && (res = termConv(t->rterm)) != 0)
-			return res;
-
-		L = t->lterm;		// L = \x.M
-		x = L->lterm;
-		M = L->rterm;
-		N = t->rterm;
-
-		// beta-reduction: \x.M N -> M[x:=N]
-		closed = t->closed;
-		found = termSubst(x, M, N, 0);
-		*t = *M;
-
-		// if t was closed, it remains closed (bete-conversion does not introduce free variables)
-		// however the inverse can happen, a non-closed t can become closed if M becomes
-		// closed itself (for example if x does not appear in M then any possible free variables of N
-		// will disapear after the beta-conversion)
-		t->closed = M->closed || closed;
-
-		// free terms. freeing L will also free x,M, but in case of M we
-		// should not free its subterms (which have been copied to t)
-		M->lterm = M->rterm = NULL;
-		termFree(L);
-
-		if(found)							// if N was substituted in M, we should
-			N->lterm = N->rterm = NULL;		// not free its subterms
-		termFree(N);
-
-		return 1;
-
-	 case TM_ALIAS:
-		// to check for reductions we need to substitute the alias with the corresponding term
-		if(termAliasSubst(t) != 0)
-			return -1;
-
-		// search for reductions in the new term
-		return termConv(t);
-
-	 default:										// we never reach here!
-		assert(0);
-		return -1;
 	}
+
+	return result;
 }
 
 // Decode Scott numerals (with inversed argument order):
