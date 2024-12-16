@@ -681,26 +681,36 @@ int termRemoveAliases(TERM *t, char *id) {
 // Used when removing recursion via a fixed point combinator.
 
 void termAlias2Var(TERM *t, char *alias, char *var) {
+	// Note: use the stack only when we need to add a second item to process
 
-	switch(t->type) {
-	 case(TM_VAR):
-		return;
-
-	 case(TM_ABSTR):
-		termAlias2Var(t->rterm, alias, var);
-		return;
-
-	 case(TM_APPL):
-		termAlias2Var(t->lterm, alias, var);
-		termAlias2Var(t->rterm, alias, var);
-		return;
-
-	 case(TM_ALIAS):
-		if(alias == t->name) {
-			t->type = TM_VAR;
-			t->name = var;		// already interned
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t) {
+			t = termPop();
+			assert(t);
 		}
-		return;
+
+		switch(t->type) {
+			case(TM_ABSTR):
+				t = t->rterm;
+				todo++;
+				continue;
+
+			case(TM_APPL):
+				termPush(t->lterm);
+				t = t->rterm;
+				todo += 2;
+				continue;
+
+			case(TM_ALIAS):
+				if(alias == t->name) {
+					t->type = TM_VAR;
+					t->name = var;		// already interned
+				}
+				break;
+
+			default:
+		}
+		t = NULL;
 	}
 }
 
