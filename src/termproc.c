@@ -45,6 +45,15 @@ void termPrint(TERM *t, int isMostRight) {
 		readable = getOption(OPT_READABLE);
 	int num;
 
+	// if the term is a numeral we print the corresponding number
+	if(readable && (num = termNumber(t)) != -1) {
+		printf("%d", num);
+		return;
+	} else if(readable && termIsList(t)) {
+		termPrintList(t);
+		return;
+	}
+
 	switch(t->type) {
 	 case TM_VAR:
 	 case TM_ALIAS:
@@ -52,12 +61,7 @@ void termPrint(TERM *t, int isMostRight) {
 		break;
 
 	 case TM_ABSTR:
-		// if the term is a church numeral we print the corresponding number
-		if(readable && (num = termNumber(t)) != -1)
-			printf("%d", num);
-		else if(readable && termIsList(t))
-			termPrintList(t);
-		else if(readable && termIsIdentity(t))
+		if(readable && termIsIdentity(t))
 			printf("I");
 		else {
 			if(showPar || !isMostRight) printf("(");
@@ -422,6 +426,57 @@ int termConv(TERM *t) {
 	}
 }
 
+// Decode Scott numerals (with inversed argument order):
+//    0     = \s.\z.z			(same as church-0, so no need to treat separately)
+//    <N+1> = \s.\z.s <N>
+//
+static int scottNumeral(TERM *t) {
+	int n = 0;
+
+	while(1) {
+		if(t->type != TM_ABSTR || t->rterm->type != TM_ABSTR)
+			return -1;
+
+		TERM *body = t->rterm->rterm;
+
+		if(body->type == TM_VAR && body->name == t->rterm->lterm->name)
+			return n;
+
+		if(body->type == TM_APPL && body->lterm->type == TM_VAR && body->lterm->name == t->lterm->name) {
+			n++;
+			t = body->rterm;
+		} else {
+			return -1;
+		}
+	}
+}
+
+// Decode Church numerals
+//    <N> = \f.\x.f^N(x)
+//
+static int churchNumeral(TERM *t) {
+	// first term must be \f.
+	if(t->type != TM_ABSTR) return -1;
+	TERM *f = t->lterm;
+
+	// second term must be \x. with x != f
+	if(t->rterm->type != TM_ABSTR) return -1;
+	TERM *x = (t->rterm->lterm);
+	if(f->name == x->name) return -1;
+
+	// recognize term f^n(x), compute n
+	int n = 0;
+	for(TERM *cur = t->rterm->rterm; ; cur = cur->rterm, n++) {
+		if(cur->type == TM_VAR && cur->name == x->name)
+			return n;
+
+		if(cur->type != TM_APPL ||
+			cur->lterm->type != TM_VAR ||
+			cur->lterm->name != f->name)
+			return -1;
+	}
+}
+
 // termNumber
 //
 // If term t is a numeral then return its corresponding number, otherwise -1.
@@ -433,48 +488,19 @@ int termConv(TERM *t) {
 int termNumber(TERM *t) {
 	// Unprocessed: Succ(...(Succ(0))
 	//
-	if(t->type == TM_ALIAS && t->name == str_intern("0"))
-		return 0;
-	else if(t->type == TM_APPL && t->lterm->type == TM_ALIAS && t->lterm->name == str_intern("Succ"))
-		return 1 + termNumber(t->rterm);
-
-	// Scott numerals (with inversed argument order):
-	//    0     = \s.\z.z			(same as church-0, so no need to treat separately)
-	//    <N+1> = \s.\z.s <N>
-	//
-	if(t->type == TM_ABSTR && t->rterm->type == TM_ABSTR) {
-		TERM *body = t->rterm->rterm;
-
-		if(body->type == TM_APPL && body->lterm->type == TM_VAR && body->lterm->name == t->lterm->name) {
-			int n = termNumber(body->rterm);
-			if(n != -1)
-				return n + 1;
-		}
-	}
-
-	// church numerals
-	TERM *f, *x, *cur;
+	char *succ = str_intern("Succ");
 	int n = 0;
+	for(; t->type == TM_APPL && t->lterm->type == TM_ALIAS && t->lterm->name == succ; n++, t = t->rterm)
+		;
 
-	// first term must be \f.
-	if(t->type != TM_ABSTR) return -1;
-	f = t->lterm;
+	if(t->type == TM_ALIAS && t->name == str_intern("0"))
+		return n;
 
-	// second term must be \x. with x != f
-	if(t->rterm->type != TM_ABSTR) return -1;
-	x = (t->rterm->lterm);
-	if(f->name == x->name) return -1;
+	// Scott numerals
+	if((n = scottNumeral(t)) != -1)
+		return n;
 
-	// recognize term f^n(x), compute n
-	for(cur = t->rterm->rterm; ; cur = cur->rterm, n++) {
-		if(cur->type == TM_VAR && cur->name == x->name)
-			return n;
-
-		if(cur->type != TM_APPL ||
-			cur->lterm->type != TM_VAR ||
-			cur->lterm->name != f->name)
-			return -1;
-	}
+	return churchNumeral(t);
 }	
 
 // termIsList
