@@ -176,16 +176,18 @@ TERM *termNew() {
 
 TERM *termClone(TERM *t) {
 	// To avoid recursion, we push in the stack pairs of (<new-empty-term-to-be-filled>, <term>)
+	// Note: use the stack only when we need to add a second item to process
 	//
 	TERM *res = termNew();
 
-	termPush(res);
-	termPush(t);
+	TERM *newTerm = res;
 
 	for(int todo = 1; todo > 0; todo--) { // pairs left to process
-		t = termPop();
-		TERM *newTerm = termPop();
-		assert(t && newTerm);
+		if(!t) {
+			t = termPop();
+			newTerm = termPop();
+			assert(t && newTerm);
+		}
 
 		newTerm->type = t->type;
 		newTerm->closed = t->closed;
@@ -197,14 +199,17 @@ TERM *termClone(TERM *t) {
 			newTerm->lterm = termNew();
 			newTerm->rterm = termNew();
 
-			// new pairs to be cloned
+			// 2 more pairs to process, push the one and put the other in (t,newTerm)
 			termPush(newTerm->lterm);
 			termPush(t->lterm);
 
-			termPush(newTerm->rterm);
-			termPush(t->rterm);
+			newTerm = newTerm->rterm;
+			t = t->rterm;
 
 			todo += 2;
+
+		} else {
+			t = NULL;
 		}
 	}
 
