@@ -326,36 +326,60 @@ static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 // free variables of term t, otherwise 0.
 
 #ifndef NDEBUG
-int freeNo;				// count the number of calls of termIsFree
+int freeNo;				// count the number of terms processed by termIsFree
 #endif
 static int termIsFreeVar(TERM *t, char *name) {
-	// closed terms have no free variables
-	if(t->closed)
-		 return 0;
-#ifndef NDEBUG
-	freeNo++;
-#endif
+	assert(t);
 
-	switch(t->type) {
-	 case TM_VAR:
-		return t->name == name;
+	// Note: use the stack only when we need to add a second item to process
+	int found = 0;
 
-	 case TM_APPL:
-		return termIsFreeVar(t->lterm, name) ||
-				 termIsFreeVar(t->rterm, name);
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t)
+			t = termPop();
 
-	 case TM_ABSTR:
-		return t->lterm->name != name &&
-				 termIsFreeVar(t->rterm, name);
-	
-	 case TM_ALIAS:
-		// aliases must be closed terms (no free variables)!
-		return 0;
+		// nothing to do if already found or term is closed
+		// (closed terms have no free variables).
+		if(found || t->closed) {
+			t = NULL;
+			continue;
+		}
 
-	 default:		// we never reach here!
-		assert(0);
-		return 0;
+		#ifndef NDEBUG
+		freeNo++;
+		#endif
+
+		switch(t->type) {
+			case TM_VAR:
+				if(t->name == name)
+					found = 1;
+				t = NULL;
+				break;
+
+			case TM_APPL:
+				termPush(t->lterm);
+				t = t->rterm;
+				todo += 2;
+				break;
+
+			case TM_ABSTR:
+				if(t->lterm->name != name) {
+					t = t->rterm;
+					todo++;
+				} else {
+					// name cannot be free inside an abstraction of the same name
+					t = NULL;
+				}
+				break;
+			
+			case TM_ALIAS:
+				// aliases must be closed terms (no free variables)!
+				t = NULL;
+				break;
+		}
 	}
+
+	return found;
 }
 
 // termConv
