@@ -175,19 +175,40 @@ TERM *termNew() {
 // Creates and returns a clone of a term (and all its subterms).
 
 TERM *termClone(TERM *t) {
-	TERM *newTerm;
+	// To avoid recursion, we push in the stack pairs of (<new-empty-term-to-be-filled>, <term>)
+	//
+	TERM *res = termNew();
 
-	newTerm = termNew();
-	newTerm->type = t->type;
-	newTerm->closed = t->closed;
-	newTerm->name = t->name;			// fast copy, strings are interned
+	termPush(res);
+	termPush(t);
 
-	if(t->type == TM_APPL || t->type == TM_ABSTR) {
-		newTerm->lterm = termClone(t->lterm);
-		newTerm->rterm = termClone(t->rterm);
+	for(int todo = 1; todo > 0; todo--) { // pairs left to process
+		t = termPop();
+		TERM *newTerm = termPop();
+		assert(t && newTerm);
+
+		newTerm->type = t->type;
+		newTerm->closed = t->closed;
+		newTerm->name = t->name;			// fast copy, strings are interned
+
+		if(t->type == TM_APPL || t->type == TM_ABSTR) {
+			assert(t->lterm && t->rterm);
+
+			newTerm->lterm = termNew();
+			newTerm->rterm = termNew();
+
+			// new pairs to be cloned
+			termPush(newTerm->lterm);
+			termPush(t->lterm);
+
+			termPush(newTerm->rterm);
+			termPush(t->rterm);
+
+			todo += 2;
+		}
 	}
 
-	return newTerm;
+	return res;
 }
 
 // termSubst
