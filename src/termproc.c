@@ -788,49 +788,51 @@ void termRemoveOper(TERM *t) {
 	if(str_tilde == NULL)
 		str_tilde = str_intern("~");
 
-	TERM *alias, *appl;
-	
-	switch(t->type) {
-	 case(TM_VAR):
-	 case(TM_ALIAS):
-		break;
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t)
+			t = termPop();
 
-	 case(TM_ABSTR):
-		termRemoveOper(t->rterm);
-		break;
+		if(t->type == TM_ABSTR) {
+			t = t->rterm;
+			todo++;
 
-	 case(TM_APPL):
-		termRemoveOper(t->lterm);
-		termRemoveOper(t->rterm);
+		} else if(t->type == TM_APPL) {
+			TERM *next = t->lterm;
+			termPush(t->rterm);
 
-		//	If t has a name the it's an operator. In this case we perform the conversion:
-		//		a op b -> 'op' a b
-		//
-		//	Operator '~' has a special meaning, used during execution to decide the evaluation
-		//	order.
+			//	If t has a name the it's an operator. In this case we perform the conversion:
+			//		a op b -> 'op' a b
+			//
+			//	Operator '~' has a special meaning, used during execution to decide the evaluation
+			//	order.
+			//
+			if(t->name && t->name != str_tilde) {
+				// alias = op
+				TERM *alias = termNew();
+				alias->type = TM_ALIAS;
+				alias->name = t->name;
+				alias->closed = 1;							// aliases are closed terms
+				t->name = NULL;
 
-		if(t->name && t->name != str_tilde) {
-			// alias = op
-			alias = termNew();
-			alias->type = TM_ALIAS;
-			alias->name = t->name;
-			alias->closed = 1;							// aliases are closed terms
-			t->name = NULL;
+				// apple = op a
+				TERM *appl = termNew();
+				appl->type = TM_APPL;
+				appl->name = NULL;
 
-			// apple = op a
-			appl = termNew();
-			appl->type = TM_APPL;
-			appl->name = NULL;
+				appl->lterm = alias;
+				appl->rterm = t->lterm;
+				appl->closed = appl->rterm->closed;		// the application "op a" is closed if a is closed
 
-			appl->lterm = alias;
-			appl->rterm = t->lterm;
-			appl->closed = appl->rterm->closed;		// the application "op a" is closed if a is closed
+				// t = (op a) b
+				t->lterm = appl;
+			}
 
-			// t = (op a) b
-			t->lterm = appl;
+			t = next;
+			todo += 2;
+
+		} else {
+			t = NULL;
 		}
-
-		break;
 	}
 }
 
