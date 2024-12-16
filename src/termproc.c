@@ -506,36 +506,36 @@ int termNumber(TERM *t) {
 // termIsList
 //
 // Returns 1 if t is an encoding of a list, that is of the form
-// \s.s Head Tail h Nil: \x.\x.\y.x
+//  Head:Tail  =   \s.s Head Tail
+//  []         =   \x.\x.\y.x
 
 static int termIsList(TERM *t) {
-	TERM *r;
+	while(1) {
+		if(t->type != TM_ABSTR)
+			return 0;
 
-	if(t->type != TM_ABSTR) return 0;
+		TERM *r = t->rterm;
 
-	r = t->rterm;
-	switch(r->type) {
-	 case TM_APPL:
 		// check for the form \s.s Head Tail
-		if(r->lterm->type == TM_APPL &&
+		if(r->type == TM_APPL &&
+			r->lterm->type == TM_APPL &&
 			r->lterm->lterm->type == TM_VAR &&
-			r->lterm->lterm->name == t->lterm->name)
-			return termIsList(r->rterm);
-		break;
+			r->lterm->lterm->name == t->lterm->name) {
 
-	 case TM_ABSTR:
-		// check for the form Nil: \x.\x.\y.x
-		if(r->rterm->type == TM_ABSTR &&
+			t = r->rterm;
+
+		// check for the form [] = \x.\x.\y.x
+		} else if(r->type == TM_ABSTR &&
+			r->rterm->type == TM_ABSTR &&
 			r->rterm->rterm->type == TM_VAR &&
-			r->rterm->rterm->name == r->lterm->name)
+			r->rterm->rterm->name == r->lterm->name) {
+
 			return 1;
-		break;
 
-	 default:
-		;
+		} else {
+			return 0;
+		}
 	}
-
-	return 0;
 }
 
 static int termIsIdentity(TERM *t) {
