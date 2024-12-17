@@ -60,10 +60,10 @@ TERM *create_alias(char *name) {
 	return t;
 }
 
-TERM *create_abstraction(TERM *var, TERM *right) {
+TERM *create_abstraction(char *var, TERM *right) {
 	TERM *t = termNew();
 	t->type = TM_ABSTR;
-	t->lterm = var;
+	t->name = var;
 	t->rterm = right;
 	t->closed = 0;
 	return t;
@@ -160,7 +160,7 @@ TERM* create_bracket(TERM *t) {
 	return t;
 }
 
-TERM *create_let(TERM *var, char *eq, TERM *value, TERM *t) {
+TERM *create_let(char *var, char *eq, TERM *value, TERM *t) {
 	return create_application(
 		create_abstraction(var, t),
 		(eq == str_intern("~=") ? str_intern("~") : NULL),

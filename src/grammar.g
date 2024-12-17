@@ -38,11 +38,11 @@ term
     | number							{ $$ = create_number($0); }
 	| alias								{ $$ = create_alias($0); }
 	| '(' term ')'						{ $$ = create_bracket($1); }
-	| lambda variable '.' term			{ $$ = create_abstraction(create_variable($1), $3); }
+	| lambda variable '.' term			{ $$ = create_abstraction($1, $3); }
 	| '[' ']'					 		{ $$ = create_list(NULL, NULL); }
 	| '[' term ( ',' term )* ']'		{ $$ = create_list($1, &$n2); }
 	| '(' term ',' term ')'				{ $$ = create_bracket(create_application($1, str($n2), $3)); }
-	| 'let' variable eq term 'in' term	{ $$ = create_let(create_variable($1), str($n2), $3, $5); }
+	| 'let' variable eq term 'in' term	{ $$ = create_let($1, str($n2), $3, $5); }
 
 	// applications are left-associative, so we parse as such (see fix_precedence in parser.c)
 	| term operator? term $left 1		{ char *op = $#1 ? ${child 1,0}->user : NULL;

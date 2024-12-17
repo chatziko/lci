@@ -264,7 +264,7 @@ static void removeCycle(GraphCycle cycle) {
 		for(i = 0, node = cycle.end; i < cycle.size; i++, node = node->prev)
 			body = create_application(body, NULL, create_alias(node->id));
 
-		t = create_abstraction(create_variable(str_intern("y")), body);
+		t = create_abstraction(str_intern("y"), body);
 
 		termSetClosedFlag(t);				// mark sub-terms as closed
 		termAddDecl(newId, t, true);
@@ -335,7 +335,7 @@ static TERM *getIndexTerm(int varno, int n, char *tuple) {
 	TERM *abstr = var;								// \x1.\x2...\x<varno>.x<n>
 	for(int i = varno-1; i >= 0; i--) {
 		sprintf(name, "x%d", i);
-		abstr = create_abstraction(create_variable(str_intern(name)), abstr);
+		abstr = create_abstraction(str_intern(name), abstr);
 	}
 
 	return create_application(create_alias(tuple), NULL, abstr);

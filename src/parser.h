@@ -46,11 +46,11 @@ int parse_string(char *source);
 TERM *create_variable(char *name);
 TERM *create_number(char *s);
 TERM *create_alias(char *name);
-TERM *create_abstraction(TERM *var, TERM *right);
+TERM *create_abstraction(char *var, TERM *right);
 TERM *create_application(TERM *left, char *oper_name, TERM *right);
 TERM *create_list(TERM *first, D_ParseNode *rest);
 TERM *create_bracket(TERM *t);
-TERM *create_let(TERM *var, char *eq, TERM *value, TERM *t);
+TERM *create_let(char *var, char *eq, TERM *value, TERM *t);
 
 void parse_cmd_declaration(char *id, TERM *t);
 void parse_cmd_term(TERM *t);
