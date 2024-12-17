@@ -71,6 +71,7 @@ void vector_insert_last(Vector vec, Pointer value) {
 		// Προσοχή: δεν πρέπει να κάνουμε free τον παλιό pointer, το κάνει η realloc
 		vec->capacity *= 2;
 		vec->array = realloc(vec->array, vec->capacity * sizeof(*vec->array));
+		assert(vec->array);
 	}
 
 	// Μεγαλώνουμε τον πίνακα και προσθέτουμε το στοιχείο

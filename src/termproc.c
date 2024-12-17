@@ -8,7 +8,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "kazlib/list.h"
 #include "ADTVector.h"
 
 #include "termproc.h"
@@ -25,11 +24,13 @@ static void termPrintList(TERM *t);
 static int termIsFreeVar(TERM *t, char *name);
 static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone);
 static int termAliasSubst(TERM *t);
-static list_t* termFreeVars(TERM *t);
 static char *getVariable(TERM *t1, TERM *t2);
 
 
 static Vector termPool = NULL;
+static TERM **_termStack = NULL;
+static TERM **_termStackNext = NULL;	// points to first empty slot
+static int _termStackCapacity = 0;
 
 
 // termPrint
@@ -45,6 +46,15 @@ void termPrint(TERM *t, int isMostRight) {
 		readable = getOption(OPT_READABLE);
 	int num;
 
+	// if the term is a numeral we print the corresponding number
+	if(readable && (num = termNumber(t)) != -1) {
+		printf("%d", num);
+		return;
+	} else if(readable && termIsList(t)) {
+		termPrintList(t);
+		return;
+	}
+
 	switch(t->type) {
 	 case TM_VAR:
 	 case TM_ALIAS:
@@ -52,12 +62,7 @@ void termPrint(TERM *t, int isMostRight) {
 		break;
 
 	 case TM_ABSTR:
-		// if the term is a church numeral we print the corresponding number
-		if(readable && (num = termNumber(t)) != -1)
-			printf("%d", num);
-		else if(readable && termIsList(t))
-			termPrintList(t);
-		else if(readable && termIsIdentity(t))
+		if(readable && termIsIdentity(t))
 			printf("I");
 		else {
 			if(showPar || !isMostRight) printf("(");
@@ -94,6 +99,35 @@ void termPrint(TERM *t, int isMostRight) {
 //
 // Free a TERM's memory
 
+// NOTE: stack is shared between functions that can be nested!
+static inline void termPush(TERM *t) {
+	int pos = _termStackNext - _termStack;
+	if(pos == _termStackCapacity) {
+		_termStackCapacity = _termStackCapacity ? 2*_termStackCapacity : 1000;
+		_termStack = realloc(_termStack, _termStackCapacity * sizeof(*_termStack));
+		assert(_termStack);
+		_termStackNext = _termStack + pos;
+	}
+
+	*(_termStackNext++) = t;
+}
+
+static inline TERM *termHead() {
+	assert(_termStackNext > _termStack);
+
+	return _termStackNext[-1];
+}
+
+static inline TERM *termPop() {
+	assert(_termStackNext > _termStack);
+
+	return *--_termStackNext;
+}
+
+static inline int termStackSize() {
+	return _termStackNext - _termStack;
+}
+
 void termFree(TERM *t) {
 	// if NULL do nothing
 	if(!t) return;
@@ -107,14 +141,19 @@ void termFree(TERM *t) {
 }
 
 void termGC() {
-	if(termPool == NULL)
-		return;
+	if(termPool != NULL) {
+		while(vector_size(termPool) > 0)
+			free(termNew());
 
-	while(vector_size(termPool) > 0)
-		free(termNew());
+		vector_destroy(termPool);
+		termPool = NULL;
+	}
 
-	vector_destroy(termPool);
-	termPool = NULL;
+	if(_termStack != NULL) {
+		free(_termStack);
+		_termStack = _termStackNext = NULL;
+		_termStackCapacity = 0;
+	}
 }
 
 TERM *termNew() {
@@ -134,7 +173,9 @@ TERM *termNew() {
 		return t;
 
 	} else {
-		return malloc(sizeof(TERM));
+		TERM* res = malloc(sizeof(TERM));
+		assert(res);
+		return res;
 	}
 }
 
@@ -143,19 +184,45 @@ TERM *termNew() {
 // Creates and returns a clone of a term (and all its subterms).
 
 TERM *termClone(TERM *t) {
-	TERM *newTerm;
+	// To avoid recursion, we push in the stack pairs of (<new-empty-term-to-be-filled>, <term>)
+	// Note: use the stack only when we need to add a second item to process
+	//
+	TERM *res = termNew();
 
-	newTerm = termNew();
-	newTerm->type = t->type;
-	newTerm->closed = t->closed;
-	newTerm->name = t->name;			// fast copy, strings are interned
+	TERM *newTerm = res;
 
-	if(t->type == TM_APPL || t->type == TM_ABSTR) {
-		newTerm->lterm = termClone(t->lterm);
-		newTerm->rterm = termClone(t->rterm);
+	for(int todo = 1; todo > 0; todo--) { // pairs left to process
+		if(!t) {
+			t = termPop();
+			newTerm = termPop();
+			assert(t && newTerm);
+		}
+
+		newTerm->type = t->type;
+		newTerm->closed = t->closed;
+		newTerm->name = t->name;			// fast copy, strings are interned
+
+		if(t->type == TM_APPL || t->type == TM_ABSTR) {
+			assert(t->lterm && t->rterm);
+
+			newTerm->lterm = termNew();
+			newTerm->rterm = termNew();
+
+			// 2 more pairs to process, push the one and put the other in (t,newTerm)
+			termPush(newTerm->lterm);
+			termPush(t->lterm);
+
+			newTerm = newTerm->rterm;
+			t = t->rterm;
+
+			todo += 2;
+
+		} else {
+			t = NULL;
+		}
 	}
 
-	return newTerm;
+	return res;
 }
 
 // termSubst
@@ -268,36 +335,60 @@ static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 // free variables of term t, otherwise 0.
 
 #ifndef NDEBUG
-int freeNo;				// count the number of calls of termIsFree
+int freeNo;				// count the number of terms processed by termIsFree
 #endif
 static int termIsFreeVar(TERM *t, char *name) {
-	// closed terms have no free variables
-	if(t->closed)
-		 return 0;
-#ifndef NDEBUG
-	freeNo++;
-#endif
+	assert(t);
 
-	switch(t->type) {
-	 case TM_VAR:
-		return t->name == name;
+	// Note: use the stack only when we need to add a second item to process
+	int found = 0;
 
-	 case TM_APPL:
-		return termIsFreeVar(t->lterm, name) ||
-				 termIsFreeVar(t->rterm, name);
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t)
+			t = termPop();
 
-	 case TM_ABSTR:
-		return t->lterm->name != name &&
-				 termIsFreeVar(t->rterm, name);
-	
-	 case TM_ALIAS:
-		// aliases must be closed terms (no free variables)!
-		return 0;
+		// nothing to do if already found or term is closed
+		// (closed terms have no free variables).
+		if(found || t->closed) {
+			t = NULL;
+			continue;
+		}
 
-	 default:		// we never reach here!
-		assert(0);
-		return 0;
+		#ifndef NDEBUG
+		freeNo++;
+		#endif
+
+		switch(t->type) {
+			case TM_VAR:
+				if(t->name == name)
+					found = 1;
+				t = NULL;
+				break;
+
+			case TM_APPL:
+				termPush(t->lterm);
+				t = t->rterm;
+				todo += 2;
+				break;
+
+			case TM_ABSTR:
+				if(t->lterm->name != name) {
+					t = t->rterm;
+					todo++;
+				} else {
+					// name cannot be free inside an abstraction of the same name
+					t = NULL;
+				}
+				break;
+			
+			case TM_ALIAS:
+				// aliases must be closed terms (no free variables)!
+				t = NULL;
+				break;
+		}
 	}
+
+	return found;
 }
 
 // termConv
@@ -320,103 +411,185 @@ int termConv(TERM *t) {
 	if(str_tilde == NULL)
 		str_tilde = str_intern("~");
 
-	TERM *L, *M, *N, *x;
-	int res, found;
-	char closed;
-
 	// verify that the closed bit has been set and is not garbage
 	assert(t->closed == 0 || t->closed == 1);
 
-	switch(t->type) {
-	 case TM_VAR:
-		return 0;
+	int result = 0;
 
-	 case TM_ABSTR:
-		// Check for eta-conversion
-		// \x.M x -> M  if x not free in M
-		L = t->rterm;			// M x
-		M = L->lterm;
-		N = L->rterm;
-		x = t->lterm;
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t)
+			t = termPop();
 
-		if(L->type == TM_APPL &&
-			N->type == TM_VAR &&
-			N->name == x->name &&
-			!termIsFreeVar(M, x->name)) {
-
-			// eta-conversion
-			*t = *M;
-
-			// free terms. By freeing L we also free M,N, but we
-			// should _not_ free M's subterms (they are copied in t)
-			M->lterm = M->rterm = NULL;
-			termFree(L);
-			termFree(x);
-
-			return 1;
+		if(result) {
+			t = NULL;
+			continue;
 		}
 
-		return termConv(t->rterm);
+		switch(t->type) {
+			case TM_VAR:
+				t = NULL;
+				break;
 
-	 case TM_APPL:
-		// If the left-most term is an alias it needs to be substituted cause it might contain
-		// an abstraction. while is needed cause we might still have an alias afterwards.
-		while(t->lterm->type == TM_ALIAS)
-			if(termAliasSubst(t->lterm) != 0)
-				return -1;
+			case TM_ABSTR:
+				// Check for eta-conversion
+				// \x.M x -> M  if x not free in M
+				TERM *L = t->rterm;			// M x
+				TERM *M = L->lterm;
+				TERM *N = L->rterm;
+				TERM *x = t->lterm;
 
-		// If no abstraction exist on the left-hand side then a beta-reduction is not possible,
-		// so we continue the search in the tree.
-		if(t->lterm->type != TM_ABSTR) {
-			res = termConv(t->lterm);
-			return res != 0
-				? res
-				: termConv(t->rterm);
+				if(L->type == TM_APPL &&
+					N->type == TM_VAR &&
+					N->name == x->name &&
+					!termIsFreeVar(M, x->name)) {
+
+					// eta-conversion
+					*t = *M;
+
+					// free terms. By freeing L we also free M,N, but we
+					// should _not_ free M's subterms (they are copied in t)
+					M->lterm = M->rterm = NULL;
+					termFree(L);
+					termFree(x);
+
+					result = 1;
+					t = NULL;
+					break;
+				}
+
+				t = t->rterm;
+				todo++;
+				break;
+
+			case TM_APPL:
+				// If the left-most term is an alias it needs to be substituted cause it might contain
+				// an abstraction. while is needed cause we might still have an alias afterwards.
+				while(t->lterm->type == TM_ALIAS)
+					if(termAliasSubst(t->lterm) != 0) {
+						result = -1;
+						t = NULL;
+						break;
+					}
+
+				// If no abstraction exist on the left-hand side then a beta-reduction is not possible,
+				// so we continue the search in the tree.
+				if(t->lterm->type != TM_ABSTR) {
+					// push rterm for later
+					termPush(t->rterm);
+
+					// search the lterm first
+					t = t->lterm;
+					todo += 2;
+					break;
+				}
+
+				// If the application has beed defined with ~,
+				// we perform the reductions in the right subtree first (call-by-value)
+				//
+				// TODO: recursion still exists here, although it should be limited
+				int res;
+				if(t->name == str_tilde && (res = termConv(t->rterm)) != 0) {
+					result = res;
+					t = NULL;
+					break;
+				}
+
+				L = t->lterm;		// L = \x.M
+				x = L->lterm;
+				M = L->rterm;
+				N = t->rterm;
+
+				// beta-reduction: \x.M N -> M[x:=N]
+				char closed = t->closed;
+				int found = termSubst(x, M, N, 0);
+				*t = *M;
+
+				// if t was closed, it remains closed (bete-conversion does not introduce free variables)
+				// however the inverse can happen, a non-closed t can become closed if M becomes
+				// closed itself (for example if x does not appear in M then any possible free variables of N
+				// will disapear after the beta-conversion)
+				t->closed = M->closed || closed;
+
+				// free terms. freeing L will also free x,M, but in case of M we
+				// should not free its subterms (which have been copied to t)
+				M->lterm = M->rterm = NULL;
+				termFree(L);
+
+				if(found)							// if N was substituted in M, we should
+					N->lterm = N->rterm = NULL;		// not free its subterms
+				termFree(N);
+
+				result = 1;
+				t = NULL;
+				break;
+
+			case TM_ALIAS:
+				// to check for reductions we need to substitute the alias with the corresponding term
+				if(termAliasSubst(t) != 0) {
+					result = -1;
+					t = NULL;
+				} else {
+					// leave t as is to search for reductions in the new term
+					todo++;
+				}
+				break;
+
+			default:										// we never reach here!
+				assert(0);
 		}
+	}
 
-		// If the application has beed defined with ~,
-		// we perform the reductions in the right subtree first (call-by-value)
-		if(t->name == str_tilde && (res = termConv(t->rterm)) != 0)
-			return res;
+	return result;
+}
 
-		L = t->lterm;		// L = \x.M
-		x = L->lterm;
-		M = L->rterm;
-		N = t->rterm;
+// Decode Scott numerals (with inversed argument order):
+//    0     = \s.\z.z			(same as church-0, so no need to treat separately)
+//    <N+1> = \s.\z.s <N>
+//
+static int scottNumeral(TERM *t) {
+	int n = 0;
 
-		// beta-reduction: \x.M N -> M[x:=N]
-		closed = t->closed;
-		found = termSubst(x, M, N, 0);
-		*t = *M;
-
-		// if t was closed, it remains closed (bete-conversion does not introduce free variables)
-		// however the inverse can happen, a non-closed t can become closed if M becomes
-		// closed itself (for example if x does not appear in M then any possible free variables of N
-		// will disapear after the beta-conversion)
-		t->closed = M->closed || closed;
-
-		// free terms. freeing L will also free x,M, but in case of M we
-		// should not free its subterms (which have been copied to t)
-		M->lterm = M->rterm = NULL;
-		termFree(L);
-
-		if(found)							// if N was substituted in M, we should
-			N->lterm = N->rterm = NULL;		// not free its subterms
-		termFree(N);
-
-		return 1;
-
-	 case TM_ALIAS:
-		// to check for reductions we need to substitute the alias with the corresponding term
-		if(termAliasSubst(t) != 0)
+	while(1) {
+		if(t->type != TM_ABSTR || t->rterm->type != TM_ABSTR)
 			return -1;
 
-		// search for reductions in the new term
-		return termConv(t);
+		TERM *body = t->rterm->rterm;
 
-	 default:										// we never reach here!
-		assert(0);
-		return -1;
+		if(body->type == TM_VAR && body->name == t->rterm->lterm->name)
+			return n;
+
+		if(body->type == TM_APPL && body->lterm->type == TM_VAR && body->lterm->name == t->lterm->name) {
+			n++;
+			t = body->rterm;
+		} else {
+			return -1;
+		}
+	}
+}
+
+// Decode Church numerals
+//    <N> = \f.\x.f^N(x)
+//
+static int churchNumeral(TERM *t) {
+	// first term must be \f.
+	if(t->type != TM_ABSTR) return -1;
+	TERM *f = t->lterm;
+
+	// second term must be \x. with x != f
+	if(t->rterm->type != TM_ABSTR) return -1;
+	TERM *x = (t->rterm->lterm);
+	if(f->name == x->name) return -1;
+
+	// recognize term f^n(x), compute n
+	int n = 0;
+	for(TERM *cur = t->rterm->rterm; ; cur = cur->rterm, n++) {
+		if(cur->type == TM_VAR && cur->name == x->name)
+			return n;
+
+		if(cur->type != TM_APPL ||
+			cur->lterm->type != TM_VAR ||
+			cur->lterm->name != f->name)
+			return -1;
 	}
 }
 
@@ -431,83 +604,54 @@ int termConv(TERM *t) {
 int termNumber(TERM *t) {
 	// Unprocessed: Succ(...(Succ(0))
 	//
-	if(t->type == TM_ALIAS && t->name == str_intern("0"))
-		return 0;
-	else if(t->type == TM_APPL && t->lterm->type == TM_ALIAS && t->lterm->name == str_intern("Succ"))
-		return 1 + termNumber(t->rterm);
-
-	// Scott numerals (with inversed argument order):
-	//    0     = \s.\z.z			(same as church-0, so no need to treat separately)
-	//    <N+1> = \s.\z.s <N>
-	//
-	if(t->type == TM_ABSTR && t->rterm->type == TM_ABSTR) {
-		TERM *body = t->rterm->rterm;
-
-		if(body->type == TM_APPL && body->lterm->type == TM_VAR && body->lterm->name == t->lterm->name) {
-			int n = termNumber(body->rterm);
-			if(n != -1)
-				return n + 1;
-		}
-	}
-
-	// church numerals
-	TERM *f, *x, *cur;
+	char *succ = str_intern("Succ");
 	int n = 0;
+	for(; t->type == TM_APPL && t->lterm->type == TM_ALIAS && t->lterm->name == succ; n++, t = t->rterm)
+		;
 
-	// first term must be \f.
-	if(t->type != TM_ABSTR) return -1;
-	f = t->lterm;
+	if(t->type == TM_ALIAS && t->name == str_intern("0"))
+		return n;
 
-	// second term must be \x. with x != f
-	if(t->rterm->type != TM_ABSTR) return -1;
-	x = (t->rterm->lterm);
-	if(f->name == x->name) return -1;
+	// Scott numerals
+	if((n = scottNumeral(t)) != -1)
+		return n;
 
-	// recognize term f^n(x), compute n
-	for(cur = t->rterm->rterm; ; cur = cur->rterm, n++) {
-		if(cur->type == TM_VAR && cur->name == x->name)
-			return n;
-
-		if(cur->type != TM_APPL ||
-			cur->lterm->type != TM_VAR ||
-			cur->lterm->name != f->name)
-			return -1;
-	}
+	return churchNumeral(t);
 }	
 
 // termIsList
 //
 // Returns 1 if t is an encoding of a list, that is of the form
-// \s.s Head Tail h Nil: \x.\x.\y.x
+//  Head:Tail  =   \s.s Head Tail
+//  []         =   \x.\x.\y.x
 
 static int termIsList(TERM *t) {
-	TERM *r;
+	while(1) {
+		if(t->type != TM_ABSTR)
+			return 0;
 
-	if(t->type != TM_ABSTR) return 0;
+		TERM *r = t->rterm;
 
-	r = t->rterm;
-	switch(r->type) {
-	 case TM_APPL:
 		// check for the form \s.s Head Tail
-		if(r->lterm->type == TM_APPL &&
+		if(r->type == TM_APPL &&
+			r->lterm->type == TM_APPL &&
 			r->lterm->lterm->type == TM_VAR &&
-			r->lterm->lterm->name == t->lterm->name)
-			return termIsList(r->rterm);
-		break;
+			r->lterm->lterm->name == t->lterm->name) {
 
-	 case TM_ABSTR:
-		// check for the form Nil: \x.\x.\y.x
-		if(r->rterm->type == TM_ABSTR &&
+			t = r->rterm;
+
+		// check for the form [] = \x.\x.\y.x
+		} else if(r->type == TM_ABSTR &&
+			r->rterm->type == TM_ABSTR &&
 			r->rterm->rterm->type == TM_VAR &&
-			r->rterm->rterm->name == r->lterm->name)
+			r->rterm->rterm->name == r->lterm->name) {
+
 			return 1;
-		break;
 
-	 default:
-		;
+		} else {
+			return 0;
+		}
 	}
-
-	return 0;
 }
 
 static int termIsIdentity(TERM *t) {
@@ -568,29 +712,36 @@ static int termAliasSubst(TERM *t) {
 // If id != NULL the only this specific alias is substituted.
 
 int termRemoveAliases(TERM *t, char *id) {
+	termPush(t);
+	int undefined = 0;
 
-	switch(t->type) {
-	 case(TM_VAR):
-		 return 0;
+	for(int todo = 1; todo > 0; todo--) {
+		t = termPop();
+		assert(t);
 
-	 case(TM_ABSTR):
-		 return termRemoveAliases(t->rterm, id);
+		switch(t->type) {
+			case(TM_ABSTR):
+				termPush(t->rterm);
+				todo++;
+				break;
 
-	 case(TM_APPL):
-		 return termRemoveAliases(t->lterm, id) ||
-				  termRemoveAliases(t->rterm, id);
+			case(TM_APPL):
+				termPush(t->lterm);
+				termPush(t->rterm);
+				todo += 2;
+				break;
 
-	 case(TM_ALIAS):
-		return !id || id == t->name
-			? termAliasSubst(t)
-			: 0;
-
-		//Antikatastash mono enos epipedoy
-		//return termRemoveAliases(t);
-
-	 default:				//we never reach here
-		return 0;
+			case(TM_ALIAS):
+				if(!id || id == t->name)
+					termAliasSubst(t);
+				else
+					undefined = 1;
+				
+			default:
+		}
 	}
+
+	return undefined;
 }
 
 // termAlias2Var
@@ -599,26 +750,36 @@ int termRemoveAliases(TERM *t, char *id) {
 // Used when removing recursion via a fixed point combinator.
 
 void termAlias2Var(TERM *t, char *alias, char *var) {
+	// Note: use the stack only when we need to add a second item to process
 
-	switch(t->type) {
-	 case(TM_VAR):
-		return;
-
-	 case(TM_ABSTR):
-		termAlias2Var(t->rterm, alias, var);
-		return;
-
-	 case(TM_APPL):
-		termAlias2Var(t->lterm, alias, var);
-		termAlias2Var(t->rterm, alias, var);
-		return;
-
-	 case(TM_ALIAS):
-		if(alias == t->name) {
-			t->type = TM_VAR;
-			t->name = var;		// already interned
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t) {
+			t = termPop();
+			assert(t);
 		}
-		return;
+
+		switch(t->type) {
+			case(TM_ABSTR):
+				t = t->rterm;
+				todo++;
+				continue;
+
+			case(TM_APPL):
+				termPush(t->lterm);
+				t = t->rterm;
+				todo += 2;
+				continue;
+
+			case(TM_ALIAS):
+				if(alias == t->name) {
+					t->type = TM_VAR;
+					t->name = var;		// already interned
+				}
+				break;
+
+			default:
+		}
+		t = NULL;
 	}
 }
 
@@ -627,95 +788,111 @@ void termRemoveOper(TERM *t) {
 	if(str_tilde == NULL)
 		str_tilde = str_intern("~");
 
-	TERM *alias, *appl;
-	
-	switch(t->type) {
-	 case(TM_VAR):
-	 case(TM_ALIAS):
-		break;
+	for(int todo = 1; todo > 0; todo--) {
+		if(!t)
+			t = termPop();
 
-	 case(TM_ABSTR):
-		termRemoveOper(t->rterm);
-		break;
+		if(t->type == TM_ABSTR) {
+			t = t->rterm;
+			todo++;
 
-	 case(TM_APPL):
-		termRemoveOper(t->lterm);
-		termRemoveOper(t->rterm);
+		} else if(t->type == TM_APPL) {
+			TERM *next = t->lterm;
+			termPush(t->rterm);
 
-		//	If t has a name the it's an operator. In this case we perform the conversion:
-		//		a op b -> 'op' a b
-		//
-		//	Operator '~' has a special meaning, used during execution to decide the evaluation
-		//	order.
+			//	If t has a name the it's an operator. In this case we perform the conversion:
+			//		a op b -> 'op' a b
+			//
+			//	Operator '~' has a special meaning, used during execution to decide the evaluation
+			//	order.
+			//
+			if(t->name && t->name != str_tilde) {
+				// alias = op
+				TERM *alias = termNew();
+				alias->type = TM_ALIAS;
+				alias->name = t->name;
+				alias->closed = 1;							// aliases are closed terms
+				t->name = NULL;
 
-		if(t->name && t->name != str_tilde) {
-			// alias = op
-			alias = termNew();
-			alias->type = TM_ALIAS;
-			alias->name = t->name;
-			alias->closed = 1;							// aliases are closed terms
-			t->name = NULL;
+				// apple = op a
+				TERM *appl = termNew();
+				appl->type = TM_APPL;
+				appl->name = NULL;
 
-			// apple = op a
-			appl = termNew();
-			appl->type = TM_APPL;
-			appl->name = NULL;
+				appl->lterm = alias;
+				appl->rterm = t->lterm;
+				appl->closed = appl->rterm->closed;		// the application "op a" is closed if a is closed
 
-			appl->lterm = alias;
-			appl->rterm = t->lterm;
-			appl->closed = appl->rterm->closed;		// the application "op a" is closed if a is closed
+				// t = (op a) b
+				t->lterm = appl;
+			}
 
-			// t = (op a) b
-			t->lterm = appl;
+			t = next;
+			todo += 2;
+
+		} else {
+			t = NULL;
 		}
-
-		break;
 	}
 }
 
 void termSetClosedFlag(TERM *t) {
-	list_t *fvars = termFreeVars(t);
-	list_destroy_nodes(fvars);
-	list_destroy(fvars);
-}
+	// Note: in the stack we keep both the "active" terms currently being visited, and the "pending" terms
+	// that will be visited in the future (eg a right branch while we visit the left). The active terms
+	// are distinguished by a NULL marker right after them.
+	//
+	int init_size = termStackSize();
+	termPush(t);
 
-static int compare_pointers(const void *key1, const void *key2) {
-    return key1 - key2;
-}
+	while(termStackSize() > init_size) {
+		t = termHead();
+		if(t) {
+			// entering the term, add NULL marker to mark as active
+			termPush(NULL);
+		} else {
+			// reached NULL marker, we are returning, remove marker and term
+			termPop();
+			termPop();
+			continue;
+		}
 
-static list_t* termFreeVars(TERM *t) {
-	list_t *vars = NULL, *rvars;
-	lnode_t *node;
+		// entering term t, terms are closed until we show otherwise
+		t->closed = 1;
 
-	switch(t->type) {
-	 case(TM_VAR):
-		vars = list_create(LISTCOUNT_T_MAX);
-		list_append(vars, lnode_create(t->name));
-		break;
+		switch(t->type) {
+			case(TM_VAR):
+				t->closed = 0;
 
-	 case(TM_ALIAS):
-		vars = list_create(LISTCOUNT_T_MAX);
-		break;
+				// mark all active terms in the stack as not closed, from the most
+				// nested going outwards. Stop if we find an abstraction with the same name.
+				//
+				for(int i = termStackSize(); i > init_size; i--) {
+					TERM *ancestor = _termStack[i-1];
+					if(ancestor)
+						continue;	// no active marker, this is a pending term
 
-	 case(TM_ABSTR):
-		vars = termFreeVars(t->rterm);
-		while((node = list_find(vars, t->lterm->name, compare_pointers)) != NULL)
-			lnode_destroy(list_delete(vars, node));
-		break;
+					ancestor = _termStack[--i-1];
+					if(ancestor->type == TM_ABSTR && ancestor->lterm->name == t->name)
+						break;
+					else
+						ancestor->closed = 0;
+				}
+				break;
 
-	 case(TM_APPL):
-		vars = termFreeVars(t->lterm);
-		rvars = termFreeVars(t->rterm);
-		list_transfer(vars, rvars, list_first(rvars));
-		list_destroy(rvars);
-		break;
-	
-	 default:
-		assert(0 /* invalid t-> type */);
+			case(TM_ALIAS):
+				t->closed = 1;
+				break;
+
+			case(TM_ABSTR):
+				termPush(t->rterm);
+				break;
+
+			case(TM_APPL):
+				termPush(t->rterm);
+				termPush(t->lterm);
+				break;
+		}
 	}
-
-	t->closed = list_isempty(vars);
-	return vars;
 }
 
 // Finds a variable not contained in lists l1 and l2, by trying all strings in

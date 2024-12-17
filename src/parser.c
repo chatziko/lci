@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "dparse.h"
 #include "termproc.h"
@@ -144,11 +145,7 @@ TERM *create_application(TERM *left, char *oper_name, TERM *right) {
 // <N> creates the term Succ(Succ(...(Succ(0)))
 
 TERM *create_number(char *s) {
-	int num = 0;
-	if(strlen(s) > 4)
-		fprintf(stderr, "Error: integers must be in the range 0-9999. Changing to 0.\n");
-	else
-		num = atoi(s);
+	int num = atoi(s);
 
 	TERM *t = create_alias(str_intern("0"));
 	for(; num > 0; num--)
