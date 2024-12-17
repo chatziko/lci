@@ -442,7 +442,7 @@ int termConv(TERM *t) {
 				t = NULL;
 				break;
 
-			case TM_ABSTR:
+			case TM_ABSTR: {
 				// Check for eta-conversion
 				// \x.M x -> M  if x not free in M
 				TERM *L = t->rterm;			// M x
@@ -471,8 +471,9 @@ int termConv(TERM *t) {
 				t = t->rterm;
 				todo++;
 				break;
+			}
 
-			case TM_APPL:
+			case TM_APPL: {
 				// If the left-most term is an alias it needs to be substituted cause it might contain
 				// an abstraction. while is needed cause we might still have an alias afterwards.
 				while(t->lterm->type == TM_ALIAS)
@@ -505,10 +506,10 @@ int termConv(TERM *t) {
 					break;
 				}
 
-				L = t->lterm;		// L = \x.M
-				x = L->name;
-				M = L->rterm;
-				N = t->rterm;
+				TERM *L = t->lterm;		// L = \x.M
+				char *x = L->name;
+				TERM *M = L->rterm;
+				TERM *N = t->rterm;
 
 				// beta-reduction: \x.M N -> M[x:=N]
 				char closed = t->closed;
@@ -544,6 +545,7 @@ int termConv(TERM *t) {
 					todo++;
 				}
 				break;
+			}
 
 			default:										// we never reach here!
 				assert(0);
