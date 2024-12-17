@@ -309,12 +309,8 @@ static void removeCycle(GraphCycle cycle) {
 	newTerm->rterm = termNew();								// Remove \_me.
 	TERM *tmpTerm = newTerm->rterm;
 	tmpTerm->type = TM_ABSTR;
-	tmpTerm->name = NULL;
+	tmpTerm->name = str_intern("_me");					// _me variable
 	tmpTerm->rterm = t;
-
-	tmpTerm->lterm = termNew();								// _me variable
-	tmpTerm->lterm->type = TM_VAR;
-	tmpTerm->lterm->name = str_intern("_me");
 
 	// Change declaration
 	termSetClosedFlag(newTerm);

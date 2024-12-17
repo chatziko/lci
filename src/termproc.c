@@ -22,7 +22,7 @@ static int termIsList(TERM *t);
 static void termPrintList(TERM *t);
 
 static int termIsFreeVar(TERM *t, char *name);
-static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone);
+static int termSubst(char *x, TERM *M, TERM *N, int mustClone);
 static int termAliasSubst(TERM *t);
 static char *getVariable(TERM *t1, TERM *t2);
 
@@ -166,8 +166,10 @@ TERM *termNew() {
 		vector_remove_last(termPool);
 
 		// free subterm (they are not freed when the term is freed)
-		if(t->type == TM_APPL || t->type == TM_ABSTR) {
+		if(t->type == TM_APPL) {
 			termFree(t->lterm);
+			termFree(t->rterm);
+		} else if(t->type == TM_ABSTR) {
 			termFree(t->rterm);
 		}
 		return t;
@@ -202,7 +204,7 @@ TERM *termClone(TERM *t) {
 		newTerm->closed = t->closed;
 		newTerm->name = t->name;			// fast copy, strings are interned
 
-		if(t->type == TM_APPL || t->type == TM_ABSTR) {
+		if(t->type == TM_APPL) {
 			assert(t->lterm && t->rterm);
 
 			newTerm->lterm = termNew();
@@ -216,6 +218,17 @@ TERM *termClone(TERM *t) {
 			t = t->rterm;
 
 			todo += 2;
+
+		} else if(t->type == TM_ABSTR) {
+			assert(t->rterm);
+
+			newTerm->rterm = termNew();
+
+			// put the new pair to process in (t,newTerm)
+			newTerm = newTerm->rterm;
+			t = t->rterm;
+
+			todo ++;
 
 		} else {
 			t = NULL;
@@ -237,8 +250,8 @@ TERM *termClone(TERM *t) {
 // without cost, so a term marked as non-closed could in fact be closed. But the
 // opposite should hold, terms marked as closed MUST be closed.
 
-static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
-	TERM z, *y, *P, *clone;
+static int termSubst(char *x, TERM *M, TERM *N, int mustClone) {
+	TERM z, *P, *clone;
 	int found = 0;
 
 	// nothing can be substituted in closed terms
@@ -247,7 +260,7 @@ static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 
 	switch(M->type) {
 	 case TM_VAR:
-	 	if(M->name == x->name) {		// fast compare, strings are interned
+	 	if(M->name == x) {		// fast compare, strings are interned
 			if(mustClone) {
 				clone = termClone(N);
 				*M = *clone;
@@ -271,11 +284,10 @@ static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 		break;
 
 	 case TM_ABSTR:		
-		y = M->lterm;
 		P = M->rterm;
 
 		// case 1: x = y
-		if(y->name == x->name)	// fast comparison, strings are interned
+		if(M->name == x)	// fast comparison, strings are interned
 			break;
 
 		// If y is free in N then we should alpha-convert it to a different name to avoid capture
@@ -302,7 +314,7 @@ static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 		//       P->closed to avoid extra function calls and avoid calling termIsFreeVar(N, y->name) if P->closed is set
 		// 
 		if(!N->closed && !P->closed &&
-			termIsFreeVar(N, y->name) &&	termIsFreeVar(P, x->name)
+			termIsFreeVar(N, M->name) && termIsFreeVar(P, x)
 			) {
 			//printf("ISFREE\n");
 
@@ -312,8 +324,8 @@ static int termSubst(TERM *x, TERM *M, TERM *N, int mustClone) {
 			z.name = getVariable(N, P);
 			z.closed = 0;
 
-			termSubst(y, P, &z, 1);
-			y->name = z.name;
+			termSubst(M->name, P, &z, 1);
+			M->name = z.name;
 		}
 		found = termSubst(x, P, N, mustClone);
 
@@ -372,7 +384,7 @@ static int termIsFreeVar(TERM *t, char *name) {
 				break;
 
 			case TM_ABSTR:
-				if(t->lterm->name != name) {
+				if(t->name != name) {
 					t = t->rterm;
 					todo++;
 				} else {
@@ -436,12 +448,12 @@ int termConv(TERM *t) {
 				TERM *L = t->rterm;			// M x
 				TERM *M = L->lterm;
 				TERM *N = L->rterm;
-				TERM *x = t->lterm;
+				char *x = t->name;
 
 				if(L->type == TM_APPL &&
 					N->type == TM_VAR &&
-					N->name == x->name &&
-					!termIsFreeVar(M, x->name)) {
+					N->name == x &&
+					!termIsFreeVar(M, x)) {
 
 					// eta-conversion
 					*t = *M;
@@ -450,7 +462,6 @@ int termConv(TERM *t) {
 					// should _not_ free M's subterms (they are copied in t)
 					M->lterm = M->rterm = NULL;
 					termFree(L);
-					termFree(x);
 
 					result = 1;
 					t = NULL;
@@ -495,7 +506,7 @@ int termConv(TERM *t) {
 				}
 
 				L = t->lterm;		// L = \x.M
-				x = L->lterm;
+				x = L->name;
 				M = L->rterm;
 				N = t->rterm;
 
@@ -555,10 +566,10 @@ static int scottNumeral(TERM *t) {
 
 		TERM *body = t->rterm->rterm;
 
-		if(body->type == TM_VAR && body->name == t->rterm->lterm->name)
+		if(body->type == TM_VAR && body->name == t->rterm->name)
 			return n;
 
-		if(body->type == TM_APPL && body->lterm->type == TM_VAR && body->lterm->name == t->lterm->name) {
+		if(body->type == TM_APPL && body->lterm->type == TM_VAR && body->lterm->name == t->name) {
 			n++;
 			t = body->rterm;
 		} else {
@@ -573,22 +584,22 @@ static int scottNumeral(TERM *t) {
 static int churchNumeral(TERM *t) {
 	// first term must be \f.
 	if(t->type != TM_ABSTR) return -1;
-	TERM *f = t->lterm;
+	char *f = t->name;
 
 	// second term must be \x. with x != f
 	if(t->rterm->type != TM_ABSTR) return -1;
-	TERM *x = (t->rterm->lterm);
-	if(f->name == x->name) return -1;
+	char *x = t->rterm->name;
+	if(f == x) return -1;
 
 	// recognize term f^n(x), compute n
 	int n = 0;
 	for(TERM *cur = t->rterm->rterm; ; cur = cur->rterm, n++) {
-		if(cur->type == TM_VAR && cur->name == x->name)
+		if(cur->type == TM_VAR && cur->name == x)
 			return n;
 
 		if(cur->type != TM_APPL ||
 			cur->lterm->type != TM_VAR ||
-			cur->lterm->name != f->name)
+			cur->lterm->name != f)
 			return -1;
 	}
 }
@@ -636,7 +647,7 @@ static int termIsList(TERM *t) {
 		if(r->type == TM_APPL &&
 			r->lterm->type == TM_APPL &&
 			r->lterm->lterm->type == TM_VAR &&
-			r->lterm->lterm->name == t->lterm->name) {
+			r->lterm->lterm->name == t->name) {
 
 			t = r->rterm;
 
@@ -644,7 +655,7 @@ static int termIsList(TERM *t) {
 		} else if(r->type == TM_ABSTR &&
 			r->rterm->type == TM_ABSTR &&
 			r->rterm->rterm->type == TM_VAR &&
-			r->rterm->rterm->name == r->lterm->name) {
+			r->rterm->rterm->name == r->name) {
 
 			return 1;
 
@@ -658,7 +669,7 @@ static int termIsIdentity(TERM *t) {
 	return
 		t->type == TM_ABSTR &&
 		t->rterm->type == TM_VAR &&
-		t->lterm->name == t->rterm->name;
+		t->name == t->rterm->name;
 }
 
 // termPrintList
@@ -872,7 +883,7 @@ void termSetClosedFlag(TERM *t) {
 						continue;	// no active marker, this is a pending term
 
 					ancestor = _termStack[--i-1];
-					if(ancestor->type == TM_ABSTR && ancestor->lterm->name == t->name)
+					if(ancestor->type == TM_ABSTR && ancestor->name == t->name)
 						break;
 					else
 						ancestor->closed = 0;
