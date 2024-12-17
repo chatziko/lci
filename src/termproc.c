@@ -28,7 +28,9 @@ static char *getVariable(TERM *t1, TERM *t2);
 
 
 static Vector termPool = NULL;
-static Vector termStack = NULL;
+static TERM **_termStack = NULL;
+static TERM **_termStackNext = NULL;	// points to first empty slot
+static int _termStackCapacity = 0;
 
 
 // termPrint
@@ -98,35 +100,32 @@ void termPrint(TERM *t, int isMostRight) {
 // Free a TERM's memory
 
 // NOTE: stack is shared between functions that can be nested!
-static void termPush(TERM *t) {
-	if(termStack == NULL)
-		termStack = vector_create(0, NULL);
+static inline void termPush(TERM *t) {
+	int pos = _termStackNext - _termStack;
+	if(pos == _termStackCapacity) {
+		_termStackCapacity = _termStackCapacity ? 2*_termStackCapacity : 1000;
+		_termStack = realloc(_termStack, _termStackCapacity * sizeof(*_termStack));
+		assert(_termStack);
+		_termStackNext = _termStack + pos;
+	}
 
-	vector_insert_last(termStack, t);
+	*(_termStackNext++) = t;
 }
 
-static TERM *termHead() {
-	assert(termStack);
+static inline TERM *termHead() {
+	assert(_termStackNext > _termStack);
 
-	int size = vector_size(termStack);
-	assert(size > 0);
-
-	return vector_get_at(termStack, size-1);
+	return _termStackNext[-1];
 }
 
-static TERM *termPop() {
-	assert(termStack);
+static inline TERM *termPop() {
+	assert(_termStackNext > _termStack);
 
-	int size = vector_size(termStack);
-	assert(size > 0);
-
-	TERM *t = vector_get_at(termStack, size-1);
-	vector_remove_last(termStack);
-	return t;
+	return *--_termStackNext;
 }
 
-static int termStackSize() {
-	return termStack ? vector_size(termStack) : 0;
+static inline int termStackSize() {
+	return _termStackNext - _termStack;
 }
 
 void termFree(TERM *t) {
@@ -150,9 +149,10 @@ void termGC() {
 		termPool = NULL;
 	}
 
-	if(termStack != NULL) {
-		vector_destroy(termStack);
-		termStack = NULL;
+	if(_termStack != NULL) {
+		free(_termStack);
+		_termStack = _termStackNext = NULL;
+		_termStackCapacity = 0;
 	}
 }
 
@@ -866,15 +866,16 @@ void termSetClosedFlag(TERM *t) {
 				// mark all active terms in the stack as not closed, from the most
 				// nested going outwards. Stop if we find an abstraction with the same name.
 				//
-				for(int i = vector_size(termStack)-1; i >= 0; i--) {
-					if(vector_get_at(termStack, i))
+				for(int i = termStackSize(); i > init_size; i--) {
+					TERM *ancestor = _termStack[i-1];
+					if(ancestor)
 						continue;	// no active marker, this is a pending term
 
-					TERM *s = vector_get_at(termStack, --i);
-					if(s->type == TM_ABSTR && s->lterm->name == t->name)
+					ancestor = _termStack[--i-1];
+					if(ancestor->type == TM_ABSTR && ancestor->lterm->name == t->name)
 						break;
 					else
-						s->closed = 0;
+						ancestor->closed = 0;
 				}
 				break;
 
