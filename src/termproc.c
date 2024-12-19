@@ -68,8 +68,7 @@ void termPrint(TERM *t, int isMostRight) {
 			if(showPar || !isMostRight) printf("(");
 
 			printf(greekLambda ? "\u03BB" : "\\");
-			termPrint(t->lterm, 0);
-			printf(".");
+			printf("%s.", t->name);
 			termPrint(t->rterm, 1);
 
 			if(showPar || !isMostRight) printf(")");
