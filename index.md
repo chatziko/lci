@@ -44,7 +44,7 @@ To demonstrate them, there is an implementation of the N-Queens problem
 
 ## Install
 
-#### From source
+### From source
 
 The latest version is
 [available here](https://github.com/chatziko/lci/releases/).
@@ -62,7 +62,7 @@ This will install the `lci` executable in `/usr/local/bin` and `.lcirc, queens.l
 
 You can also checkout the code from [github](https://github.com/chatziko/lci/).
 
-#### Using Homebrew on OSX
+### Using Homebrew on OSX
 
 Install [Homebrew](http://brew.sh) and run:
 
@@ -70,13 +70,13 @@ Install [Homebrew](http://brew.sh) and run:
 brew install lci
 ```
 
-#### Binaries for Windows
+### Binaries for Windows
 
 Windows binaries are
 [available here](https://github.com/chatziko/lci/releases/).
 Simply extract and run the `lci` executable.
 
-#### Building for WebAssembly
+### Building for WebAssembly
 
 The browser version can be built with [emscripten](https://emscripten.org/).
 You first need to build `make_dparser` with a normal build, then build
@@ -91,15 +91,13 @@ emcmake cmake ..
 emmake make
 ```
 
-#### Contribution
-
-If you have found a bug please [report it](https://github.com/chatziko/lci/issues).
-Also feel free to send pull requests, or suggest features.
 
 ## Documentation
 
-LCI's documentation covers most of the program's features and explains various
-topics concerning the lambda-calculus
+[LCI's documentation](documentation) covers most of the program's features
+and related lambda-calculus concepts.
 
-* [View](https://www.chatzi.org/lci/lcidoc.html) the documentation (html).
-* [Download](https://www.chatzi.org/lci/lcidoc.pdf) the documentation (pdf).
+## Contributing
+
+If you found a bug please [report it](https://github.com/chatziko/lci/issues).
+Also feel free to send pull requests, or suggest features.
