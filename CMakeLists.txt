@@ -89,6 +89,13 @@ set_tests_properties(fixed_point PROPERTIES
 	PASS_REGULAR_EXPRESSION "cycles removed.*\\[3, 4, \\[\\], 5\\]"
 )
 
+add_test(show_alias
+	sh -c "printf \"ShowAlias\\n\" | ./lci"
+)
+set_tests_properties(show_alias PROPERTIES
+	PASS_REGULAR_EXPRESSION ": = Cons"
+)
+
 # valgrind test
 find_program(VALGRIND valgrind)
 if(VALGRIND)
