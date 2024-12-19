@@ -97,8 +97,5 @@ Also feel free to send pull requests, or suggest features.
 
 ## Documentation
 
-LCI's documentation covers most of the program's features and explains various
-topics concerning the lambda-calculus
-
-* [View](https://www.chatzi.org/lci/lcidoc.html) the documentation (html).
-* [Download](https://www.chatzi.org/lci/lcidoc.pdf) the documentation (pdf).
+[LCI's documentation](https://www.chatzi.org/lci/documentation) covers most of the program's features
+and related lambda-calculus concepts.

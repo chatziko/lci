@@ -4,7 +4,6 @@ project(lci C)
 
 add_subdirectory(dparser EXCLUDE_FROM_ALL)
 add_subdirectory(replxx EXCLUDE_FROM_ALL)
-add_subdirectory(doc)
 add_subdirectory(html)
 
 # default type is Release, change with cmake -DCMAKE_BUILD_TYPE=
@@ -60,7 +59,7 @@ add_custom_target(release_bin
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} VERBATIM
 	COMMAND ${CMAKE_COMMAND} -E make_directory release_bin
 	COMMAND ${CMAKE_COMMAND} -E copy .lcirc queens.lci $<TARGET_FILE:lci> release_bin/
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/COPYING release_bin/
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/Documentation.md ${CMAKE_CURRENT_SOURCE_DIR}/COPYING release_bin/
 )
 
 # prepare source release
